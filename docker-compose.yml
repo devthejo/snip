@@ -1,0 +1,16 @@
+version: "3.7"
+services:
+  snip:
+    image: "registry.gitlab.com/youtopia.earth/ops/snip:${SNIP_TAG:-master}"
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        DOCKER_VERSION: ${DOCKER_VERSION:-19}
+        DOCKER_COMPOSE_VERSION: ${DOCKER_COMPOSE_VERSION:-1.25.1-rc1}
+        GOMPLATE_VERSION: ${GOMPLATE_VERSION:-v3.6.0-slim}
+        GOLANG_VERSION: ${GOLANG_VERSION:-1.13}
+      cache_from:
+        - registry.gitlab.com/youtopia.earth/ops/snip:latest
+        - registry.gitlab.com/youtopia.earth/ops/snip:${SNIP_TAG:-}
+
