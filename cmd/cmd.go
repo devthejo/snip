@@ -32,6 +32,7 @@ func CmdRoot(app App) *cobra.Command {
 	pFlags.StringP("log-level", "l", config.FlagLogLevelDefault, config.FlagLogLevelDesc)
 	pFlags.StringP("log-type", "", config.FlagLogTypeDefault, config.FlagLogTypeDesc)
 	pFlags.BoolP("log-force-colors", "", config.FlagLogForceColorsDefault, config.FlagLogForceColorsDesc)
+	pFlags.StringP("cwd", "", "", config.FlagCWDDesc)
 
 	v := app.GetViper()
 

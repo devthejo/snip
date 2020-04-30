@@ -85,6 +85,7 @@ func (cl *ConfigLoader) Load() {
 
 func (cl *ConfigLoader) InitConfig() {
 	cl.ConfigLogFromEnv()
+	cl.ConfigureCWD()
 	cl.LoadDotEnv()
 	cl.ConfigLogFromEnv()
 	cl.LoadJsonnet()
