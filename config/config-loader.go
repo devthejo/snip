@@ -5,12 +5,14 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/imdario/mergo"
 	"github.com/mitchellh/mapstructure"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
+	"gitlab.com/youtopia.earth/ops/snip/errors"
 	"gitlab.com/youtopia.earth/ops/snip/goenv"
 	"gitlab.com/youtopia.earth/ops/snip/tools"
 )
@@ -31,7 +33,7 @@ type ConfigLoader struct {
 func NewConfigLoader() *ConfigLoader {
 	cl := &ConfigLoader{}
 	cl.Viper = viper.New()
-	cl.Config = NewConfig()
+	cl.Config = &Config{}
 	cl.configPaths = []string{".", "/etc"}
 	cl.configName = "snip"
 	return cl
@@ -211,9 +213,12 @@ func (cl *ConfigLoader) LoadViperConfigFile() {
 }
 
 func (cl *ConfigLoader) LoadViper() {
-	if err := cl.Viper.Unmarshal(cl.Config, cl.ViperDecoderConfigOption); err != nil {
+	mergeConfig := &Config{}
+	if err := cl.Viper.Unmarshal(mergeConfig, cl.ViperDecoderConfigOption); err != nil {
 		logrus.Fatalf("Unable to unmarshal config: %v", err)
 	}
+	err := mergo.Merge(cl.Config, *mergeConfig, mergo.WithOverride)
+	errors.Check(err)
 }
 
 func (cl *ConfigLoader) GetOptionString(flags *pflag.FlagSet, key string, defaultValue string) string {

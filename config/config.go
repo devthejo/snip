@@ -1,9 +1,6 @@
 package config
 
-func NewConfig() *Config {
-	config := &Config{}
-	return config
-}
+type Play interface{}
 
 // Config struct
 type Config struct {
@@ -11,4 +8,6 @@ type Config struct {
 	LogType        string `mapstructure:"LOG_TYPE" json:"log_type"`
 	LogForceColors bool   `mapstructure:"LOG_FORCE_COLORS" json:"logs_force_colors"`
 	CWD            string `mapstructure:"CWD" json:"cwd"`
+
+	Playbook []Play `mapstructure:"PLAYBOOK" json:"playbook"`
 }
