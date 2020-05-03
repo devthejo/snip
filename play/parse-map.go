@@ -8,13 +8,16 @@ import (
 
 	"gitlab.com/youtopia.earth/ops/snip/decode"
 	"gitlab.com/youtopia.earth/ops/snip/errors"
+	"gitlab.com/youtopia.earth/ops/snip/tools"
 )
 
 func ParseMap(play *Play, playMap map[string]interface{}) {
 
 	parseName(play, playMap)
+	parseFuncName(play, playMap)
 	parseTitle(play, playMap)
 	parseVars(play, playMap)
+	parseRegisterVars(play, playMap)
 	parseCheckCommand(play, playMap)
 	parseDependencies(play, playMap)
 	parsePostInstall(play, playMap)
@@ -48,6 +51,9 @@ func parseName(play *Play, playMap map[string]interface{}) {
 	default:
 		logrus.Fatalf("unexpected play name type %T value %v", playMap["name"], playMap["name"])
 	}
+}
+func parseFuncName(play *Play, playMap map[string]interface{}) {
+	play.FuncName = "__snip_play_" + strings.ToLower(tools.KeyEnv(play.Name))
 }
 
 func parseTitle(play *Play, playMap map[string]interface{}) {
@@ -134,6 +140,18 @@ func parseSSH(play *Play, playMap map[string]interface{}) {
 	case nil:
 	default:
 		logrus.Fatalf("unexpected play var ssh type %T value %v", playMap["ssh"], playMap["ssh"])
+	}
+}
+
+func parseRegisterVars(play *Play, playMap map[string]interface{}) {
+	switch playMap["registerVars"].(type) {
+	case []interface{}:
+		registerVars, err := decode.ToStrings(playMap["registerVars"])
+		errors.Check(err)
+		play.RegisterVars = registerVars
+	case nil:
+	default:
+		logrus.Fatalf("unexpected play registerVars type %T value %v", playMap["registerVars"], playMap["registerVars"])
 	}
 }
 

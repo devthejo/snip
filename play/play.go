@@ -1,10 +1,12 @@
 package play
 
 type Play struct {
-	Name  string
-	Title string
+	Name     string
+	Title    string
+	FuncName string
 
-	Vars map[string]*Var
+	Vars         map[string]*Var
+	RegisterVars []string
 
 	CheckCommand string
 
@@ -14,8 +16,9 @@ type Play struct {
 	Sudo bool
 	SSH  bool
 
-	Markdown   string
-	CodeBlocks []*CodeBlock
+	Markdown         string
+	SourceCodeBlocks []*CodeBlock
+	CodeBlocks       []*CodeBlock
 
 	State PlayStateType
 }

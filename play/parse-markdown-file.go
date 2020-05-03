@@ -67,12 +67,30 @@ func ParseMarkdownFile(play *Play, app App) {
 		switch tok := t.(type) {
 		case *markdown.Fence:
 			if tok.Content != "" && (tok.Params == "bash" || tok.Params == "sh") {
-				play.CodeBlocks = append(play.CodeBlocks, &CodeBlock{
+				codeBlock := &CodeBlock{
 					Type:    CodeBlockBash,
 					Content: tok.Content,
-				})
+				}
+				play.SourceCodeBlocks = append(play.SourceCodeBlocks, codeBlock)
+				play.CodeBlocks = append(play.CodeBlocks, generateBashVarsCodeBlock(play))
+				play.CodeBlocks = append(play.CodeBlocks, codeBlock)
 			}
 		}
 	}
 
+}
+
+func generateBashVarsCodeBlock(play *Play) *CodeBlock {
+	var content string
+
+	// for _, v := range play.Vars {
+	//
+	// }
+
+	codeBlock := &CodeBlock{
+		Type:    CodeBlockBash,
+		Content: content,
+	}
+
+	return codeBlock
 }

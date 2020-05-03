@@ -8,6 +8,7 @@ const (
 	FlagCWDDesc            = "current working directory"
 
 	FlagSnippetsDirDesc = "snippets directory"
+	FlagOutputDesc      = "output file"
 )
 
 var (
@@ -16,4 +17,5 @@ var (
 	FlagLogLevelDefault       = "info"
 
 	FlagSnippetsDirDefault = "snippets"
+	FlagOutputDefault      = ""
 )
