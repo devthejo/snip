@@ -18,6 +18,8 @@ github.com/hashicorp/hcl/hcl/token
 github.com/hashicorp/hcl/json/parser
 github.com/hashicorp/hcl/json/scanner
 github.com/hashicorp/hcl/json/token
+# github.com/imdario/mergo v0.3.9
+github.com/imdario/mergo
 # github.com/inconshreveable/mousetrap v1.0.0
 github.com/inconshreveable/mousetrap
 # github.com/konsorten/go-windows-terminal-sequences v1.0.1
@@ -47,11 +49,34 @@ github.com/spf13/viper
 github.com/subosito/gotenv
 # github.com/yosuke-furukawa/json5 v0.1.1
 github.com/yosuke-furukawa/json5/encoding/json5
+# github.com/yuin/goldmark v1.1.30
+github.com/yuin/goldmark
+github.com/yuin/goldmark/ast
+github.com/yuin/goldmark/extension
+github.com/yuin/goldmark/extension/ast
+github.com/yuin/goldmark/parser
+github.com/yuin/goldmark/renderer
+github.com/yuin/goldmark/renderer/html
+github.com/yuin/goldmark/text
+github.com/yuin/goldmark/util
+# github.com/yuin/goldmark-meta v0.0.0-20191126180153-f0638e958b60
+github.com/yuin/goldmark-meta
+# gitlab.com/golang-commonmark/html v0.0.0-20191124015941-a22733972181
+gitlab.com/golang-commonmark/html
+# gitlab.com/golang-commonmark/linkify v0.0.0-20191026162114-a0c2df6c8f82
+gitlab.com/golang-commonmark/linkify
+# gitlab.com/golang-commonmark/markdown v0.0.0-20191127184510-91b5b3c99c19
+gitlab.com/golang-commonmark/markdown
+# gitlab.com/golang-commonmark/mdurl v0.0.0-20191124015652-932350d1cb84
+gitlab.com/golang-commonmark/mdurl
+# gitlab.com/golang-commonmark/puny v0.0.0-20191124015043-9f83538fa04f
+gitlab.com/golang-commonmark/puny
 # golang.org/x/sys v0.0.0-20190531175056-4c3a928424d2
 golang.org/x/sys/unix
-# golang.org/x/text v0.3.0
+# golang.org/x/text v0.3.2
 golang.org/x/text/transform
 golang.org/x/text/unicode/norm
+golang.org/x/text/unicode/rangetable
 # gopkg.in/ini.v1 v1.51.0
 gopkg.in/ini.v1
 # gopkg.in/yaml.v2 v2.2.4
