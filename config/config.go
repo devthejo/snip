@@ -9,7 +9,8 @@ type Config struct {
 
 	Playbook []interface{} `mapstructure:"PLAYBOOK" json:"playbook"`
 
-	SnippetsDir    string `mapstructure:"SNIPPETS_DIR" json:"snippets_dir"`
-	BashOutput     string `mapstructure:"BASH_OUTPUT" json:"bash_output"`
+	SnippetsDir string `mapstructure:"SNIPPETS_DIR" json:"snippets_dir"`
+	BuildDir    string `mapstructure:"BUILD_DIR" json:"build_dir"`
+
 	MarkdownOutput string `mapstructure:"MARKDOWN_OUTPUT" json:"markdown_output"`
 }

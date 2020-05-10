@@ -12,10 +12,8 @@ func NewCmd(app App) *cobra.Command {
 
 	cmd.AddCommand(CmdCompletion(app, cmd))
 
-	cmd.AddCommand(CmdBash(app, cmd))
-	// cmd.AddCommand(CmdPlayPrompt(app, cmd))
+	cmd.AddCommand(CmdPlay(app, cmd))
 	// cmd.AddCommand(CmdMarkdown(app, cmd))
-	// cmd.AddCommand(CmdPlay(app, cmd))
 
 	return cmd
 }

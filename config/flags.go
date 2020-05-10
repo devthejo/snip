@@ -7,15 +7,17 @@ const (
 	FlagLogForceColorsDesc = "force log colors for text log when no tty"
 	FlagCWDDesc            = "current working directory"
 
-	FlagSnippetsDirDesc = "snippets directory"
-	FlagOutputDesc      = "output file"
+	FlagSnippetsDirDesc    = "snippets directory"
+	FlagBuildDirDesc       = "bash build directory"
+	FlagMarkdownOutputDesc = "markdown output file"
 )
 
 var (
 	FlagLogForceColorsDefault = false
-	FlagLogTypeDefault        = "json"
+	FlagLogTypeDefault        = "text"
 	FlagLogLevelDefault       = "info"
 
-	FlagSnippetsDirDefault = "snippets"
-	FlagOutputDefault      = ""
+	FlagSnippetsDirDefault    = "snippets"
+	FlagBuildDirDefault       = "build"
+	FlagMarkdownOutputDefault = "snip.md"
 )

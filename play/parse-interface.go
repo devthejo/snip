@@ -6,7 +6,7 @@ import (
 	"gitlab.com/youtopia.earth/ops/snip/errors"
 )
 
-func ParseInterface(playI interface{}, app App) *Play {
+func ParseInterface(app App, playI interface{}) *Play {
 	play := &Play{}
 	switch playI.(type) {
 	case string:
@@ -18,6 +18,6 @@ func ParseInterface(playI interface{}, app App) *Play {
 	default:
 		logrus.Fatalf("unexpected play type %T value %v", playI, playI)
 	}
-	ParseMarkdownFile(play, app)
+	ParseMarkdownFile(app, play)
 	return play
 }

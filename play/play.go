@@ -1,9 +1,8 @@
 package play
 
 type Play struct {
-	Name     string
-	Title    string
-	FuncName string
+	Name  string
+	Title string
 
 	Vars         map[string]*Var
 	RegisterVars []string
@@ -16,21 +15,25 @@ type Play struct {
 	Sudo bool
 	SSH  bool
 
-	Markdown         string
-	SourceCodeBlocks []*CodeBlock
-	CodeBlocks       []*CodeBlock
+	Markdown   string
+	CodeBlocks []*CodeBlock
 
 	State PlayStateType
 }
 
 type Var struct {
-	Required       bool
-	Default        string
-	DefaultFromVar string
+	Name string
 
-	Prompt              PromptType
-	PromptMessage       string
-	PromptSelectOptions []string
+	DefaultFromVar string
+	Default        string
+	Required       bool
+
+	Prompt                PromptType
+	PromptForce           bool
+	PromptMessage         string
+	PromptSelectOptions   []string
+	PromptMultiSelectGlue string
+	PromptAnswer          string
 }
 
 type PromptType int

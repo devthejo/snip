@@ -1,20 +1,17 @@
 package play
 
 import (
-	"reflect"
 	"strings"
 
 	"github.com/sirupsen/logrus"
 
 	"gitlab.com/youtopia.earth/ops/snip/decode"
 	"gitlab.com/youtopia.earth/ops/snip/errors"
-	"gitlab.com/youtopia.earth/ops/snip/tools"
 )
 
 func ParseMap(play *Play, playMap map[string]interface{}) {
 
 	parseName(play, playMap)
-	parseFuncName(play, playMap)
 	parseTitle(play, playMap)
 	parseVars(play, playMap)
 	parseRegisterVars(play, playMap)
@@ -26,23 +23,6 @@ func ParseMap(play *Play, playMap map[string]interface{}) {
 
 }
 
-func hasField(Iface interface{}, FieldName string) bool {
-	ValueIface := reflect.ValueOf(Iface)
-
-	// Check if the passed interface is a pointer
-	if ValueIface.Type().Kind() != reflect.Ptr {
-		// Create a new type of Iface's Type, so we have a pointer to work with
-		ValueIface = reflect.New(reflect.TypeOf(Iface))
-	}
-
-	// 'dereference' with Elem() and get the field by name
-	Field := ValueIface.Elem().FieldByName(FieldName)
-	if !Field.IsValid() {
-		return false
-	}
-	return true
-}
-
 func parseName(play *Play, playMap map[string]interface{}) {
 	switch playMap["name"].(type) {
 	case string:
@@ -51,9 +31,6 @@ func parseName(play *Play, playMap map[string]interface{}) {
 	default:
 		logrus.Fatalf("unexpected play name type %T value %v", playMap["name"], playMap["name"])
 	}
-}
-func parseFuncName(play *Play, playMap map[string]interface{}) {
-	play.FuncName = "__snip_play_" + strings.ToLower(tools.KeyEnv(play.Name))
 }
 
 func parseTitle(play *Play, playMap map[string]interface{}) {
@@ -177,7 +154,7 @@ func parseVars(play *Play, playMap map[string]interface{}) {
 			default:
 				logrus.Fatalf("unexpected play var type %T value %v", v, v)
 			}
-			vars[key] = parseVar(val)
+			vars[key] = parseVar(key, val)
 		}
 		play.Vars = vars
 	case nil:
@@ -186,14 +163,18 @@ func parseVars(play *Play, playMap map[string]interface{}) {
 	}
 }
 
-func parseVar(v map[string]interface{}) *Var {
-	vr := &Var{}
-	parseVarRequired(vr, v)
+func parseVar(k string, v map[string]interface{}) *Var {
+	vr := &Var{
+		Name: k,
+	}
 	parseVarDefault(vr, v)
 	parseVarDefaultFromVar(vr, v)
+	parseVarRequired(vr, v)
 	parseVarPrompt(vr, v)
+	parseVarPromptForce(vr, v)
 	parseVarPromptMessage(vr, v)
 	parseVarPromptSelectOptions(vr, v)
+	parseVarPromptMultiSelectGlue(vr, v)
 	return vr
 }
 
@@ -264,6 +245,25 @@ func parseVarPrompt(vr *Var, v map[string]interface{}) {
 	}
 }
 
+func parseVarPromptForce(vr *Var, v map[string]interface{}) {
+	switch v["promptForce"].(type) {
+	case bool:
+		vr.PromptForce = v["promptForce"].(bool)
+	case string:
+		s := v["promptForce"].(string)
+		if s == "true" || s == "1" {
+			vr.PromptForce = true
+		} else if s == "false" || s == "0" || s == "" {
+			vr.PromptForce = false
+		} else {
+			logrus.Fatalf("unexpected play var promptForce type %T value %v", v["promptForce"], v["promptForce"])
+		}
+	case nil:
+	default:
+		logrus.Fatalf("unexpected play var promptForce type %T value %v", v["promptForce"], v["promptForce"])
+	}
+}
+
 func parseVarPromptMessage(vr *Var, v map[string]interface{}) {
 	switch v["promptMessage"].(type) {
 	case string:
@@ -271,6 +271,9 @@ func parseVarPromptMessage(vr *Var, v map[string]interface{}) {
 	case nil:
 	default:
 		logrus.Fatalf("unexpected play var promptMessage type %T value %v", v["promptMessage"], v["promptMessage"])
+	}
+	if vr.PromptMessage == "" {
+		vr.PromptMessage = vr.Name
 	}
 }
 
@@ -284,5 +287,17 @@ func parseVarPromptSelectOptions(vr *Var, v map[string]interface{}) {
 		}
 	default:
 		logrus.Fatalf("unexpected play var promptSelectOptions type %T value %v", v["promptSelectOptions"], v["promptSelectOptions"])
+	}
+}
+func parseVarPromptMultiSelectGlue(vr *Var, v map[string]interface{}) {
+	switch v["promptMultiSelectGlue"].(type) {
+	case string:
+		vr.PromptMultiSelectGlue = v["promptMultiSelectGlue"].(string)
+	case nil:
+		if vr.Prompt == PromptMultiSelect {
+			vr.PromptMultiSelectGlue = ","
+		}
+	default:
+		logrus.Fatalf("unexpected play var promptMultiSelectGlue type %T value %v", v["promptMultiSelectGlue"], v["promptMultiSelectGlue"])
 	}
 }
