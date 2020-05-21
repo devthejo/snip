@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"time"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gitlab.com/youtopia.earth/ops/snip/config"
@@ -12,4 +14,5 @@ type App interface {
 	GetConfigLoader() *config.ConfigLoader
 	GetConfigFile() *string
 	OnPreRun(*cobra.Command)
+	GetNow() time.Time
 }

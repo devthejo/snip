@@ -12,6 +12,8 @@ require (
 	github.com/google/go-jsonnet v0.15.0
 	github.com/imdario/mergo v0.3.9
 	github.com/joho/godotenv v1.3.0 // indirect
+	github.com/json-iterator/go v1.1.9
+	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
 	github.com/kvz/logstreamer v0.0.0-20150507115422-a635b98146f0
 	github.com/mitchellh/mapstructure v1.3.0
 	github.com/ogier/pflag v0.0.1 // indirect

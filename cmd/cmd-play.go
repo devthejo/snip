@@ -11,7 +11,7 @@ func CmdPlay(app App, rootCmd *cobra.Command) *cobra.Command {
 
 	var cmd = &cobra.Command{
 		Use:   "play",
-		Short: "run playbook",
+		Short: "let's play !",
 		Args:  cobra.ExactArgs(0),
 		PreRun: func(cmd *cobra.Command, args []string) {
 			app.OnPreRun(cmd)
@@ -19,11 +19,12 @@ func CmdPlay(app App, rootCmd *cobra.Command) *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			cfg := app.GetConfig()
 
-			playbook := play.LoadPlaybook(app, cfg.Playbook)
+			p := play.ParsePlay(app, cfg.Play, nil)
+			// logrus.Infof("%v", tools.JsonEncode(p))
+			// logrus.Infof("%v", p)
 
-			play.BuildPlaybook(app, playbook)
-			play.PromptVars(app, playbook)
-			play.Run(app, playbook)
+			p.PromptVars(nil)
+			// play.Run(app, playbook, vars, vars_loops)
 
 		},
 	}

@@ -9,35 +9,25 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func PromptVars(app App, playbook []*Play) {
-
-	// cfg := app.GetConfig()
-
-	for _, p := range playbook {
-		for _, v := range p.Vars {
-			if (v.Required && v.Default == "" && v.DefaultFromVar == "") || v.PromptForce {
-				switch v.Prompt {
-				default:
-					askInput(v)
-				case PromptInput:
-					askInput(v)
-				case PromptMultiline:
-					askMultiline(v)
-				case PromptPassword:
-					askPassword(v)
-				case PromptConfirm:
-					askConfirm(v)
-				case PromptSelect:
-					askSelect(v)
-				case PromptMultiSelect:
-					askMultiSelect(v)
-				case PromptEditor:
-					askEditor(v)
-				}
-			}
-		}
+func PromptVar(v *Var) {
+	switch v.Prompt {
+	default:
+		askInput(v)
+	case PromptInput:
+		askInput(v)
+	case PromptMultiline:
+		askMultiline(v)
+	case PromptPassword:
+		askPassword(v)
+	case PromptConfirm:
+		askConfirm(v)
+	case PromptSelect:
+		askSelect(v)
+	case PromptMultiSelect:
+		askMultiSelect(v)
+	case PromptEditor:
+		askEditor(v)
 	}
-
 }
 
 func promptMessage(v *Var) string {

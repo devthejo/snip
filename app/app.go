@@ -1,6 +1,8 @@
 package app
 
 import (
+	"time"
+
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -16,6 +18,7 @@ type App struct {
 	ConfigLoader    *config.ConfigLoader
 	Viper           *viper.Viper
 	RootCmd         *cobra.Command
+	Now             time.Time
 }
 
 func New() *App {
@@ -28,6 +31,8 @@ func NewApp() *App {
 	app := &App{}
 
 	app.ConfigEnvPrefix = "SNIP"
+
+	app.Now = time.Now()
 
 	var configFile string
 	app.ConfigFile = &configFile
@@ -75,4 +80,8 @@ func (app *App) RunCmd() {
 	if err := RootCmd.Execute(); err != nil {
 		logrus.Fatal(err)
 	}
+}
+
+func (app *App) GetNow() time.Time {
+	return app.Now
 }
