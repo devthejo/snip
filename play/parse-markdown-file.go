@@ -3,6 +3,7 @@ package play
 import (
 	"bytes"
 	"io/ioutil"
+	"path/filepath"
 	"strings"
 
 	"github.com/sirupsen/logrus"
@@ -62,6 +63,15 @@ func ParseMarkdownFile(app App, mdPath string, cmd *Cmd) {
 	errors.Check(err)
 
 	metaData := meta.Get(context)
+	if metaData["title"] == nil {
+		title := mdPath
+		title = strings.TrimSuffix(title, filepath.Ext(title))
+		title = strings.ReplaceAll(title, "-", " ")
+		title = strings.ReplaceAll(title, "/", " ")
+		title = "snippet: " + title
+		metaData["title"] = title
+	}
+	logrus.Info(metaData)
 	cmd.Play.ParseMap(metaData)
 
 	md2 := markdown.New(markdown.XHTMLOutput(true), markdown.Nofollow(true))

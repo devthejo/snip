@@ -2,8 +2,10 @@ package play
 
 import (
 	"strconv"
+	"strings"
 
 	shellquote "github.com/kballard/go-shellquote"
+	"github.com/sirupsen/logrus"
 	"gitlab.com/youtopia.earth/ops/snip/decode"
 	"gitlab.com/youtopia.earth/ops/snip/errors"
 )
@@ -17,11 +19,12 @@ type Play struct {
 
 	Play interface{}
 
+	Vars   map[string]*Var
+	LoopOn []map[string]*Var
+
 	LoopSets       map[string]map[string]*Var
-	LoopOn         []interface{}
 	LoopSequential bool
 
-	Vars         map[string]*Var
 	RegisterVars []string
 
 	CheckCommand []string
@@ -61,7 +64,7 @@ func ParsePlay(app App, m map[string]interface{}, scope *Scope) *Play {
 }
 
 func (p *Play) ParseMap(m map[string]interface{}) {
-	p.ParsePlay(m)
+	p.ParsePlayCmd(m)
 	p.ParseTitle(m)
 	p.ParseLoopSets(m)
 	p.ParseLoopOn(m)
@@ -73,8 +76,21 @@ func (p *Play) ParseMap(m map[string]interface{}) {
 	p.ParsePostInstall(m)
 	p.ParseSudo(m)
 	p.ParseSSH(m)
+	p.ParsePlayChildren(m)
 }
 
+func (p *Play) ParsePlayCmd(m map[string]interface{}) {
+	switch m["play"].(type) {
+	case string:
+		p.ParsePlay(m)
+	}
+}
+func (p *Play) ParsePlayChildren(m map[string]interface{}) {
+	switch m["play"].(type) {
+	case []interface{}:
+		p.ParsePlay(m)
+	}
+}
 func (p *Play) ParsePlay(m map[string]interface{}) {
 	switch v := m["play"].(type) {
 	case []interface{}:
@@ -90,18 +106,14 @@ func (p *Play) ParsePlay(m map[string]interface{}) {
 	case string:
 		c, err := shellquote.Split(v)
 		errors.Check(err)
-		p.ParsePlayCmd(c)
+		cmd := &Cmd{}
+		cmd.Play = p
+		cmd.Parse(c)
+		p.Play = cmd
 	case nil:
 	default:
 		unexpectedTypePlay(m, "play")
 	}
-}
-
-func (p *Play) ParsePlayCmd(c []string) {
-	cmd := &Cmd{}
-	cmd.Play = p
-	cmd.Parse(c)
-	p.Play = cmd
 }
 
 func (p *Play) ParseTitle(m map[string]interface{}) {
@@ -136,10 +148,14 @@ func (p *Play) ParseLoopSets(m map[string]interface{}) {
 func (p *Play) ParseLoopOn(m map[string]interface{}) {
 	switch v := m["loop_on"].(type) {
 	case []interface{}:
-		p.LoopOn = make([]interface{}, len(v))
+		p.LoopOn = make([]map[string]*Var, len(v))
 		for loopI, loopV := range v {
 			switch loop := loopV.(type) {
 			case string:
+				loop = strings.ToLower(loop)
+				if p.Scope.LoopSets[loop] == nil {
+					logrus.Fatalf("undefined LoopSet %v", loop)
+				}
 				p.LoopOn[loopI] = p.Scope.LoopSets[loop]
 			case map[interface{}]interface{}:
 				l, err := decode.ToMap(loop)
@@ -274,26 +290,14 @@ func (p *Play) PromptVars(varsMap map[string]string) {
 		varsMap = make(map[string]string)
 	}
 
-	vars := p.Vars
-	for _, v := range vars {
-		var currentVal string
-		if v.Required {
-			if vars[v.Name] != nil {
-				currentVal = vars[v.Name].Default
-			} else if v.Default != "" {
-				currentVal = v.Default
-			}
-		}
-		if v.ForcePrompt || (v.Required && currentVal == "" && v.DefaultFromVar == "") {
-			if varsMap[v.Name] != "" {
-				v.PromptAnswer = varsMap[v.Name]
-				continue
-			}
-			PromptVar(v)
-		}
+	for _, v := range p.Vars {
+		v.EnsureFilled(varsMap, p.Scope)
+	}
 
-		varsMap[v.Name] = v.PromptAnswer
-
+	for _, vars := range p.LoopOn {
+		for _, v := range vars {
+			v.EnsureFilled(varsMap, p.Scope)
+		}
 	}
 
 	switch pSlice := p.Play.(type) {

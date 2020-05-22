@@ -202,6 +202,25 @@ func (vr *Var) ParsePromptMultiSelectGlue(v map[string]interface{}) {
 	}
 }
 
+func (vr *Var) EnsureFilled(varsMap map[string]string, scope *Scope) {
+	var currentVal string
+	if vr.Required {
+		if scope.Vars[vr.Name] != nil {
+			currentVal = scope.Vars[vr.Name].Default
+		} else if vr.Default != "" {
+			currentVal = vr.Default
+		}
+	}
+	if vr.ForcePrompt || (vr.Required && currentVal == "" && vr.DefaultFromVar == "") {
+		if varsMap[vr.Name] != "" {
+			vr.PromptAnswer = varsMap[vr.Name]
+			return
+		}
+		PromptVar(vr)
+	}
+	varsMap[vr.Name] = vr.PromptAnswer
+}
+
 func unexpectedTypeVarValue(k string, v interface{}) {
 	logrus.Fatalf("unexpected var type %T value %v for key %v", v, v, k)
 }
