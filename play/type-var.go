@@ -1,6 +1,14 @@
 package play
 
 import (
+	"fmt"
+	"os"
+	"strings"
+
+	survey "github.com/AlecAivazis/survey/v2"
+	"github.com/AlecAivazis/survey/v2/terminal"
+	"github.com/mgutz/ansi"
+	cmap "github.com/orcaman/concurrent-map"
 	"github.com/sirupsen/logrus"
 	"gitlab.com/youtopia.earth/ops/snip/decode"
 	"gitlab.com/youtopia.earth/ops/snip/errors"
@@ -9,16 +17,20 @@ import (
 type Var struct {
 	Name string
 
-	DefaultFromVar string
-	Default        string
-	Required       bool
+	Default string
+	Value   string
+	Depth   int
+
+	Required bool
+
+	PromptDefault bool
+	PromptValue   bool
 
 	Prompt                PromptType
-	ForcePrompt           bool
 	PromptMessage         string
+	PromptIcons           survey.AskOpt
 	PromptSelectOptions   []string
 	PromptMultiSelectGlue string
-	PromptAnswer          string
 }
 
 type PromptType int
@@ -34,7 +46,7 @@ const (
 	Prompt
 )
 
-func ParsesVarsMap(varsI map[string]interface{}) map[string]*Var {
+func ParsesVarsMap(varsI map[string]interface{}, depth int) map[string]*Var {
 	vars := make(map[string]*Var)
 	for key, val := range varsI {
 		var value map[string]interface{}
@@ -45,20 +57,23 @@ func ParsesVarsMap(varsI map[string]interface{}) map[string]*Var {
 			errors.Check(err)
 		case string:
 			value = make(map[string]interface{})
-			value["default"] = v
+			value["value"] = v
 		case bool:
 			if v {
-				value["default"] = "true"
+				value["value"] = "true"
 			} else {
-				value["default"] = "false"
+				value["value"] = "false"
 			}
 		case nil:
 			value = make(map[string]interface{})
-			value["default"] = ""
+			value["value"] = ""
 		default:
 			unexpectedTypeVarValue(key, v)
 		}
-		vr := &Var{}
+		vr := &Var{
+			Depth: depth,
+		}
+		key = strings.ToUpper(key)
 		vr.Parse(key, value)
 		vars[key] = vr
 	}
@@ -68,10 +83,11 @@ func ParsesVarsMap(varsI map[string]interface{}) map[string]*Var {
 func (vr *Var) Parse(k string, m map[string]interface{}) {
 	vr.Name = k
 	vr.ParseDefault(m)
-	vr.ParseDefaultFromVar(m)
+	vr.ParseValue(m)
 	vr.ParseRequired(m)
 	vr.ParsePrompt(m)
-	vr.ParseForcePrompt(m)
+	vr.ParsePromptDefault(m)
+	vr.ParsePromptValue(m)
 	vr.ParsePromptMessage(m)
 	vr.ParsePromptSelectOptions(m)
 	vr.ParsePromptMultiSelectGlue(m)
@@ -105,14 +121,13 @@ func (vr *Var) ParseDefault(v map[string]interface{}) {
 		unexpectedTypeVar(v, "default")
 	}
 }
-
-func (vr *Var) ParseDefaultFromVar(v map[string]interface{}) {
-	switch v["defaultFromVar"].(type) {
+func (vr *Var) ParseValue(v map[string]interface{}) {
+	switch v["value"].(type) {
 	case string:
-		vr.DefaultFromVar = v["defaultFromVar"].(string)
+		vr.Value = v["value"].(string)
 	case nil:
 	default:
-		unexpectedTypeVar(v, "defaultFromVar")
+		unexpectedTypeVar(v, "value")
 	}
 }
 
@@ -144,24 +159,42 @@ func (vr *Var) ParsePrompt(v map[string]interface{}) {
 	}
 }
 
-func (vr *Var) ParseForcePrompt(v map[string]interface{}) {
-	switch v["forcePrompt"].(type) {
+func (vr *Var) ParsePromptDefault(v map[string]interface{}) {
+	switch v["promptDefault"].(type) {
 	case bool:
-		vr.ForcePrompt = v["forcePrompt"].(bool)
+		vr.PromptDefault = v["promptDefault"].(bool)
 	case string:
-		s := v["forcePrompt"].(string)
+		s := v["promptDefault"].(string)
 		if s == "true" || s == "1" {
-			vr.ForcePrompt = true
+			vr.PromptDefault = true
 		} else if s == "false" || s == "0" || s == "" {
-			vr.ForcePrompt = false
+			vr.PromptDefault = false
 		} else {
-			unexpectedTypeVar(v, "forcePrompt")
+			unexpectedTypeVar(v, "promptDefault")
 		}
 	case nil:
 	default:
-		unexpectedTypeVar(v, "forcePrompt")
+		unexpectedTypeVar(v, "promptDefault")
 	}
-	// logrus.Infof("vr.ForcePrompt %v", vr.ForcePrompt)
+}
+
+func (vr *Var) ParsePromptValue(v map[string]interface{}) {
+	switch v["promptValue"].(type) {
+	case bool:
+		vr.PromptValue = v["promptValue"].(bool)
+	case string:
+		s := v["promptValue"].(string)
+		if s == "true" || s == "1" {
+			vr.PromptValue = true
+		} else if s == "false" || s == "0" || s == "" {
+			vr.PromptValue = false
+		} else {
+			unexpectedTypeVar(v, "promptValue")
+		}
+	case nil:
+	default:
+		unexpectedTypeVar(v, "promptValue")
+	}
 }
 
 func (vr *Var) ParsePromptMessage(v map[string]interface{}) {
@@ -202,23 +235,173 @@ func (vr *Var) ParsePromptMultiSelectGlue(v map[string]interface{}) {
 	}
 }
 
-func (vr *Var) EnsureFilled(varsMap map[string]string, scope *Scope) {
-	var currentVal string
-	if vr.Required {
-		if scope.Vars[vr.Name] != nil {
-			currentVal = scope.Vars[vr.Name].Default
-		} else if vr.Default != "" {
-			currentVal = vr.Default
-		}
+func (v *Var) PromptVarDefault() {
+	msg := v.GetPromptMessageDefault()
+	v.PromptVar(&v.Default, msg)
+}
+
+func (v *Var) PromptVarValue() {
+	msg := v.GetPromptMessageValue()
+	v.PromptVar(&v.Value, msg)
+}
+
+func (v *Var) PromptVar(ref *string, msg string) {
+	if v.PromptIcons == nil {
+		v.PromptIcons = survey.WithIcons(func(icons *survey.IconSet) {
+			icons.Question.Text = strings.Repeat("  ", v.Depth+1) + "•"
+			icons.Question.Format = "default+hb"
+		})
 	}
-	if vr.ForcePrompt || (vr.Required && currentVal == "" && vr.DefaultFromVar == "") {
-		if varsMap[vr.Name] != "" {
-			vr.PromptAnswer = varsMap[vr.Name]
-			return
-		}
-		PromptVar(vr)
+
+	switch v.Prompt {
+	default:
+		v.AskInput(ref, msg)
+	case PromptInput:
+		v.AskInput(ref, msg)
+	case PromptMultiline:
+		v.AskMultiline(ref, msg)
+	case PromptPassword:
+		v.AskPassword(ref, msg)
+	case PromptConfirm:
+		v.AskConfirm(ref, msg)
+	case PromptSelect:
+		v.AskSelect(ref, msg)
+	case PromptMultiSelect:
+		v.AskMultiSelect(ref, msg)
+	case PromptEditor:
+		v.AskEditor(ref, msg)
 	}
-	varsMap[vr.Name] = vr.PromptAnswer
+}
+
+func (v *Var) GetPromptMessageDefault() string {
+	msg := v.PromptMessage
+	if v.Default != "" {
+		msg += " (" + v.Default + ")"
+	}
+	msg += " :"
+	return msg
+}
+func (v *Var) GetPromptMessageValue() string {
+	msg := v.PromptMessage
+	if v.Value != "" {
+		msg += " (" + v.Value + ")"
+	}
+	msg += " :"
+	return msg
+}
+
+func (v *Var) HandleAnswer(err error) {
+	if err == terminal.InterruptErr {
+		os.Exit(0)
+	} else if err != nil {
+		logrus.Error(err)
+	}
+}
+
+func (v *Var) AskInput(ref *string, msg string) {
+	prompt := &survey.Input{
+		Message: msg,
+	}
+	err := survey.AskOne(prompt, ref, v.PromptIcons)
+	v.HandleAnswer(err)
+}
+
+func (v *Var) AskMultiline(ref *string, msg string) {
+	prompt := &survey.Multiline{
+		Message: msg,
+	}
+	err := survey.AskOne(prompt, ref, v.PromptIcons)
+	v.HandleAnswer(err)
+}
+
+func (v *Var) AskPassword(ref *string, msg string) {
+	prompt := &survey.Password{
+		Message: msg,
+	}
+	err := survey.AskOne(prompt, ref, v.PromptIcons)
+	v.HandleAnswer(err)
+}
+
+func (v *Var) AskEditor(ref *string, msg string) {
+	prompt := &survey.Editor{
+		Message: msg,
+	}
+	err := survey.AskOne(prompt, ref, v.PromptIcons)
+	v.HandleAnswer(err)
+}
+
+func (v *Var) AskConfirm(ref *string, msg string) {
+	prompt := &survey.Confirm{
+		Message: msg,
+	}
+	err := survey.AskOne(prompt, ref, v.PromptIcons)
+	v.HandleAnswer(err)
+}
+func (v *Var) AskSelect(ref *string, msg string) {
+	prompt := &survey.Select{
+		Message: msg,
+		Options: v.PromptSelectOptions,
+	}
+	err := survey.AskOne(prompt, ref, v.PromptIcons)
+	v.HandleAnswer(err)
+}
+func (v *Var) AskMultiSelect(ref *string, msg string) {
+	answer := []string{}
+	prompt := &survey.MultiSelect{
+		Message:  msg,
+		Options:  v.PromptSelectOptions,
+		PageSize: 10,
+	}
+	err := survey.AskOne(prompt, answer, v.PromptIcons)
+	*ref = strings.Join(answer, v.PromptMultiSelectGlue)
+	v.HandleAnswer(err)
+}
+
+func (v *Var) RegisterValueTo(vars cmap.ConcurrentMap) {
+	if v.PromptValue && v.Value == "" {
+		v.PromptVarValue()
+	}
+	if v.Value != "" {
+		vars.Set(v.Name, v.Value)
+	}
+}
+
+func (v *Var) RegisterDefaultTo(varsDefault cmap.ConcurrentMap) {
+	if v.PromptDefault && v.Default == "" {
+		v.PromptVarDefault()
+	}
+	val, ok := varsDefault.Get(v.Name)
+	if !ok || val == nil || val.(string) == "" {
+		varsDefault.Set(v.Name, v.Value)
+	}
+}
+
+func (v *Var) HandleRequired(varsDefault cmap.ConcurrentMap, vars cmap.ConcurrentMap) {
+	if !v.Required || v.Default != "" || v.Value != "" {
+		return
+	}
+
+	val, ok := varsDefault.Get(v.Name)
+	if ok && val != nil && val.(string) != "" {
+		return
+	}
+
+	val, ok = vars.Get(v.Name)
+	if ok && val != nil && val.(string) != "" {
+		return
+	}
+
+	for {
+		v.PromptVarDefault()
+		if v.Default != "" {
+			varsDefault.Set(v.Name, v.Default)
+			break
+		}
+		msg := fmt.Sprintf(strings.Repeat("  ", v.Depth+2)+`🔺 variable "%v" is required and cannot be empty"`, v.Name)
+		msg = ansi.Color(msg, "red")
+		fmt.Println(msg)
+	}
+
 }
 
 func unexpectedTypeVarValue(k string, v interface{}) {

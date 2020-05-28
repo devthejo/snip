@@ -19,12 +19,12 @@ func CmdPlay(app App, rootCmd *cobra.Command) *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			cfg := app.GetConfig()
 
-			p := play.ParsePlay(app, cfg.Play, nil)
+			p := play.CreatePlay(app, cfg.Play, nil)
 			// logrus.Infof("%v", tools.JsonEncode(p))
 			// logrus.Infof("%v", p)
 
-			p.PromptVars(nil)
-			// play.Run(app, playbook, vars, vars_loops)
+			// p.PromptVars(nil)
+			p.Run(nil, nil)
 
 		},
 	}

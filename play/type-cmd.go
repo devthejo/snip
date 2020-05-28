@@ -5,8 +5,10 @@ import (
 	"path/filepath"
 	"strings"
 
+	cmap "github.com/orcaman/concurrent-map"
 	"github.com/sirupsen/logrus"
 	"gitlab.com/youtopia.earth/ops/snip/errors"
+	"gitlab.com/youtopia.earth/ops/snip/tools"
 )
 
 type Cmd struct {
@@ -14,6 +16,7 @@ type Cmd struct {
 
 	Command string
 	Args    []string
+	Vars    map[string]string
 
 	IsMD       bool
 	MDPath     string
@@ -83,6 +86,19 @@ func (cmd *Cmd) BuildBashFromMD() {
 	logrus.Debugf("writed bash from md to %v", file)
 
 	cmd.Command = file
+}
+
+func (cmd *Cmd) Run(vars cmap.ConcurrentMap, varsDefault cmap.ConcurrentMap) {
+
+	cmd.Vars = make(map[string]string)
+	for k, v := range varsDefault.Items() {
+		cmd.Vars[k] = v.(string)
+	}
+	for k, v := range vars.Items() {
+		cmd.Vars[k] = v.(string)
+	}
+
+	logrus.Debugf("vars: %v", tools.JsonEncode(cmd.Vars))
 }
 
 func unexpectedTypeCmd(m map[string]interface{}, key string) {

@@ -23,7 +23,7 @@ func CmdRoot(app App) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:                    "snip",
-		Short:                  "Bash superset for DevOps 🦊",
+		Short:                  "Bash superset for DevOps 🚀",
 		BashCompletionFunction: newBashCompletionFunc(cl),
 	}
 
