@@ -243,7 +243,6 @@ func (p *Play) ParseVars(m map[string]interface{}, override bool) {
 		errors.Check(err)
 		for key, val := range ParsesVarsMap(m, p.Depth) {
 			_, hk := p.Vars[key]
-			logrus.Warnf("%v: %v -> %v", key, p.Vars[key], val)
 			if override || !hk {
 				p.Vars[key] = val
 			}
@@ -253,8 +252,6 @@ func (p *Play) ParseVars(m map[string]interface{}, override bool) {
 		errors.Check(err)
 		for key, val := range ParsesVarsMap(m, p.Depth) {
 			_, hk := p.Vars[key]
-			// logrus.Warnf("override %v", override)
-			// logrus.Warnf("%v: %v -> %v", key, p.Vars[key], val)
 			if override || !hk {
 				p.Vars[key] = val
 			}

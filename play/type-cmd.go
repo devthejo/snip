@@ -89,15 +89,15 @@ func (cmd *Cmd) BuildBashFromMD() {
 
 func (cmd *Cmd) Run(ctx *RunCtx) {
 
-	cmd.Vars = make(map[string]string)
+	vars := make(map[string]string)
 	for k, v := range ctx.VarsDefault.Items() {
-		cmd.Vars[k] = v.(string)
+		vars[k] = v.(string)
 	}
 	for k, v := range ctx.Vars.Items() {
-		cmd.Vars[k] = v.(string)
+		vars[k] = v.(string)
 	}
 
-	logrus.Debugf(strings.Repeat("  ", cmd.Play.Depth+2)+" vars: %v", tools.JsonEncode(cmd.Vars))
+	logrus.Debugf(strings.Repeat("  ", cmd.Play.Depth+2)+" vars: %v", tools.JsonEncode(vars))
 
 	if !ctx.ReadyToRun {
 		return
