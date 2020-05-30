@@ -1,13 +1,11 @@
 package play
 
 import (
-	"fmt"
 	"os"
 	"strings"
 
 	survey "github.com/AlecAivazis/survey/v2"
 	"github.com/AlecAivazis/survey/v2/terminal"
-	"github.com/mgutz/ansi"
 	cmap "github.com/orcaman/concurrent-map"
 	"github.com/sirupsen/logrus"
 	"gitlab.com/youtopia.earth/ops/snip/decode"
@@ -51,6 +49,8 @@ func ParsesVarsMap(varsI map[string]interface{}, depth int) map[string]*Var {
 	for key, val := range varsI {
 		var value map[string]interface{}
 		switch v := val.(type) {
+		case map[string]interface{}:
+			value = v
 		case map[interface{}]interface{}:
 			var err error
 			value, err = decode.ToMap(v)
@@ -160,50 +160,50 @@ func (vr *Var) ParsePrompt(v map[string]interface{}) {
 }
 
 func (vr *Var) ParsePromptDefault(v map[string]interface{}) {
-	switch v["promptDefault"].(type) {
+	switch v["prompt_default"].(type) {
 	case bool:
-		vr.PromptDefault = v["promptDefault"].(bool)
+		vr.PromptDefault = v["prompt_default"].(bool)
 	case string:
-		s := v["promptDefault"].(string)
+		s := v["prompt_default"].(string)
 		if s == "true" || s == "1" {
 			vr.PromptDefault = true
 		} else if s == "false" || s == "0" || s == "" {
 			vr.PromptDefault = false
 		} else {
-			unexpectedTypeVar(v, "promptDefault")
+			unexpectedTypeVar(v, "prompt_default")
 		}
 	case nil:
 	default:
-		unexpectedTypeVar(v, "promptDefault")
+		unexpectedTypeVar(v, "prompt_default")
 	}
 }
 
 func (vr *Var) ParsePromptValue(v map[string]interface{}) {
-	switch v["promptValue"].(type) {
+	switch v["prompt_value"].(type) {
 	case bool:
-		vr.PromptValue = v["promptValue"].(bool)
+		vr.PromptValue = v["prompt_value"].(bool)
 	case string:
-		s := v["promptValue"].(string)
+		s := v["prompt_value"].(string)
 		if s == "true" || s == "1" {
 			vr.PromptValue = true
 		} else if s == "false" || s == "0" || s == "" {
 			vr.PromptValue = false
 		} else {
-			unexpectedTypeVar(v, "promptValue")
+			unexpectedTypeVar(v, "prompt_value")
 		}
 	case nil:
 	default:
-		unexpectedTypeVar(v, "promptValue")
+		unexpectedTypeVar(v, "prompt_value")
 	}
 }
 
 func (vr *Var) ParsePromptMessage(v map[string]interface{}) {
-	switch v["promptMessage"].(type) {
+	switch v["prompt_message"].(type) {
 	case string:
-		vr.PromptMessage = v["promptMessage"].(string)
+		vr.PromptMessage = v["prompt_message"].(string)
 	case nil:
 	default:
-		unexpectedTypeVar(v, "promptMessage")
+		unexpectedTypeVar(v, "prompt_message")
 	}
 	if vr.PromptMessage == "" {
 		vr.PromptMessage = vr.Name
@@ -211,27 +211,27 @@ func (vr *Var) ParsePromptMessage(v map[string]interface{}) {
 }
 
 func (vr *Var) ParsePromptSelectOptions(v map[string]interface{}) {
-	switch v["promptSelectOptions"].(type) {
+	switch v["prompt_select_options"].(type) {
 	case []string:
-		vr.PromptSelectOptions = v["promptSelectOptions"].([]string)
+		vr.PromptSelectOptions = v["prompt_select_options"].([]string)
 	case nil:
 		if vr.Prompt == PromptSelect || vr.Prompt == PromptMultiSelect {
-			logrus.Fatalf("unexpected empty play var promptSelectOptions for %v", v)
+			logrus.Fatalf("unexpected empty play var prompt_select_options for %v", v)
 		}
 	default:
-		unexpectedTypeVar(v, "promptSelectOptions")
+		unexpectedTypeVar(v, "prompt_select_options")
 	}
 }
 func (vr *Var) ParsePromptMultiSelectGlue(v map[string]interface{}) {
-	switch v["promptMultiSelectGlue"].(type) {
+	switch v["prompt_multi_select_glue"].(type) {
 	case string:
-		vr.PromptMultiSelectGlue = v["promptMultiSelectGlue"].(string)
+		vr.PromptMultiSelectGlue = v["prompt_multi_select_glue"].(string)
 	case nil:
 		if vr.Prompt == PromptMultiSelect {
 			vr.PromptMultiSelectGlue = ","
 		}
 	default:
-		unexpectedTypeVar(v, "promptMultiSelectGlue")
+		unexpectedTypeVar(v, "prompt_multi_select_glue")
 	}
 }
 
@@ -243,12 +243,15 @@ func (v *Var) PromptVarDefault() {
 func (v *Var) PromptVarValue() {
 	msg := v.GetPromptMessageValue()
 	v.PromptVar(&v.Value, msg)
+	if v.Value == "" && v.Default != "" {
+		v.Value = v.Default
+	}
 }
 
 func (v *Var) PromptVar(ref *string, msg string) {
 	if v.PromptIcons == nil {
 		v.PromptIcons = survey.WithIcons(func(icons *survey.IconSet) {
-			icons.Question.Text = strings.Repeat("  ", v.Depth+1) + "•"
+			icons.Question.Text = strings.Repeat("  ", v.Depth+4) + " •"
 			icons.Question.Format = "default+hb"
 		})
 	}
@@ -283,8 +286,8 @@ func (v *Var) GetPromptMessageDefault() string {
 }
 func (v *Var) GetPromptMessageValue() string {
 	msg := v.PromptMessage
-	if v.Value != "" {
-		msg += " (" + v.Value + ")"
+	if v.Default != "" {
+		msg += " (" + v.Default + ")"
 	}
 	msg += " :"
 	return msg
@@ -372,7 +375,7 @@ func (v *Var) RegisterDefaultTo(varsDefault cmap.ConcurrentMap) {
 	}
 	val, ok := varsDefault.Get(v.Name)
 	if !ok || val == nil || val.(string) == "" {
-		varsDefault.Set(v.Name, v.Value)
+		varsDefault.Set(v.Name, v.Default)
 	}
 }
 
@@ -397,9 +400,7 @@ func (v *Var) HandleRequired(varsDefault cmap.ConcurrentMap, vars cmap.Concurren
 			varsDefault.Set(v.Name, v.Default)
 			break
 		}
-		msg := fmt.Sprintf(strings.Repeat("  ", v.Depth+2)+`🔺 variable "%v" is required and cannot be empty"`, v.Name)
-		msg = ansi.Color(msg, "red")
-		fmt.Println(msg)
+		logrus.Warnf(strings.Repeat("  ", v.Depth+2)+` variable "%v" is required and cannot be empty`, v.Name)
 	}
 
 }

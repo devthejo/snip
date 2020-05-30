@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	cmap "github.com/orcaman/concurrent-map"
 	"github.com/sirupsen/logrus"
 	"gitlab.com/youtopia.earth/ops/snip/errors"
 	"gitlab.com/youtopia.earth/ops/snip/tools"
@@ -88,17 +87,22 @@ func (cmd *Cmd) BuildBashFromMD() {
 	cmd.Command = file
 }
 
-func (cmd *Cmd) Run(vars cmap.ConcurrentMap, varsDefault cmap.ConcurrentMap) {
+func (cmd *Cmd) Run(ctx *RunCtx) {
 
 	cmd.Vars = make(map[string]string)
-	for k, v := range varsDefault.Items() {
+	for k, v := range ctx.VarsDefault.Items() {
 		cmd.Vars[k] = v.(string)
 	}
-	for k, v := range vars.Items() {
+	for k, v := range ctx.Vars.Items() {
 		cmd.Vars[k] = v.(string)
 	}
 
-	logrus.Debugf("vars: %v", tools.JsonEncode(cmd.Vars))
+	logrus.Debugf(strings.Repeat("  ", cmd.Play.Depth+2)+" vars: %v", tools.JsonEncode(cmd.Vars))
+
+	if !ctx.ReadyToRun {
+		return
+	}
+
 }
 
 func unexpectedTypeCmd(m map[string]interface{}, key string) {

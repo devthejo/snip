@@ -25,9 +25,10 @@ func ConfigureLogrusLogType(strLogType string, logForceColors bool) {
 		case "JSON":
 			logrus.SetFormatter(&logrus.JSONFormatter{})
 		case "TEXT":
-			logrus.SetFormatter(&logrus.TextFormatter{
-				ForceColors: true,
-			})
+			// logrus.SetFormatter(&logrus.TextFormatter{
+			// 	ForceColors: true,
+			// })
+			logrus.SetFormatter(&LogFormatter{})
 		default:
 			logrus.Fatalf(`Invalid LOG_TYPE: "%v"`, upLogType)
 		}

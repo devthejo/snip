@@ -71,7 +71,7 @@ func ParseMarkdownFile(app App, mdPath string, cmd *Cmd) {
 		title = "snippet: " + title
 		metaData["title"] = title
 	}
-	cmd.Play.ParseMap(metaData)
+	cmd.Play.ParseMapAsDefault(metaData)
 
 	md2 := markdown.New(markdown.XHTMLOutput(true), markdown.Nofollow(true))
 	tokens := md2.Parse(source)

@@ -1,12 +1,12 @@
 package play
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 	"sync"
 
 	shellquote "github.com/kballard/go-shellquote"
+	"github.com/mgutz/ansi"
 	cmap "github.com/orcaman/concurrent-map"
 	"github.com/sirupsen/logrus"
 
@@ -27,7 +27,7 @@ type Play struct {
 	LoopOn []*Loop
 
 	LoopSets       map[string]map[string]*Var
-	LoopSequential bool
+	LoopSequential *bool
 
 	RegisterVars []string
 
@@ -36,8 +36,8 @@ type Play struct {
 	Dependencies []string
 	PostInstall  []string
 
-	Sudo bool
-	SSH  bool
+	Sudo *bool
+	SSH  *bool
 
 	State PlayStateType
 
@@ -75,40 +75,42 @@ func (p *Play) SetParentPlay(parentPlay *Play) {
 		return
 	}
 	p.Depth = parentPlay.Depth + 1
-	for k, v := range parentPlay.LoopSets {
-		p.LoopSets[k] = v
-	}
+}
+
+func (p *Play) ParseMapAsDefault(m map[string]interface{}) {
+	p.ParseTitle(m, false)
+	p.ParseLoopSets(m, false)
+	p.ParseLoopOn(m, false)
+	p.ParseLoopSequential(m, false)
+	p.ParseVars(m, false)
+	p.ParseRegisterVars(m, false)
+	p.ParseCheckCommand(m, false)
+	p.ParseDependencies(m, false)
+	p.ParsePostInstall(m, false)
+	p.ParseSudo(m, false)
+	p.ParseSSH(m, false)
+	p.ParsePlay(m, false)
 }
 
 func (p *Play) ParseMap(m map[string]interface{}) {
-	p.ParsePlayCmd(m)
-	p.ParseTitle(m)
-	p.ParseLoopSets(m)
-	p.ParseLoopOn(m)
-	p.ParseLoopSequential(m)
-	p.ParseVars(m)
-	p.ParseRegisterVars(m)
-	p.ParseCheckCommand(m)
-	p.ParseDependencies(m)
-	p.ParsePostInstall(m)
-	p.ParseSudo(m)
-	p.ParseSSH(m)
-	p.ParsePlayChildren(m)
+	p.ParseTitle(m, true)
+	p.ParseLoopSets(m, true)
+	p.ParseLoopOn(m, true)
+	p.ParseLoopSequential(m, true)
+	p.ParseVars(m, true)
+	p.ParseRegisterVars(m, true)
+	p.ParseCheckCommand(m, true)
+	p.ParseDependencies(m, true)
+	p.ParsePostInstall(m, true)
+	p.ParseSudo(m, true)
+	p.ParseSSH(m, true)
+	p.ParsePlay(m, true)
 }
 
-func (p *Play) ParsePlayCmd(m map[string]interface{}) {
-	switch m["play"].(type) {
-	case string:
-		p.ParsePlay(m)
+func (p *Play) ParsePlay(m map[string]interface{}, override bool) {
+	if !override && p.Play != nil {
+		return
 	}
-}
-func (p *Play) ParsePlayChildren(m map[string]interface{}) {
-	switch m["play"].(type) {
-	case []interface{}:
-		p.ParsePlay(m)
-	}
-}
-func (p *Play) ParsePlay(m map[string]interface{}) {
 	switch v := m["play"].(type) {
 	case []interface{}:
 		playSlice := make([]*Play, len(v))
@@ -144,7 +146,10 @@ func (p *Play) ParsePlay(m map[string]interface{}) {
 	}
 }
 
-func (p *Play) ParseTitle(m map[string]interface{}) {
+func (p *Play) ParseTitle(m map[string]interface{}, override bool) {
+	if !override && p.Title != "" {
+		return
+	}
 	switch v := m["title"].(type) {
 	case string:
 		p.Title = v
@@ -154,7 +159,12 @@ func (p *Play) ParseTitle(m map[string]interface{}) {
 	}
 }
 
-func (p *Play) ParseLoopSets(m map[string]interface{}) {
+func (p *Play) ParseLoopSets(m map[string]interface{}, override bool) {
+	if p.ParentPlay != nil {
+		for k, v := range p.ParentPlay.LoopSets {
+			p.LoopSets[k] = v
+		}
+	}
 	switch v := m["loop_sets"].(type) {
 	case map[string]interface{}:
 		loops, err := decode.ToMap(v)
@@ -162,7 +172,10 @@ func (p *Play) ParseLoopSets(m map[string]interface{}) {
 		for loopKey, loopVal := range loops {
 			switch loopV := loopVal.(type) {
 			case map[string]interface{}:
-				p.LoopSets[loopKey] = ParsesVarsMap(loopV, p.Depth)
+				_, hk := p.LoopSets[loopKey]
+				if !hk || override {
+					p.LoopSets[loopKey] = ParsesVarsMap(loopV, p.Depth)
+				}
 			default:
 				unexpectedTypeVarValue(loopKey, loopVal)
 			}
@@ -172,7 +185,10 @@ func (p *Play) ParseLoopSets(m map[string]interface{}) {
 		unexpectedTypePlay(m, "loop_sets")
 	}
 }
-func (p *Play) ParseLoopOn(m map[string]interface{}) {
+func (p *Play) ParseLoopOn(m map[string]interface{}, override bool) {
+	if p.LoopOn != nil && !override {
+		return
+	}
 	switch v := m["loop_on"].(type) {
 	case []interface{}:
 		p.LoopOn = make([]*Loop, len(v))
@@ -208,29 +224,40 @@ func (p *Play) ParseLoopOn(m map[string]interface{}) {
 		unexpectedTypePlay(m, "loop_on")
 	}
 }
-func (p *Play) ParseLoopSequential(m map[string]interface{}) {
+func (p *Play) ParseLoopSequential(m map[string]interface{}, override bool) {
 	switch v := m["loop_sequential"].(type) {
 	case bool:
-		p.LoopSequential = v
+		if p.LoopSequential == nil || override {
+			p.LoopSequential = &v
+		}
 	case nil:
 	default:
 		unexpectedTypePlay(m, "loop_sequential")
 	}
 }
 
-func (p *Play) ParseVars(m map[string]interface{}) {
+func (p *Play) ParseVars(m map[string]interface{}, override bool) {
 	switch v := m["vars"].(type) {
 	case map[string]interface{}:
 		m, err := decode.ToMap(v)
 		errors.Check(err)
 		for key, val := range ParsesVarsMap(m, p.Depth) {
-			p.Vars[key] = val
+			_, hk := p.Vars[key]
+			logrus.Warnf("%v: %v -> %v", key, p.Vars[key], val)
+			if override || !hk {
+				p.Vars[key] = val
+			}
 		}
 	case map[interface{}]interface{}:
 		m, err := decode.ToMap(v)
 		errors.Check(err)
 		for key, val := range ParsesVarsMap(m, p.Depth) {
-			p.Vars[key] = val
+			_, hk := p.Vars[key]
+			// logrus.Warnf("override %v", override)
+			// logrus.Warnf("%v: %v -> %v", key, p.Vars[key], val)
+			if override || !hk {
+				p.Vars[key] = val
+			}
 		}
 	case nil:
 	default:
@@ -238,12 +265,15 @@ func (p *Play) ParseVars(m map[string]interface{}) {
 	}
 }
 
-func (p *Play) ParseRegisterVars(m map[string]interface{}) {
+func (p *Play) ParseRegisterVars(m map[string]interface{}, override bool) {
+	if !override && p.RegisterVars == nil {
+		return
+	}
 	switch v := m["register_vars"].(type) {
 	case []interface{}:
 		s, err := decode.ToStrings(v)
 		errors.Check(err)
-		p.RegisterVars = append(p.RegisterVars, s...)
+		p.RegisterVars = s
 		for _, v := range p.RegisterVars {
 			key := strings.ToLower(v)
 			if p.Vars[key] == nil {
@@ -258,7 +288,10 @@ func (p *Play) ParseRegisterVars(m map[string]interface{}) {
 		unexpectedTypeCmd(m, "register_vars")
 	}
 }
-func (p *Play) ParseCheckCommand(m map[string]interface{}) {
+func (p *Play) ParseCheckCommand(m map[string]interface{}, override bool) {
+	if !override && p.CheckCommand != nil {
+		return
+	}
 	switch v := m["check_command"].(type) {
 	case string:
 		s, err := shellquote.Split(v)
@@ -273,7 +306,10 @@ func (p *Play) ParseCheckCommand(m map[string]interface{}) {
 		unexpectedTypeCmd(m, "check_command")
 	}
 }
-func (p *Play) ParseDependencies(m map[string]interface{}) {
+func (p *Play) ParseDependencies(m map[string]interface{}, override bool) {
+	if !override && p.Dependencies == nil {
+		return
+	}
 	switch m["dependencies"].(type) {
 	case []interface{}:
 		dependencies, err := decode.ToStrings(m["dependencies"])
@@ -285,61 +321,68 @@ func (p *Play) ParseDependencies(m map[string]interface{}) {
 	}
 }
 
-func (p *Play) ParsePostInstall(m map[string]interface{}) {
-	switch m["postInstall"].(type) {
+func (p *Play) ParsePostInstall(m map[string]interface{}, override bool) {
+	if !override && p.PostInstall == nil {
+		return
+	}
+	switch m["post_install"].(type) {
 	case []interface{}:
-		postInstall, err := decode.ToStrings(m["postInstall"])
+		post_install, err := decode.ToStrings(m["post_install"])
 		errors.Check(err)
-		p.PostInstall = postInstall
+		p.PostInstall = post_install
 	case nil:
 	default:
-		unexpectedTypeCmd(m, "postInstall")
+		unexpectedTypeCmd(m, "post_install")
 	}
 }
 
-func (p *Play) ParseSudo(m map[string]interface{}) {
+func (p *Play) ParseSudo(m map[string]interface{}, override bool) {
+	if !override && p.Sudo != nil {
+		return
+	}
 	switch s := m["sudo"].(type) {
 	case bool:
-		p.Sudo = s
+		p.Sudo = &s
 	case string:
+		var b bool
 		if s == "true" || s == "1" {
-			p.Sudo = true
+			b = true
 		} else if s == "false" || s == "0" || s == "" {
-			p.Sudo = false
+			b = false
 		} else {
 			unexpectedTypeCmd(m, "sudo")
 		}
+		p.Sudo = &b
 	case nil:
 	default:
 		unexpectedTypeCmd(m, "sudo")
 	}
 }
 
-func (p *Play) ParseSSH(m map[string]interface{}) {
+func (p *Play) ParseSSH(m map[string]interface{}, override bool) {
+	if !override && p.SSH != nil {
+		return
+	}
 	switch s := m["ssh"].(type) {
 	case bool:
-		p.SSH = s
+		p.SSH = &s
 	case string:
+		var b bool
 		if s == "true" || s == "1" {
-			p.SSH = true
+			b = true
 		} else if s == "false" || s == "0" || s == "" {
-			p.SSH = false
+			b = false
 		} else {
 			unexpectedTypeCmd(m, "ssh")
 		}
+		p.SSH = &b
 	case nil:
 	default:
 		unexpectedTypeCmd(m, "ssh")
 	}
 }
 
-func (p *Play) Run(parentVars cmap.ConcurrentMap, parentVarsDefault cmap.ConcurrentMap) {
-	if parentVars == nil {
-		parentVars = cmap.New()
-	}
-	if parentVarsDefault == nil {
-		parentVarsDefault = cmap.New()
-	}
+func (p *Play) Run(ctx *RunCtx) {
 
 	var icon string
 	if p.ParentPlay == nil {
@@ -349,13 +392,14 @@ func (p *Play) Run(parentVars cmap.ConcurrentMap, parentVarsDefault cmap.Concurr
 	} else {
 		icon = `⤷`
 	}
-	fmt.Println(strings.Repeat("  ", p.Depth)+icon, p.Title)
+
+	logrus.Info(strings.Repeat("  ", p.Depth+1) + icon + " " + p.Title)
 
 	runLoopSeq := func(loop *Loop) {
 		vars := cmap.New()
 		varsDefault := cmap.New()
 
-		for k, v := range parentVars.Items() {
+		for k, v := range ctx.Vars.Items() {
 			vars.Set(k, v)
 		}
 		for _, v := range p.Vars {
@@ -365,41 +409,52 @@ func (p *Play) Run(parentVars cmap.ConcurrentMap, parentVarsDefault cmap.Concurr
 			v.RegisterValueTo(vars)
 		}
 
-		for k, v := range parentVarsDefault.Items() {
+		for k, v := range ctx.VarsDefault.Items() {
 			varsDefault.Set(k, v)
-		}
-		for _, v := range p.Vars {
-			v.RegisterDefaultTo(varsDefault)
-			v.HandleRequired(varsDefault, vars)
 		}
 		for _, v := range loop.Vars {
 			v.RegisterDefaultTo(varsDefault)
 			v.HandleRequired(varsDefault, vars)
 		}
+		for _, v := range p.Vars {
+			v.RegisterDefaultTo(varsDefault)
+			v.HandleRequired(varsDefault, vars)
+		}
+
+		runCtx := &RunCtx{
+			Vars:        vars,
+			VarsDefault: varsDefault,
+			ReadyToRun:  ctx.ReadyToRun,
+		}
 
 		switch pl := p.Play.(type) {
 		case []*Play:
 			for _, child := range pl {
-				child.Run(vars, varsDefault)
+				child.Run(runCtx)
 			}
 		case *Cmd:
-			pl.Run(vars, varsDefault)
+			pl.Run(runCtx)
 		}
 	}
 
 	var wg sync.WaitGroup
 	var runLoop func(loop *Loop)
-	if p.LoopSequential {
+
+	var loopSequential bool
+	if p.LoopSequential != nil {
+		loopSequential = *p.LoopSequential
+	}
+
+	if loopSequential || !ctx.ReadyToRun {
 		runLoop = runLoopSeq
 	} else {
-		runLoop = runLoopSeq
-		// runLoop = func(loop *Loop) {
-		// 	wg.Add(1)
-		// 	go func() {
-		// 		defer wg.Done()
-		// 		runLoopSeq(loop)
-		// 	}()
-		// }
+		runLoop = func(loop *Loop) {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				runLoopSeq(loop)
+			}()
+		}
 	}
 
 	var loops []*Loop
@@ -416,6 +471,18 @@ func (p *Play) Run(parentVars cmap.ConcurrentMap, parentVarsDefault cmap.Concurr
 		runLoop(loop)
 	}
 	wg.Wait()
+
+}
+
+func (p *Play) Start() {
+	ctx := CreateRunCtx()
+
+	logrus.Infof(ansi.Color("≡ ", "green") + "collecting variables")
+	p.Run(ctx)
+
+	ctx.ReadyToRun = true
+	logrus.Infof("🚀 running playbook")
+	p.Run(ctx)
 
 }
 

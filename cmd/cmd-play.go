@@ -23,8 +23,7 @@ func CmdPlay(app App, rootCmd *cobra.Command) *cobra.Command {
 			// logrus.Infof("%v", tools.JsonEncode(p))
 			// logrus.Infof("%v", p)
 
-			// p.PromptVars(nil)
-			p.Run(nil, nil)
+			p.Start()
 
 		},
 	}
