@@ -7,7 +7,6 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"gitlab.com/youtopia.earth/ops/snip/errors"
-	"gitlab.com/youtopia.earth/ops/snip/tools"
 )
 
 type Cmd struct {
@@ -21,6 +20,8 @@ type Cmd struct {
 	MDPath     string
 	Markdown   string
 	CodeBlocks []*CodeBlock
+
+	RunStack []*Run
 }
 
 type CodeBlockType int
@@ -97,11 +98,18 @@ func (cmd *Cmd) Run(ctx *RunCtx) {
 		vars[k] = v.(string)
 	}
 
-	logrus.Debugf(strings.Repeat("  ", cmd.Play.Depth+2)+" vars: %v", tools.JsonEncode(vars))
+	// logrus.Debugf(strings.Repeat("  ", cmd.Play.Depth+2)+" vars: %v", tools.JsonEncode(vars))
 
 	if !ctx.ReadyToRun {
 		return
 	}
+
+	r := CreateRun(cmd)
+	r.Vars = vars
+
+	cmd.RunStack = append(cmd.RunStack, r)
+
+	r.Exec()
 
 }
 

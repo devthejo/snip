@@ -19,6 +19,8 @@ type Play struct {
 
 	ParentPlay *Play
 
+	Index int
+	Key   string
 	Title string
 
 	Play interface{}
@@ -39,19 +41,13 @@ type Play struct {
 	Sudo *bool
 	SSH  *bool
 
-	State PlayStateType
+	State StateType
 
 	Depth       int
 	HasChildren bool
 }
 
-type PlayStateType int
-
-const (
-	PlayStateReady PlayStateType = iota
-	PlayStateUpdated
-	PlayStateFailed
-)
+type StateType int
 
 func CreatePlay(app App, m map[string]interface{}, parentPlay *Play) *Play {
 
@@ -78,33 +74,26 @@ func (p *Play) SetParentPlay(parentPlay *Play) {
 }
 
 func (p *Play) ParseMapAsDefault(m map[string]interface{}) {
-	p.ParseTitle(m, false)
-	p.ParseLoopSets(m, false)
-	p.ParseLoopOn(m, false)
-	p.ParseLoopSequential(m, false)
-	p.ParseVars(m, false)
-	p.ParseRegisterVars(m, false)
-	p.ParseCheckCommand(m, false)
-	p.ParseDependencies(m, false)
-	p.ParsePostInstall(m, false)
-	p.ParseSudo(m, false)
-	p.ParseSSH(m, false)
-	p.ParsePlay(m, false)
+	p.ParseMapRun(m, false)
+}
+func (p *Play) ParseMap(m map[string]interface{}) {
+	p.ParseMapRun(m, true)
 }
 
-func (p *Play) ParseMap(m map[string]interface{}) {
-	p.ParseTitle(m, true)
-	p.ParseLoopSets(m, true)
-	p.ParseLoopOn(m, true)
-	p.ParseLoopSequential(m, true)
-	p.ParseVars(m, true)
-	p.ParseRegisterVars(m, true)
-	p.ParseCheckCommand(m, true)
-	p.ParseDependencies(m, true)
-	p.ParsePostInstall(m, true)
-	p.ParseSudo(m, true)
-	p.ParseSSH(m, true)
-	p.ParsePlay(m, true)
+func (p *Play) ParseMapRun(m map[string]interface{}, override bool) {
+	p.ParseKey(m, override)
+	p.ParseTitle(m, override)
+	p.ParseLoopSets(m, override)
+	p.ParseLoopOn(m, override)
+	p.ParseLoopSequential(m, override)
+	p.ParseVars(m, override)
+	p.ParseRegisterVars(m, override)
+	p.ParseCheckCommand(m, override)
+	p.ParseDependencies(m, override)
+	p.ParsePostInstall(m, override)
+	p.ParseSudo(m, override)
+	p.ParseSSH(m, override)
+	p.ParsePlay(m, override)
 }
 
 func (p *Play) ParsePlay(m map[string]interface{}, override bool) {
@@ -128,7 +117,9 @@ func (p *Play) ParsePlay(m map[string]interface{}, override bool) {
 				unexpectedTypePlay(m, "play")
 			}
 
-			playSlice[i] = CreatePlay(p.App, m, p)
+			pI := CreatePlay(p.App, m, p)
+			pI.Index = i
+			playSlice[i] = pI
 		}
 		p.Play = playSlice
 		p.HasChildren = true
@@ -143,6 +134,19 @@ func (p *Play) ParsePlay(m map[string]interface{}, override bool) {
 	case nil:
 	default:
 		unexpectedTypePlay(m, "play")
+	}
+}
+
+func (p *Play) ParseKey(m map[string]interface{}, override bool) {
+	if !override && p.Key != "" {
+		return
+	}
+	switch v := m["key"].(type) {
+	case string:
+		p.Key = v
+	case nil:
+	default:
+		unexpectedTypeCmd(m, "key")
 	}
 }
 
@@ -200,20 +204,23 @@ func (p *Play) ParseLoopOn(m map[string]interface{}, override bool) {
 					logrus.Fatalf("undefined LoopSet %v", loop)
 				}
 				p.LoopOn[loopI] = &Loop{
-					Name: loop,
-					Vars: p.LoopSets[loop],
+					Name:       "loop-set   : " + loop,
+					Vars:       p.LoopSets[loop],
+					IsLoopItem: true,
 				}
 			case map[interface{}]interface{}:
 				l, err := decode.ToMap(loop)
 				errors.Check(err)
 				p.LoopOn[loopI] = &Loop{
-					Name: "item: " + strconv.Itoa(loopI),
-					Vars: ParsesVarsMap(l, p.Depth),
+					Name:       "loop-index : " + strconv.Itoa(loopI),
+					Vars:       ParsesVarsMap(l, p.Depth),
+					IsLoopItem: true,
 				}
 			case map[string]interface{}:
 				p.LoopOn[loopI] = &Loop{
-					Name: "item: " + strconv.Itoa(loopI),
-					Vars: ParsesVarsMap(loop, p.Depth),
+					Name:       "loop-index : " + strconv.Itoa(loopI),
+					Vars:       ParsesVarsMap(loop, p.Depth),
+					IsLoopItem: true,
 				}
 			default:
 				unexpectedTypeVarValue(strconv.Itoa(loopI), loopV)
@@ -379,6 +386,22 @@ func (p *Play) ParseSSH(m map[string]interface{}, override bool) {
 	}
 }
 
+func (p *Play) GetTitle() string {
+	title := p.Title
+	if title == "" {
+		title = p.GetKey()
+	}
+	return title
+}
+
+func (p *Play) GetKey() string {
+	key := p.Key
+	if key == "" {
+		key = strconv.Itoa(p.Index)
+	}
+	return key
+}
+
 func (p *Play) Run(ctx *RunCtx) {
 
 	var icon string
@@ -390,9 +413,13 @@ func (p *Play) Run(ctx *RunCtx) {
 		icon = `⤷`
 	}
 
-	logrus.Info(strings.Repeat("  ", p.Depth+1) + icon + " " + p.Title)
+	logrus.Info(strings.Repeat("  ", p.Depth+1) + icon + " " + p.GetTitle())
 
 	runLoopSeq := func(loop *Loop) {
+		if loop.IsLoopItem {
+			logrus.Info(strings.Repeat("  ", p.Depth+2) + "⦿ " + loop.Name)
+		}
+
 		vars := cmap.New()
 		varsDefault := cmap.New()
 
@@ -457,8 +484,9 @@ func (p *Play) Run(ctx *RunCtx) {
 	var loops []*Loop
 	if len(p.LoopOn) == 0 {
 		loops = append(loops, &Loop{
-			Name: "",
-			Vars: make(map[string]*Var),
+			Name:       "",
+			Vars:       make(map[string]*Var),
+			IsLoopItem: false,
 		})
 	} else {
 		loops = p.LoopOn

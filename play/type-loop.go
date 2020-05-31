@@ -1,6 +1,7 @@
 package play
 
 type Loop struct {
-	Name string
-	Vars map[string]*Var
+	Name       string
+	Vars       map[string]*Var
+	IsLoopItem bool
 }

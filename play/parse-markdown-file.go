@@ -63,6 +63,9 @@ func ParseMarkdownFile(app App, mdPath string, cmd *Cmd) {
 	errors.Check(err)
 
 	metaData := meta.Get(context)
+	if metaData["key"] == nil {
+		metaData["key"] = mdPath
+	}
 	if metaData["title"] == nil {
 		title := mdPath
 		title = strings.TrimSuffix(title, filepath.Ext(title))
