@@ -19,10 +19,8 @@ func CmdPlay(app App, rootCmd *cobra.Command) *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			cfg := app.GetConfig()
 
-			p := play.CreatePlay(app, cfg.Play, nil)
-			// logrus.Infof("%v", tools.JsonEncode(p))
-			// logrus.Infof("%v", p)
-
+			cfgPlay := play.CreateCfgPlay(app, cfg.Play, nil)
+			p := cfgPlay.BuildRoot()
 			p.Start()
 
 		},

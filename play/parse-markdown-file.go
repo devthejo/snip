@@ -18,7 +18,7 @@ import (
 	"gitlab.com/youtopia.earth/ops/snip/tools"
 )
 
-func ParseMarkdownFile(app App, mdPath string, cmd *Cmd) {
+func ParseMarkdownFile(app App, mdPath string, ccmd *CfgCmd) {
 
 	cfg := app.GetConfig()
 
@@ -45,7 +45,7 @@ func ParseMarkdownFile(app App, mdPath string, cmd *Cmd) {
 		markdownString = strings.Trim(markdownString[i+5:], "\n")
 	}
 	// TODO add descriptions from metas and vars
-	cmd.Markdown = markdownString
+	ccmd.Markdown = markdownString
 
 	md1 := goldmark.New(
 		goldmark.WithExtensions(
@@ -74,7 +74,7 @@ func ParseMarkdownFile(app App, mdPath string, cmd *Cmd) {
 		title = "snippet: " + title
 		metaData["title"] = title
 	}
-	cmd.Play.ParseMapAsDefault(metaData)
+	ccmd.CfgPlay.ParseMapAsDefault(metaData)
 
 	md2 := markdown.New(markdown.XHTMLOutput(true), markdown.Nofollow(true))
 	tokens := md2.Parse(source)
@@ -86,7 +86,7 @@ func ParseMarkdownFile(app App, mdPath string, cmd *Cmd) {
 					Type:    CodeBlockBash,
 					Content: tok.Content,
 				}
-				cmd.CodeBlocks = append(cmd.CodeBlocks, codeBlock)
+				ccmd.CodeBlocks = append(ccmd.CodeBlocks, codeBlock)
 			}
 		}
 	}
