@@ -25,7 +25,7 @@ type CfgPlay struct {
 	CfgPlay interface{}
 
 	Vars   map[string]*Var
-	LoopOn []*CfgLoop
+	LoopOn []*CfgLoopRow
 
 	LoopSets       map[string]map[string]*Var
 	LoopSequential *bool
@@ -124,6 +124,7 @@ func (cp *CfgPlay) ParseCfgPlay(m map[string]interface{}, override bool) {
 		errors.Check(err)
 		cmd := &CfgCmd{}
 		cmd.CfgPlay = cp
+		cmd.Depth = cp.Depth + 1
 		cmd.Parse(c)
 		cp.CfgPlay = cmd
 	case nil:
@@ -138,7 +139,7 @@ func (cp *CfgPlay) ParseKey(m map[string]interface{}, override bool) {
 	}
 	switch v := m["key"].(type) {
 	case string:
-		cp.Key = v
+		cp.Key = strings.ReplaceAll(v, "|", "-")
 	case nil:
 	default:
 		unexpectedTypeCmd(m, "key")
@@ -190,36 +191,26 @@ func (cp *CfgPlay) ParseLoopOn(m map[string]interface{}, override bool) {
 	}
 	switch v := m["loop_on"].(type) {
 	case []interface{}:
-		cp.LoopOn = make([]*CfgLoop, len(v))
+		cp.LoopOn = make([]*CfgLoopRow, len(v))
 		for loopI, loopV := range v {
+			var cfgLoopRow *CfgLoopRow
 			switch loop := loopV.(type) {
 			case string:
 				loop = strings.ToLower(loop)
 				if cp.LoopSets[loop] == nil {
 					logrus.Fatalf("undefined LoopSet %v", loop)
 				}
-				cp.LoopOn[loopI] = &CfgLoop{
-					Name:       "loop-set   : " + loop,
-					Vars:       cp.LoopSets[loop],
-					IsLoopItem: true,
-				}
+				cfgLoopRow = CreateCfgLoopRow(loopI, loop, cp.LoopSets[loop])
 			case map[interface{}]interface{}:
 				l, err := decode.ToMap(loop)
 				errors.Check(err)
-				cp.LoopOn[loopI] = &CfgLoop{
-					Name:       "loop-index : " + strconv.Itoa(loopI),
-					Vars:       ParsesVarsMap(l, cp.Depth),
-					IsLoopItem: true,
-				}
+				cfgLoopRow = CreateCfgLoopRow(loopI, "", ParsesVarsMap(l, cp.Depth))
 			case map[string]interface{}:
-				cp.LoopOn[loopI] = &CfgLoop{
-					Name:       "loop-index : " + strconv.Itoa(loopI),
-					Vars:       ParsesVarsMap(loop, cp.Depth),
-					IsLoopItem: true,
-				}
+				cfgLoopRow = CreateCfgLoopRow(loopI, "", ParsesVarsMap(loop, cp.Depth))
 			default:
 				unexpectedTypeVarValue(strconv.Itoa(loopI), loopV)
 			}
+			cp.LoopOn[loopI] = cfgLoopRow
 		}
 	case nil:
 	default:
@@ -397,11 +388,48 @@ func (cp *CfgPlay) GetKey() string {
 	return key
 }
 
-func (cp *CfgPlay) Build(ctx *RunCtx, parent interface{}) *Play {
-	p := &Play{
-		RunCtx: ctx,
-		Parent: parent,
+func CreatePlayFromCfgPlay(cp *CfgPlay) *Play {
+	var loopSequential bool
+	if cp.LoopSequential != nil {
+		loopSequential = *cp.LoopSequential
 	}
+
+	var sudo bool
+	if cp.Sudo != nil {
+		sudo = *cp.Sudo
+	}
+
+	var ssh bool
+	if cp.SSH != nil {
+		ssh = *cp.SSH
+	}
+
+	p := &Play{
+
+		Index: cp.Index,
+		Key:   cp.Key,
+		Title: cp.Title,
+
+		LoopSequential: loopSequential,
+		CheckCommand:   cp.CheckCommand,
+
+		// RegisterVars: cp.RegisterVars,
+		// Dependencies: ,
+		// PostInstall: ,
+
+		Sudo: sudo,
+		SSH:  ssh,
+
+		Depth:       cp.Depth,
+		HasChildren: cp.HasChildren,
+	}
+	return p
+}
+
+func (cp *CfgPlay) Build(ctx *RunCtx, parentLoopRow *LoopRow) *Play {
+	p := CreatePlayFromCfgPlay(cp)
+	p.RunCtx = ctx
+	p.ParentLoopRow = parentLoopRow
 
 	var icon string
 	if cp.ParentCfgPlay == nil {
@@ -414,27 +442,32 @@ func (cp *CfgPlay) Build(ctx *RunCtx, parent interface{}) *Play {
 
 	logrus.Info(strings.Repeat("  ", cp.Depth+1) + icon + " " + cp.GetTitle())
 
-	var loops []*CfgLoop
+	var loops []*CfgLoopRow
 	if len(cp.LoopOn) == 0 {
-		loops = append(loops, &CfgLoop{
-			Name:       "",
-			Vars:       make(map[string]*Var),
-			IsLoopItem: false,
+		loops = append(loops, &CfgLoopRow{
+			Name:          "",
+			Key:           "",
+			Index:         0,
+			Vars:          make(map[string]*Var),
+			IsLoopRowItem: false,
 		})
 	} else {
 		loops = cp.LoopOn
 	}
 
-	p.Loop = make([]*Loop, len(loops))
-	for i, cfgLoop := range loops {
-		loop := &Loop{
-			Name:       cfgLoop.Name,
-			Vars:       cfgLoop.Vars,
-			IsLoopItem: cfgLoop.IsLoopItem,
+	p.LoopRow = make([]*LoopRow, len(loops))
+	for i, cfgLoopRow := range loops {
+		loop := &LoopRow{
+			Name:          cfgLoopRow.Name,
+			Key:           cfgLoopRow.Key,
+			Index:         cfgLoopRow.Index,
+			Vars:          cfgLoopRow.Vars,
+			IsLoopRowItem: cfgLoopRow.IsLoopRowItem,
+			ParentPlay:    p,
 		}
-		p.Loop[i] = loop
+		p.LoopRow[i] = loop
 
-		if loop.IsLoopItem {
+		if loop.IsLoopRowItem {
 			logrus.Info(strings.Repeat("  ", cp.Depth+2) + "⦿ " + loop.Name)
 		}
 
@@ -466,10 +499,6 @@ func (cp *CfgPlay) Build(ctx *RunCtx, parent interface{}) *Play {
 		runCtx := &RunCtx{
 			Vars:        vars,
 			VarsDefault: varsDefault,
-		}
-
-		loop.Play = &Play{
-			RunCtx: runCtx,
 		}
 
 		switch pl := cp.CfgPlay.(type) {

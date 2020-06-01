@@ -16,6 +16,7 @@ type CfgCmd struct {
 	Args    []string
 	Vars    map[string]string
 
+	Depth      int
 	IsMD       bool
 	MDPath     string
 	Markdown   string
@@ -86,10 +87,14 @@ func (ccmd *CfgCmd) BuildBashFromMD() {
 	ccmd.Command = file
 }
 
-func (ccmd *CfgCmd) Build(ctx *RunCtx, parent interface{}) *Cmd {
+func (ccmd *CfgCmd) Build(ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 	cmd := &Cmd{
-		Parent: parent,
-		CfgCmd: ccmd,
+		ParentLoopRow: parentLoopRow,
+		CfgCmd:        ccmd,
+		Command:       ccmd.Command,
+		Args:          ccmd.Args,
+		IsMD:          ccmd.IsMD,
+		Depth:         ccmd.Depth,
 	}
 
 	vars := make(map[string]string)
@@ -100,6 +105,14 @@ func (ccmd *CfgCmd) Build(ctx *RunCtx, parent interface{}) *Cmd {
 		vars[k] = v.(string)
 	}
 	cmd.Vars = vars
+
+	logKey := cmd.GetLogKey()
+
+	logger := logrus.WithFields(logrus.Fields{
+		"key": logKey,
+	})
+
+	cmd.Logger = logger
 
 	return cmd
 }

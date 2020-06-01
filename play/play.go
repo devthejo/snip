@@ -15,13 +15,13 @@ type Play struct {
 
 	RunCtx *RunCtx
 
-	Parent interface{}
+	ParentLoopRow *LoopRow
 
 	Index int
 	Key   string
 	Title string
 
-	Loop []*Loop
+	LoopRow []*LoopRow
 
 	Vars map[string]*Var
 
@@ -62,7 +62,7 @@ func (p *Play) GetKey() string {
 func (p *Play) Run() {
 
 	var icon string
-	if p.Parent == nil {
+	if p.ParentLoopRow == nil {
 		icon = `🠞`
 	} else if !p.HasChildren {
 		icon = `⯈`
@@ -72,8 +72,8 @@ func (p *Play) Run() {
 
 	logrus.Info(strings.Repeat("  ", p.Depth+1) + icon + " " + p.GetTitle())
 
-	runLoopSeq := func(loop *Loop) {
-		if loop.IsLoopItem {
+	runLoopSeq := func(loop *LoopRow) {
+		if loop.IsLoopRowItem {
 			logrus.Info(strings.Repeat("  ", p.Depth+2) + "⦿ " + loop.Name)
 		}
 
@@ -88,12 +88,12 @@ func (p *Play) Run() {
 	}
 
 	var wg sync.WaitGroup
-	var runLoop func(loop *Loop)
+	var runLoopRow func(loop *LoopRow)
 
 	if p.LoopSequential {
-		runLoop = runLoopSeq
+		runLoopRow = runLoopSeq
 	} else {
-		runLoop = func(loop *Loop) {
+		runLoopRow = func(loop *LoopRow) {
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
@@ -102,8 +102,8 @@ func (p *Play) Run() {
 		}
 	}
 
-	for _, loop := range p.Loop {
-		runLoop(loop)
+	for _, loop := range p.LoopRow {
+		runLoopRow(loop)
 	}
 	wg.Wait()
 
