@@ -61,7 +61,7 @@ func (cmd *Cmd) GetTreeKeyParts() []string {
 
 func (cmd *Cmd) Run() {
 
-	cmd.Logger.Info(cmd.Indent + "Hello")
+	cmd.Logger.Info(cmd.Indent + "▶️  playing")
 	cmd.Logger.Debugf(cmd.Indent+"vars: %v", tools.JsonEncode(cmd.Vars))
 
 }
