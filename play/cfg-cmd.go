@@ -97,6 +97,12 @@ func (ccmd *CfgCmd) Build(ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 		Depth:         ccmd.Depth,
 	}
 
+	depth := ccmd.Depth
+	if parentLoopRow.IsLoopRowItem {
+		depth = depth + 1
+	}
+	cmd.Indent = strings.Repeat("  ", depth+1)
+
 	vars := make(map[string]string)
 	for k, v := range ctx.VarsDefault.Items() {
 		vars[k] = v.(string)
@@ -106,10 +112,10 @@ func (ccmd *CfgCmd) Build(ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 	}
 	cmd.Vars = vars
 
-	logKey := cmd.GetLogKey()
+	logKey := cmd.GetTreeKey()
 
 	logger := logrus.WithFields(logrus.Fields{
-		"key": logKey,
+		"tree": logKey,
 	})
 
 	cmd.Logger = logger

@@ -19,14 +19,15 @@ type Cmd struct {
 
 	Logger *logrus.Entry
 	Depth  int
+	Indent string
 }
 
-func (cmd *Cmd) GetLogKey() string {
-	parts := cmd.GetLogKeyParts()
+func (cmd *Cmd) GetTreeKey() string {
+	parts := cmd.GetTreeKeyParts()
 	return strings.Join(parts, "|")
 
 }
-func (cmd *Cmd) GetLogKeyParts() []string {
+func (cmd *Cmd) GetTreeKeyParts() []string {
 	var parts []string
 	var parent interface{}
 	parent = cmd.ParentLoopRow
@@ -60,7 +61,7 @@ func (cmd *Cmd) GetLogKeyParts() []string {
 
 func (cmd *Cmd) Run() {
 
-	cmd.Logger.Info("Hello")
-	cmd.Logger.Debugf(strings.Repeat("  ", cmd.Depth+2)+" vars: %v", tools.JsonEncode(cmd.Vars))
+	cmd.Logger.Info(cmd.Indent + "Hello")
+	cmd.Logger.Debugf(cmd.Indent+"vars: %v", tools.JsonEncode(cmd.Vars))
 
 }

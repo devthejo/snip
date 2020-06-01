@@ -22,10 +22,10 @@ func (f *LogFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 	var levelText string
 	switch entry.Level {
 	case logrus.DebugLevel:
-		icon = "🐝"
+		icon = "⏿"
 		levelText = "DEBU"
 	case logrus.TraceLevel:
-		icon = "☢"
+		icon = "👁"
 		levelText = "TRAC"
 	case logrus.WarnLevel:
 		icon = "🛆"

@@ -31,8 +31,10 @@ func ConfigureLogrusLogType(strLogType string, logForceColors bool) {
 			// })
 			logrus.SetFormatter(&LogFormatter{
 				NativeTextFormatter: &logrus.TextFormatter{
-					ForceColors:      true,
-					DisableTimestamp: true,
+					ForceColors:            true,
+					DisableTimestamp:       true,
+					DisableLevelTruncation: false,
+					PadLevelText:           false,
 				},
 			})
 		default:
