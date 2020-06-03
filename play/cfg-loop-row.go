@@ -2,7 +2,6 @@ package play
 
 import (
 	"strconv"
-	"strings"
 )
 
 type CfgLoopRow struct {
@@ -23,7 +22,7 @@ func CreateCfgLoopRow(index int, key string, loopSet map[string]*Var) *CfgLoopRo
 	}
 	cfgLoopRow := &CfgLoopRow{
 		Name:          name,
-		Key:           strings.ReplaceAll(key, "|", "-"),
+		Key:           key,
 		Index:         index,
 		Vars:          loopSet,
 		IsLoopRowItem: true,

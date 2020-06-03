@@ -10,6 +10,8 @@ const (
 	FlagSnippetsDirDesc    = "snippets directory"
 	FlagBuildDirDesc       = "bash build directory"
 	FlagMarkdownOutputDesc = "markdown output file"
+
+	FlagShutdownTimeoutDesc = "shutdown timeout"
 )
 
 var (
@@ -20,4 +22,6 @@ var (
 	FlagSnippetsDirDefault    = "snippets"
 	FlagBuildDirDefault       = "build"
 	FlagMarkdownOutputDefault = "snip.md"
+
+	FlagShutdownTimeoutDefault = "5"
 )

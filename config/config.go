@@ -1,5 +1,7 @@
 package config
 
+import "time"
+
 // Config struct
 type Config struct {
 	LogLevel       string `mapstructure:"LOG_LEVEL" json:"log_level"`
@@ -15,4 +17,6 @@ type Config struct {
 	BuildDir    string `mapstructure:"BUILD_DIR" json:"build_dir"`
 
 	MarkdownOutput string `mapstructure:"MARKDOWN_OUTPUT" json:"markdown_output"`
+
+	ShutdownTimeout time.Duration `mapstructure:"SHUTDOWN_TIMEOUT" json:"shutdownTimeout,omitempty"`
 }

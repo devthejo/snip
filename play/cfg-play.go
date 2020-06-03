@@ -139,7 +139,7 @@ func (cp *CfgPlay) ParseKey(m map[string]interface{}, override bool) {
 	}
 	switch v := m["key"].(type) {
 	case string:
-		cp.Key = strings.ReplaceAll(v, "|", "-")
+		cp.Key = v
 	case nil:
 	default:
 		unexpectedTypeCmd(m, "key")
@@ -388,142 +388,13 @@ func (cp *CfgPlay) GetKey() string {
 	return key
 }
 
-func CreatePlayFromCfgPlay(cp *CfgPlay) *Play {
-	var loopSequential bool
-	if cp.LoopSequential != nil {
-		loopSequential = *cp.LoopSequential
-	}
-
-	var sudo bool
-	if cp.Sudo != nil {
-		sudo = *cp.Sudo
-	}
-
-	var ssh bool
-	if cp.SSH != nil {
-		ssh = *cp.SSH
-	}
-
-	p := &Play{
-
-		Index: cp.Index,
-		Key:   cp.Key,
-		Title: cp.Title,
-
-		LoopSequential: loopSequential,
-		CheckCommand:   cp.CheckCommand,
-
-		// RegisterVars: cp.RegisterVars,
-		// Dependencies: ,
-		// PostInstall: ,
-
-		Sudo: sudo,
-		SSH:  ssh,
-
-		Depth:       cp.Depth,
-		HasChildren: cp.HasChildren,
-	}
-	return p
-}
-
-func (cp *CfgPlay) Build(ctx *RunCtx, parentLoopRow *LoopRow) *Play {
-	p := CreatePlayFromCfgPlay(cp)
-	p.RunCtx = ctx
-	p.ParentLoopRow = parentLoopRow
-
-	var icon string
-	if cp.ParentCfgPlay == nil {
-		icon = `🠞`
-	} else if !cp.HasChildren {
-		icon = `⯈`
-	} else {
-		icon = `⤷`
-	}
-
-	logrus.Info(strings.Repeat("  ", cp.Depth+1) + icon + " " + cp.GetTitle())
-
-	var loops []*CfgLoopRow
-	if len(cp.LoopOn) == 0 {
-		loops = append(loops, &CfgLoopRow{
-			Name:          "",
-			Key:           "",
-			Index:         0,
-			Vars:          make(map[string]*Var),
-			IsLoopRowItem: false,
-		})
-	} else {
-		loops = cp.LoopOn
-	}
-
-	p.LoopRow = make([]*LoopRow, len(loops))
-	for i, cfgLoopRow := range loops {
-		loop := &LoopRow{
-			Name:          cfgLoopRow.Name,
-			Key:           cfgLoopRow.Key,
-			Index:         cfgLoopRow.Index,
-			Vars:          cfgLoopRow.Vars,
-			IsLoopRowItem: cfgLoopRow.IsLoopRowItem,
-			ParentPlay:    p,
-		}
-		p.LoopRow[i] = loop
-
-		if loop.IsLoopRowItem {
-			logrus.Info(strings.Repeat("  ", cp.Depth+2) + "⦿ " + loop.Name)
-		}
-
-		vars := cmap.New()
-		varsDefault := cmap.New()
-
-		for k, v := range ctx.Vars.Items() {
-			vars.Set(k, v)
-		}
-		for _, v := range cp.Vars {
-			v.RegisterValueTo(vars)
-		}
-		for _, v := range loop.Vars {
-			v.RegisterValueTo(vars)
-		}
-
-		for k, v := range ctx.VarsDefault.Items() {
-			varsDefault.Set(k, v)
-		}
-		for _, v := range loop.Vars {
-			v.RegisterDefaultTo(varsDefault)
-			v.HandleRequired(varsDefault, vars)
-		}
-		for _, v := range cp.Vars {
-			v.RegisterDefaultTo(varsDefault)
-			v.HandleRequired(varsDefault, vars)
-		}
-
-		runCtx := &RunCtx{
-			Vars:        vars,
-			VarsDefault: varsDefault,
-		}
-
-		switch pl := cp.CfgPlay.(type) {
-		case []*CfgPlay:
-			sp := make([]*Play, len(pl))
-			for i, child := range pl {
-				sp[i] = child.Build(runCtx, loop)
-			}
-			loop.Play = sp
-		case *CfgCmd:
-			loop.Play = pl.Build(runCtx, loop)
-		}
-	}
-
-	return p
-
-}
-
 func (cp *CfgPlay) BuildRoot() *Play {
 	logrus.Infof(ansi.Color("≡ ", "green") + "collecting variables")
 	ctx := &RunCtx{
 		Vars:        cmap.New(),
 		VarsDefault: cmap.New(),
 	}
-	return cp.Build(ctx, nil)
+	return CreatePlay(cp, ctx, nil)
 }
 
 func unexpectedTypeCfgPlay(m map[string]interface{}, key string) {

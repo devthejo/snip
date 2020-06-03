@@ -5,7 +5,9 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
 	"gitlab.com/youtopia.earth/ops/snip/config"
+	"gitlab.com/youtopia.earth/ops/snip/proc"
 )
 
 type App interface {
@@ -15,4 +17,5 @@ type App interface {
 	GetConfigFile() *string
 	OnPreRun(*cobra.Command)
 	GetNow() time.Time
+	GetMainProc() *proc.Main
 }

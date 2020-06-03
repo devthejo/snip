@@ -43,6 +43,6 @@ func (f *LogFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 		levelText = "INFO"
 		icon = "🛈"
 	}
-	msg = strings.Replace(msg, levelText, icon, 1)
+	msg = strings.Replace(msg, levelText, icon+" ", 1)
 	return []byte(msg), err
 }

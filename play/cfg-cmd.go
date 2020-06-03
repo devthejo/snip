@@ -87,42 +87,6 @@ func (ccmd *CfgCmd) BuildBashFromMD() {
 	ccmd.Command = file
 }
 
-func (ccmd *CfgCmd) Build(ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
-	cmd := &Cmd{
-		ParentLoopRow: parentLoopRow,
-		CfgCmd:        ccmd,
-		Command:       ccmd.Command,
-		Args:          ccmd.Args,
-		IsMD:          ccmd.IsMD,
-		Depth:         ccmd.Depth,
-	}
-
-	depth := ccmd.Depth
-	if parentLoopRow.IsLoopRowItem {
-		depth = depth + 1
-	}
-	cmd.Indent = strings.Repeat("  ", depth+1)
-
-	vars := make(map[string]string)
-	for k, v := range ctx.VarsDefault.Items() {
-		vars[k] = v.(string)
-	}
-	for k, v := range ctx.Vars.Items() {
-		vars[k] = v.(string)
-	}
-	cmd.Vars = vars
-
-	logKey := cmd.GetTreeKey()
-
-	logger := logrus.WithFields(logrus.Fields{
-		"tree": logKey,
-	})
-
-	cmd.Logger = logger
-
-	return cmd
-}
-
 func unexpectedTypeCmd(m map[string]interface{}, key string) {
 	errors.UnexpectedType(m, key, "cmd")
 }

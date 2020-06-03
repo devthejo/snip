@@ -9,6 +9,7 @@ import (
 
 	"gitlab.com/youtopia.earth/ops/snip/cmd"
 	"gitlab.com/youtopia.earth/ops/snip/config"
+	"gitlab.com/youtopia.earth/ops/snip/proc"
 )
 
 type App struct {
@@ -18,7 +19,9 @@ type App struct {
 	ConfigLoader    *config.ConfigLoader
 	Viper           *viper.Viper
 	RootCmd         *cobra.Command
-	Now             time.Time
+
+	Now      time.Time
+	MainProc *proc.Main
 }
 
 func New() *App {
@@ -84,4 +87,11 @@ func (app *App) RunCmd() {
 
 func (app *App) GetNow() time.Time {
 	return app.Now
+}
+
+func (app *App) GetMainProc() *proc.Main {
+	if app.MainProc == nil {
+		app.MainProc = proc.CreateMain(app)
+	}
+	return app.MainProc
 }

@@ -5,7 +5,9 @@ import (
 	"strings"
 	"sync"
 
+	cmap "github.com/orcaman/concurrent-map"
 	"github.com/sirupsen/logrus"
+	"go.uber.org/multierr"
 
 	"gitlab.com/youtopia.earth/ops/snip/errors"
 )
@@ -43,6 +45,131 @@ type Play struct {
 	State StateType
 }
 
+func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
+	var loopSequential bool
+	if cp.LoopSequential != nil {
+		loopSequential = *cp.LoopSequential
+	}
+
+	var sudo bool
+	if cp.Sudo != nil {
+		sudo = *cp.Sudo
+	}
+
+	var ssh bool
+	if cp.SSH != nil {
+		ssh = *cp.SSH
+	}
+
+	p := &Play{
+
+		Index: cp.Index,
+		Key:   cp.Key,
+		Title: cp.Title,
+
+		LoopSequential: loopSequential,
+		CheckCommand:   cp.CheckCommand,
+
+		// RegisterVars: cp.RegisterVars,
+		// Dependencies: ,
+		// PostInstall: ,
+
+		Sudo: sudo,
+		SSH:  ssh,
+
+		Depth:       cp.Depth,
+		HasChildren: cp.HasChildren,
+	}
+
+	p.RunCtx = ctx
+	p.ParentLoopRow = parentLoopRow
+
+	var icon string
+	if cp.ParentCfgPlay == nil {
+		icon = `🠞`
+	} else if !cp.HasChildren {
+		icon = `⯈`
+	} else {
+		icon = `⤷`
+	}
+
+	logrus.Info(strings.Repeat("  ", cp.Depth+1) + icon + " " + cp.GetTitle())
+
+	var loops []*CfgLoopRow
+	if len(cp.LoopOn) == 0 {
+		loops = append(loops, &CfgLoopRow{
+			Name:          "",
+			Key:           "",
+			Index:         0,
+			Vars:          make(map[string]*Var),
+			IsLoopRowItem: false,
+		})
+	} else {
+		loops = cp.LoopOn
+	}
+
+	p.LoopRow = make([]*LoopRow, len(loops))
+	for i, cfgLoopRow := range loops {
+		loop := &LoopRow{
+			Name:          cfgLoopRow.Name,
+			Key:           cfgLoopRow.Key,
+			Index:         cfgLoopRow.Index,
+			Vars:          cfgLoopRow.Vars,
+			IsLoopRowItem: cfgLoopRow.IsLoopRowItem,
+			ParentPlay:    p,
+		}
+		p.LoopRow[i] = loop
+
+		if loop.IsLoopRowItem {
+			logrus.Info(strings.Repeat("  ", cp.Depth+2) + "⦿ " + loop.Name)
+		}
+
+		vars := cmap.New()
+		varsDefault := cmap.New()
+
+		for k, v := range ctx.Vars.Items() {
+			vars.Set(k, v)
+		}
+		for _, v := range cp.Vars {
+			v.RegisterValueTo(vars)
+		}
+		for _, v := range loop.Vars {
+			v.RegisterValueTo(vars)
+		}
+
+		for k, v := range ctx.VarsDefault.Items() {
+			varsDefault.Set(k, v)
+		}
+		for _, v := range loop.Vars {
+			v.RegisterDefaultTo(varsDefault)
+			v.HandleRequired(varsDefault, vars)
+		}
+		for _, v := range cp.Vars {
+			v.RegisterDefaultTo(varsDefault)
+			v.HandleRequired(varsDefault, vars)
+		}
+
+		runCtx := &RunCtx{
+			Vars:        vars,
+			VarsDefault: varsDefault,
+		}
+
+		switch pl := cp.CfgPlay.(type) {
+		case []*CfgPlay:
+			sp := make([]*Play, len(pl))
+			for i, child := range pl {
+				sp[i] = CreatePlay(child, runCtx, loop)
+			}
+			loop.Play = sp
+		case *CfgCmd:
+			loop.Play = CreateCmd(pl, runCtx, loop)
+		}
+	}
+
+	return p
+
+}
+
 func (p *Play) GetTitle() string {
 	title := p.Title
 	if title == "" {
@@ -59,7 +186,7 @@ func (p *Play) GetKey() string {
 	return key
 }
 
-func (p *Play) Run() {
+func (p *Play) Run() error {
 
 	var icon string
 	if p.ParentLoopRow == nil {
@@ -72,6 +199,8 @@ func (p *Play) Run() {
 
 	logrus.Info(strings.Repeat("  ", p.Depth+1) + icon + " " + p.GetTitle())
 
+	var errSlice []error
+
 	runLoopSeq := func(loop *LoopRow) {
 		if loop.IsLoopRowItem {
 			logrus.Info(strings.Repeat("  ", p.Depth+2) + "⦿ " + loop.Name)
@@ -80,10 +209,15 @@ func (p *Play) Run() {
 		switch pl := loop.Play.(type) {
 		case []*Play:
 			for _, child := range pl {
-				child.Run()
+				if err := child.Run(); err != nil {
+					errSlice = append(errSlice, err)
+					break
+				}
 			}
 		case *Cmd:
-			pl.Run()
+			if err := pl.Run(); err != nil {
+				errSlice = append(errSlice, err)
+			}
 		}
 	}
 
@@ -107,11 +241,16 @@ func (p *Play) Run() {
 	}
 	wg.Wait()
 
+	if len(errSlice) > 0 {
+		return multierr.Combine(errSlice...)
+	}
+	return nil
+
 }
 
-func (p *Play) Start() {
+func (p *Play) Start() error {
 	logrus.Infof("🚀 running playbook")
-	p.Run()
+	return p.Run()
 }
 
 func unexpectedTypePlay(m map[string]interface{}, key string) {

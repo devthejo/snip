@@ -28,5 +28,6 @@ require (
 	github.com/yuin/goldmark v1.1.30
 	github.com/yuin/goldmark-meta v0.0.0-20191126180153-f0638e958b60
 	gitlab.com/golang-commonmark/markdown v0.0.0-20191127184510-91b5b3c99c19
-	golang.org/x/sys v0.0.0-20190531175056-4c3a928424d2
+	go.uber.org/multierr v1.1.0
+	golang.org/x/sys v0.0.0-20190531175056-4c3a928424d2 // indirect
 )

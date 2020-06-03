@@ -19,9 +19,14 @@ func CmdPlay(app App, rootCmd *cobra.Command) *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			cfg := app.GetConfig()
 
-			cfgPlay := play.CreateCfgPlay(app, cfg.Play, nil)
-			p := cfgPlay.BuildRoot()
-			p.Start()
+			mainFunc := func() error {
+				cfgPlay := play.CreateCfgPlay(app, cfg.Play, nil)
+				p := cfgPlay.BuildRoot()
+				return p.Start()
+			}
+
+			main := app.GetMainProc()
+			main.Run(mainFunc)
 
 		},
 	}
@@ -29,6 +34,7 @@ func CmdPlay(app App, rootCmd *cobra.Command) *cobra.Command {
 	flags := cmd.Flags()
 	flags.StringP("snippets-dir", "", config.FlagSnippetsDirDefault, config.FlagSnippetsDirDesc)
 	flags.StringP("build-dir", "", config.FlagBuildDirDefault, config.FlagBuildDirDesc)
+	flags.String("shutdown-timeout", config.FlagShutdownTimeoutDefault, config.FlagShutdownTimeoutDesc)
 
 	return cmd
 }
