@@ -9,7 +9,6 @@ import (
 	"github.com/kvz/logstreamer"
 	"github.com/opencontainers/runc/libcontainer/user"
 	"github.com/sirupsen/logrus"
-	// "github.com/t-tomalak/logrus-easy-formatter"
 )
 
 func RunCmd(commandSlice []string, args ...interface{}) error {

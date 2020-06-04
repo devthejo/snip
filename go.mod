@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.0.7
+	github.com/bramvdbogaerde/go-scp v0.0.0-20200518191442-5c8efdd1d925
 	github.com/golang-commonmark/html v0.0.0-20180910111043-7d7c804e1d46 // indirect
 	github.com/golang-commonmark/linkify v0.0.0-20180910111149-f05efb453a0e // indirect
 	github.com/golang-commonmark/markdown v0.0.0-20180910011815-a8f139058164 // indirect
@@ -29,5 +30,6 @@ require (
 	github.com/yuin/goldmark-meta v0.0.0-20191126180153-f0638e958b60
 	gitlab.com/golang-commonmark/markdown v0.0.0-20191127184510-91b5b3c99c19
 	go.uber.org/multierr v1.1.0
+	golang.org/x/crypto v0.0.0-20190530122614-20be4c3c3ed5
 	golang.org/x/sys v0.0.0-20190531175056-4c3a928424d2 // indirect
 )

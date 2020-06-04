@@ -131,7 +131,6 @@ func (cmd *Cmd) Main() error {
 		labelsStr = labelsStr + "[" + label + "]"
 	}
 
-	// cmd.Logger.Info(cmd.Indent + "▶️  playing " + labelsStr)
 	cmd.Logger.Info("⮞ playing " + labelsStr)
 	cmd.Logger.Debugf("vars: %v", tools.JsonEncode(cmd.Vars))
 

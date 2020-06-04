@@ -7,7 +7,7 @@ import (
 	"gitlab.com/youtopia.earth/ops/snip/play"
 )
 
-func CmdPlay(app App, rootCmd *cobra.Command) *cobra.Command {
+func CmdPlay(app App) *cobra.Command {
 
 	var cmd = &cobra.Command{
 		Use:   "play",
@@ -20,6 +20,7 @@ func CmdPlay(app App, rootCmd *cobra.Command) *cobra.Command {
 			cfg := app.GetConfig()
 
 			mainFunc := func() error {
+				app.SetMiddlewaresMap(play.BuildMiddlewaresMap(app))
 				cfgPlay := play.CreateCfgPlay(app, cfg.Play, nil)
 				p := cfgPlay.BuildRoot()
 				return p.Start()
@@ -32,8 +33,8 @@ func CmdPlay(app App, rootCmd *cobra.Command) *cobra.Command {
 	}
 
 	flags := cmd.Flags()
-	flags.StringP("snippets-dir", "", config.FlagSnippetsDirDefault, config.FlagSnippetsDirDesc)
-	flags.StringP("build-dir", "", config.FlagBuildDirDefault, config.FlagBuildDirDesc)
+	flags.String("snippets-dir", config.FlagSnippetsDirDefault, config.FlagSnippetsDirDesc)
+	flags.String("build-dir", config.FlagBuildDirDefault, config.FlagBuildDirDesc)
 	flags.String("shutdown-timeout", config.FlagShutdownTimeoutDefault, config.FlagShutdownTimeoutDesc)
 
 	return cmd

@@ -12,8 +12,9 @@ func NewCmd(app App) *cobra.Command {
 
 	cmd.AddCommand(CmdCompletion(app, cmd))
 
-	cmd.AddCommand(CmdPlay(app, cmd))
-	// cmd.AddCommand(CmdMarkdown(app, cmd))
+	cmd.AddCommand(CmdPlay(app))
+	cmd.AddCommand(CmdMiddleware(app))
+	// cmd.AddCommand(CmdMarkdown(app))
 
 	return cmd
 }
@@ -36,6 +37,13 @@ func CmdRoot(app App) *cobra.Command {
 	pFlags.StringP("log-type", "", config.FlagLogTypeDefault, config.FlagLogTypeDesc)
 	pFlags.BoolP("log-force-colors", "", config.FlagLogForceColorsDefault, config.FlagLogForceColorsDesc)
 	pFlags.StringP("cwd", "", "", config.FlagCWDDesc)
+
+	pFlags.String("ssh-host", config.FlagSSHHostDefault, config.FlagSSHHostDesc)
+	pFlags.Int("ssh-port", config.FlagSSHPortDefault, config.FlagSSHPortDesc)
+	pFlags.String("ssh-user", config.FlagSSHUserDefault, config.FlagSSHUserDesc)
+	pFlags.String("ssh-file", config.FlagSSHFileDefault, config.FlagSSHFileDesc)
+	pFlags.String("ssh-pass", config.FlagSSHPassDefault, config.FlagSSHPassDesc)
+	pFlags.Int("ssh-retry-max", config.FlagSSHRetryMaxDefault, config.FlagSSHRetryMaxDesc)
 
 	v := app.GetViper()
 

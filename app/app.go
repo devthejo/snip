@@ -9,6 +9,7 @@ import (
 
 	"gitlab.com/youtopia.earth/ops/snip/cmd"
 	"gitlab.com/youtopia.earth/ops/snip/config"
+	"gitlab.com/youtopia.earth/ops/snip/play"
 	"gitlab.com/youtopia.earth/ops/snip/proc"
 )
 
@@ -22,6 +23,8 @@ type App struct {
 
 	Now      time.Time
 	MainProc *proc.Main
+
+	MiddlewaresMap map[string]*play.Middleware
 }
 
 func New() *App {
@@ -94,4 +97,11 @@ func (app *App) GetMainProc() *proc.Main {
 		app.MainProc = proc.CreateMain(app)
 	}
 	return app.MainProc
+}
+
+func (app *App) SetMiddlewaresMap(m map[string]*play.Middleware) {
+	app.MiddlewaresMap = m
+}
+func (app *App) GetMiddlewaresMap() map[string]*play.Middleware {
+	return app.MiddlewaresMap
 }

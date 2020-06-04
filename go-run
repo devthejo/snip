@@ -4,4 +4,4 @@ if [ -e snip.json ]; then
 fi
 export SNIP_CWD=`pwd`
 cd `dirname $0`
-exec go run "main.go" $@
+exec cat /dev/stdin | go run "main.go" $@
