@@ -87,7 +87,7 @@ func (thr *Thread) Exec(runMain func() error) {
 		go func(c *exec.Cmd) {
 			select {
 			case <-thr.Done():
-				if c.Process != nil {
+				if c.Process != nil && thr.ExecRunning {
 					thr.Logger.Debug(`sending stopsignal`)
 					c.Process.Signal(syscall.SIGTERM)
 				}
@@ -103,13 +103,7 @@ func (thr *Thread) Exec(runMain func() error) {
 
 	err := runMain()
 
-	thr.Cancel()
-	thr.WaitGroup.Done()
-
 	if err != nil {
-
-		thr.ExecRunning = false
-		thr.ExecExited = true
 
 		if exitError, ok := err.(*exec.ExitError); ok {
 			thr.ExecExitCode = exitError.ExitCode()
@@ -129,13 +123,14 @@ func (thr *Thread) Exec(runMain func() error) {
 			}).Warnf("thread exec timeout fail")
 		}
 
-		thr.Cancel()
-
 		thr.Error = err
 	}
 
 	thr.ExecRunning = false
 	thr.ExecExited = true
+
+	thr.Cancel()
+	thr.WaitGroup.Done()
 }
 
 func (thr *Thread) ExpandCmdEnvMapper(key string) string {

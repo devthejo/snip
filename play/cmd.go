@@ -132,7 +132,7 @@ func (cmd *Cmd) Main() error {
 	}
 
 	// cmd.Logger.Info(cmd.Indent + "▶️  playing " + labelsStr)
-	cmd.Logger.Info("⮞  playing " + labelsStr)
+	cmd.Logger.Info("⮞ playing " + labelsStr)
 	cmd.Logger.Debugf("vars: %v", tools.JsonEncode(cmd.Vars))
 
 	commandSlice := append([]string{cmd.Command}, cmd.Args...)
