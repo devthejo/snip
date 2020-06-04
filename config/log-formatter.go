@@ -6,6 +6,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+type LogContextKey string
+
 type LogFormatter struct {
 	logrus.TextFormatter
 	NativeTextFormatter *logrus.TextFormatter
@@ -43,6 +45,17 @@ func (f *LogFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 		levelText = "INFO"
 		icon = "🛈"
 	}
-	msg = strings.Replace(msg, levelText, icon+" ", 1)
+
+	var indentationInt int
+	if entry.Context != nil {
+		indentationKey := LogContextKey("indentation")
+		if v := entry.Context.Value(indentationKey); v != nil {
+			indentationInt = v.(int)
+		}
+	}
+
+	indentationString := strings.Repeat("  ", indentationInt)
+	msg = strings.Replace(msg, levelText, icon+" "+indentationString, 1)
+
 	return []byte(msg), err
 }

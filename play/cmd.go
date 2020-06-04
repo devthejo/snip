@@ -1,12 +1,14 @@
 package play
 
 import (
+	"context"
 	"os/exec"
 	"strings"
 
 	shellquote "github.com/kballard/go-shellquote"
 	"github.com/sirupsen/logrus"
 
+	"gitlab.com/youtopia.earth/ops/snip/config"
 	"gitlab.com/youtopia.earth/ops/snip/proc"
 	"gitlab.com/youtopia.earth/ops/snip/tools"
 )
@@ -23,11 +25,9 @@ type Cmd struct {
 	Sudo    bool
 	SSH     bool
 
-	IsMD         bool
-	Logger       *logrus.Entry
-	LoggerFields logrus.Fields
-	Depth        int
-	Indent       string
+	IsMD   bool
+	Logger *logrus.Entry
+	Depth  int
 }
 
 func CreateCmd(ccmd *CfgCmd, ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
@@ -40,7 +40,6 @@ func CreateCmd(ccmd *CfgCmd, ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 		Command:       ccmd.Command,
 		Args:          ccmd.Args,
 		IsMD:          ccmd.IsMD,
-		Depth:         ccmd.Depth,
 		Sudo:          parentPlay.Sudo,
 		SSH:           parentPlay.SSH,
 		Thread:        proc.CreateThread(app),
@@ -50,7 +49,7 @@ func CreateCmd(ccmd *CfgCmd, ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 	if parentLoopRow.IsLoopRowItem {
 		depth = depth + 1
 	}
-	cmd.Indent = strings.Repeat("  ", depth+1)
+	cmd.Depth = depth
 
 	vars := make(map[string]string)
 	for k, v := range ctx.VarsDefault.Items() {
@@ -62,10 +61,11 @@ func CreateCmd(ccmd *CfgCmd, ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 	cmd.Vars = vars
 
 	logKey := cmd.GetTreeKey()
-	cmd.LoggerFields = logrus.Fields{
+	logger := logrus.WithFields(logrus.Fields{
 		"tree": logKey,
-	}
-	logger := logrus.WithFields(cmd.LoggerFields)
+	})
+	loggerCtx := context.WithValue(context.Background(), config.LogContextKey("indentation"), cmd.Depth+1)
+	logger = logger.WithContext(loggerCtx)
 	cmd.Logger = logger
 	cmd.Thread.Logger = logger
 
@@ -131,8 +131,9 @@ func (cmd *Cmd) Main() error {
 		labelsStr = labelsStr + "[" + label + "]"
 	}
 
-	cmd.Logger.Info(cmd.Indent + "▶️  playing " + labelsStr)
-	cmd.Logger.Debugf(cmd.Indent+"vars: %v", tools.JsonEncode(cmd.Vars))
+	// cmd.Logger.Info(cmd.Indent + "▶️  playing " + labelsStr)
+	cmd.Logger.Info("⮞  playing " + labelsStr)
+	cmd.Logger.Debugf("vars: %v", tools.JsonEncode(cmd.Vars))
 
 	commandSlice := append([]string{cmd.Command}, cmd.Args...)
 	// if cmd.Sudo {
@@ -144,9 +145,9 @@ func (cmd *Cmd) Main() error {
 		return nil
 	}
 
-	cmd.Logger.Debugf(cmd.Indent+"command: %v", shellquote.Join(commandSlice...))
+	cmd.Logger.Debugf("command: %v", shellquote.Join(commandSlice...))
 
-	cmd.Thread.RunCmd(commandSlice, cmd.LoggerFields, commandHook)
+	cmd.Thread.RunCmd(commandSlice, cmd.Logger, commandHook)
 
 	return cmd.Thread.Error
 }
