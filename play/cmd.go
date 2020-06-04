@@ -1,10 +1,8 @@
 package play
 
 import (
-	"context"
 	"os/exec"
 	"strings"
-	"sync"
 
 	shellquote "github.com/kballard/go-shellquote"
 	"github.com/sirupsen/logrus"
@@ -14,7 +12,7 @@ import (
 )
 
 type Cmd struct {
-	proc.Thread
+	Thread *proc.Thread
 
 	ParentLoopRow *LoopRow
 	CfgCmd        *CfgCmd
@@ -26,6 +24,7 @@ type Cmd struct {
 	SSH     bool
 
 	IsMD         bool
+	Logger       *logrus.Entry
 	LoggerFields logrus.Fields
 	Depth        int
 	Indent       string
@@ -33,6 +32,7 @@ type Cmd struct {
 
 func CreateCmd(ccmd *CfgCmd, ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 	parentPlay := parentLoopRow.ParentPlay
+	app := ccmd.CfgPlay.App
 
 	cmd := &Cmd{
 		ParentLoopRow: parentLoopRow,
@@ -43,15 +43,8 @@ func CreateCmd(ccmd *CfgCmd, ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 		Depth:         ccmd.Depth,
 		Sudo:          parentPlay.Sudo,
 		SSH:           parentPlay.SSH,
+		Thread:        proc.CreateThread(app),
 	}
-
-	cmd.WaitGroup = &sync.WaitGroup{}
-	procCtx, procCancel := context.WithCancel(context.Background())
-	cmd.Context = &procCtx
-	cmd.ContextCancel = &procCancel
-	app := ccmd.CfgPlay.App
-	cmd.App = app
-	cmd.MainProc = app.GetMainProc()
 
 	depth := ccmd.Depth
 	if parentLoopRow.IsLoopRowItem {
@@ -72,7 +65,9 @@ func CreateCmd(ccmd *CfgCmd, ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 	cmd.LoggerFields = logrus.Fields{
 		"tree": logKey,
 	}
-	cmd.Logger = logrus.WithFields(cmd.LoggerFields)
+	logger := logrus.WithFields(cmd.LoggerFields)
+	cmd.Logger = logger
+	cmd.Thread.Logger = logger
 
 	return cmd
 }
@@ -118,11 +113,10 @@ func (cmd *Cmd) GetTreeKeyParts() []string {
 }
 
 func (cmd *Cmd) Run() error {
-	cmd.ThreadRunMain = cmd.Main
-	return cmd.ThreadRun()
+	return cmd.Thread.Run(cmd.Main)
 }
 
-func (cmd *Cmd) Main(ctx context.Context, hookFunc func(c *exec.Cmd) error) error {
+func (cmd *Cmd) Main() error {
 
 	var labels []string
 	if cmd.SSH {
@@ -152,7 +146,7 @@ func (cmd *Cmd) Main(ctx context.Context, hookFunc func(c *exec.Cmd) error) erro
 
 	cmd.Logger.Debugf(cmd.Indent+"command: %v", shellquote.Join(commandSlice...))
 
-	cmd.ThreadRunCmd(commandSlice, cmd.LoggerFields, commandHook, ctx, hookFunc)
+	cmd.Thread.RunCmd(commandSlice, cmd.LoggerFields, commandHook)
 
-	return cmd.Error
+	return cmd.Thread.Error
 }

@@ -23,21 +23,41 @@ type Thread struct {
 	ExecUser     *user.ExecUser
 	ExecTimeout  time.Duration
 
-	Context       *context.Context
-	ContextCancel *context.CancelFunc
+	Context       context.Context
+	ContextCancel context.CancelFunc
 	WaitGroup     *sync.WaitGroup
 	MainProc      *Main
+
+	CommandStopper func(*exec.Cmd) error
 
 	Logger *logrus.Entry
 
 	Vars map[string]string
 
 	Error error
-
-	ThreadRunMain func(ctx context.Context, hookFunc func(c *exec.Cmd) error) error
 }
 
-func (thr *Thread) ThreadRun() error {
+func CreateThread(app App) *Thread {
+	thr := &Thread{}
+	thr.WaitGroup = &sync.WaitGroup{}
+
+	var ctx context.Context
+	var cancel context.CancelFunc
+	if thr.ExecTimeout > 0 {
+		ctx, cancel = context.WithTimeout(context.Background(), thr.ExecTimeout)
+	} else {
+		ctx, cancel = context.WithCancel(context.Background())
+	}
+	thr.Context = ctx
+	thr.ContextCancel = cancel
+
+	thr.App = app
+	thr.MainProc = app.GetMainProc()
+	return thr
+}
+
+func (thr *Thread) Run(runMain func() error) error {
+
 	mainProc := thr.App.GetMainProc()
 
 	go func() {
@@ -45,36 +65,25 @@ func (thr *Thread) ThreadRun() error {
 		thr.Cancel()
 	}()
 
-	go thr.ThreadExec()
+	go thr.Exec(runMain)
 	thr.WaitGroup.Wait()
 
 	return thr.Error
 }
 func (c *Thread) Cancel() {
-	(*c.ContextCancel)()
+	c.ContextCancel()
 }
 func (c *Thread) Done() <-chan struct{} {
-	return (*c.Context).Done()
+	return c.Context.Done()
 }
 
-func (thr *Thread) ThreadExec() {
-
-	execTimeout := thr.ExecTimeout
-	var ctx context.Context
-	if execTimeout > 0 {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(context.Background(), execTimeout)
-		defer cancel()
-	} else {
-		ctx = context.Background()
-	}
+func (thr *Thread) Exec(runMain func() error) {
 
 	thr.ExecRunning = true
 
 	thr.WaitGroup.Add(1)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	hookFunc := func(c *exec.Cmd) error {
+	thr.CommandStopper = func(c *exec.Cmd) error {
 		go func(c *exec.Cmd) {
 			select {
 			case <-thr.Done():
@@ -82,7 +91,6 @@ func (thr *Thread) ThreadExec() {
 					thr.Logger.Debug(`sending stopsignal`)
 					c.Process.Signal(syscall.SIGTERM)
 				}
-			case <-ctx.Done():
 				return
 			}
 		}(c)
@@ -93,9 +101,9 @@ func (thr *Thread) ThreadExec() {
 	mainWg.Add(1)
 	defer mainWg.Done()
 
-	err := thr.ThreadRunMain(ctx, hookFunc)
+	err := runMain()
 
-	cancel()
+	thr.Cancel()
 	thr.WaitGroup.Done()
 
 	if err != nil {
@@ -115,7 +123,7 @@ func (thr *Thread) ThreadExec() {
 			}).Errorf("thread exec error: %v", err)
 		}
 
-		if ctx.Err() == context.DeadlineExceeded {
+		if thr.Context.Err() == context.DeadlineExceeded {
 			thr.Logger.WithFields(logrus.Fields{
 				"timeout": thr.ExecTimeout,
 			}).Warnf("thread exec timeout fail")
@@ -144,10 +152,12 @@ func (thr *Thread) ExpandCmdEnv(commandSlice []string) []string {
 	return expandedCmd
 }
 
-func (thr *Thread) ThreadRunCmd(commandSlice []string, args ...interface{}) error {
+func (thr *Thread) RunCmd(commandSlice []string, args ...interface{}) error {
 	commandSlice = thr.ExpandCmdEnv(commandSlice)
 	if thr.ExecUser != nil {
 		args = append(args, thr.ExecUser)
 	}
+	args = append(args, thr.Context)
+	args = append(args, thr.CommandStopper)
 	return tools.RunCmd(commandSlice, args...)
 }
