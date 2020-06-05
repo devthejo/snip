@@ -1,0 +1,6 @@
+#!/bin/sh
+
+for filename in middlewares/*.go; do
+  echo "go build -buildmode=plugin -o middlewares/$(basename "$filename" .go).so $filename"
+  go build -buildmode=plugin -o middlewares/$(basename "$filename" .go).so $filename
+done

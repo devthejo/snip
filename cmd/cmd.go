@@ -13,7 +13,6 @@ func NewCmd(app App) *cobra.Command {
 	cmd.AddCommand(CmdCompletion(app, cmd))
 
 	cmd.AddCommand(CmdPlay(app))
-	cmd.AddCommand(CmdMiddleware(app))
 	// cmd.AddCommand(CmdMarkdown(app))
 
 	return cmd

@@ -14,6 +14,8 @@ import (
 )
 
 type Cmd struct {
+	App App
+
 	Thread *proc.Thread
 
 	ParentLoopRow *LoopRow
@@ -22,8 +24,8 @@ type Cmd struct {
 	Command string
 	Args    []string
 	Vars    map[string]string
-	Sudo    bool
-	SSH     bool
+
+	Middlewares []string
 
 	IsMD   bool
 	Logger *logrus.Entry
@@ -35,13 +37,13 @@ func CreateCmd(ccmd *CfgCmd, ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 	app := ccmd.CfgPlay.App
 
 	cmd := &Cmd{
+		App:           app,
 		ParentLoopRow: parentLoopRow,
 		CfgCmd:        ccmd,
 		Command:       ccmd.Command,
 		Args:          ccmd.Args,
 		IsMD:          ccmd.IsMD,
-		Sudo:          parentPlay.Sudo,
-		SSH:           parentPlay.SSH,
+		Middlewares:   parentPlay.Middlewares,
 		Thread:        proc.CreateThread(app),
 	}
 
@@ -116,15 +118,22 @@ func (cmd *Cmd) Run() error {
 	return cmd.Thread.Run(cmd.Main)
 }
 
+func (cmd *Cmd) ApplyMiddlewares() {
+	app := cmd.App
+	for _, k := range cmd.Middlewares {
+		apply := app.GetMiddlewareApply(k)
+		wrapped := apply(cmd.Command)
+		logrus.Warn(wrapped)
+		// cmd.Command = command.Wrap()
+	}
+
+}
+
 func (cmd *Cmd) Main() error {
 
+	cmd.ApplyMiddlewares()
+
 	var labels []string
-	if cmd.SSH {
-		labels = append(labels, "ssh")
-	}
-	if cmd.Sudo {
-		labels = append(labels, "sudo")
-	}
 
 	labelsStr := ""
 	for _, label := range labels {
@@ -135,9 +144,6 @@ func (cmd *Cmd) Main() error {
 	cmd.Logger.Debugf("vars: %v", tools.JsonEncode(cmd.Vars))
 
 	commandSlice := append([]string{cmd.Command}, cmd.Args...)
-	// if cmd.Sudo {
-	// 	commandSlice = append([]string{"sudo"}, commandSlice...)
-	// }
 
 	commandHook := func(c *exec.Cmd) error {
 		c.Env = tools.EnvToPairs(cmd.Vars)

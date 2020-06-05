@@ -15,8 +15,6 @@ type Config struct {
 	VarsLoops map[string]map[string]interface{} `mapstructure:"VARS_LOOPS" json:"vars_loops"`
 	Play      map[string]interface{}            `mapstructure:"PLAY" json:"play"`
 
-	Middlewares map[string]string `mapstructure:"MIDDLEWARES" json:"middlewares"`
-
 	SnippetsDir string `mapstructure:"SNIPPETS_DIR" json:"snippets_dir"`
 	BuildDir    string `mapstructure:"BUILD_DIR" json:"build_dir"`
 

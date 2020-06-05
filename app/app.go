@@ -1,6 +1,7 @@
 package app
 
 import (
+	"plugin"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -9,7 +10,8 @@ import (
 
 	"gitlab.com/youtopia.earth/ops/snip/cmd"
 	"gitlab.com/youtopia.earth/ops/snip/config"
-	"gitlab.com/youtopia.earth/ops/snip/play"
+	"gitlab.com/youtopia.earth/ops/snip/errors"
+	"gitlab.com/youtopia.earth/ops/snip/middleware"
 	"gitlab.com/youtopia.earth/ops/snip/proc"
 )
 
@@ -24,7 +26,7 @@ type App struct {
 	Now      time.Time
 	MainProc *proc.Main
 
-	MiddlewaresMap map[string]*play.Middleware
+	Middlewares map[string]*plugin.Plugin
 }
 
 func New() *App {
@@ -48,6 +50,8 @@ func NewApp() *App {
 	app.ConfigLoader.SetFile(app.ConfigFile)
 	app.Config = app.ConfigLoader.Config
 	app.Viper = app.ConfigLoader.Viper
+
+	app.Middlewares = make(map[string]*plugin.Plugin)
 
 	return app
 }
@@ -99,9 +103,25 @@ func (app *App) GetMainProc() *proc.Main {
 	return app.MainProc
 }
 
-func (app *App) SetMiddlewaresMap(m map[string]*play.Middleware) {
-	app.MiddlewaresMap = m
+func (app *App) GetMiddlewares() map[string]*plugin.Plugin {
+	return app.Middlewares
 }
-func (app *App) GetMiddlewaresMap() map[string]*play.Middleware {
-	return app.MiddlewaresMap
+func (app *App) GetMiddlewarePlugin(k string) *plugin.Plugin {
+	if _, ok := app.Middlewares[k]; !ok {
+		mod := "./middlewares/" + k + ".so"
+		plug, err := plugin.Open(mod)
+		errors.Check(err)
+		app.Middlewares[k] = plug
+	}
+	return app.Middlewares[k]
+}
+func (app *App) GetMiddlewareApply(k string) middleware.Apply {
+	plug := app.GetMiddlewarePlugin(k)
+	symCommand, err := plug.Lookup("Apply")
+	errors.Check(err)
+	command, ok := symCommand.(func(string) string)
+	if !ok {
+		logrus.Fatalf("unexpected type from module symbol on middleware %v", k)
+	}
+	return command
 }

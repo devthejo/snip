@@ -20,7 +20,6 @@ func CmdPlay(app App) *cobra.Command {
 			cfg := app.GetConfig()
 
 			mainFunc := func() error {
-				app.SetMiddlewaresMap(play.BuildMiddlewaresMap(app))
 				cfgPlay := play.CreateCfgPlay(app, cfg.Play, nil)
 				p := cfgPlay.BuildRoot()
 				return p.Start()

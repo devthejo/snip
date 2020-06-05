@@ -37,8 +37,7 @@ type CfgPlay struct {
 	Dependencies []string
 	PostInstall  []string
 
-	Sudo *bool
-	SSH  *bool
+	Middlewares []string
 
 	Depth       int
 	HasChildren bool
@@ -86,8 +85,7 @@ func (cp *CfgPlay) ParseMapRun(m map[string]interface{}, override bool) {
 	cp.ParseCheckCommand(m, override)
 	cp.ParseDependencies(m, override)
 	cp.ParsePostInstall(m, override)
-	cp.ParseSudo(m, override)
-	cp.ParseSSH(m, override)
+	cp.ParseMiddlewares(m, override)
 	cp.ParseCfgPlay(m, override)
 }
 
@@ -326,49 +324,18 @@ func (cp *CfgPlay) ParsePostInstall(m map[string]interface{}, override bool) {
 	}
 }
 
-func (cp *CfgPlay) ParseSudo(m map[string]interface{}, override bool) {
-	if !override && cp.Sudo != nil {
+func (cp *CfgPlay) ParseMiddlewares(m map[string]interface{}, override bool) {
+	if !override && cp.PostInstall == nil {
 		return
 	}
-	switch s := m["sudo"].(type) {
-	case bool:
-		cp.Sudo = &s
-	case string:
-		var b bool
-		if s == "true" || s == "1" {
-			b = true
-		} else if s == "false" || s == "0" || s == "" {
-			b = false
-		} else {
-			unexpectedTypeCmd(m, "sudo")
-		}
-		cp.Sudo = &b
+	switch m["middlewares"].(type) {
+	case []interface{}:
+		middlewares, err := decode.ToStrings(m["middlewares"])
+		errors.Check(err)
+		cp.Middlewares = middlewares
 	case nil:
 	default:
-		unexpectedTypeCmd(m, "sudo")
-	}
-}
-
-func (cp *CfgPlay) ParseSSH(m map[string]interface{}, override bool) {
-	if !override && cp.SSH != nil {
-		return
-	}
-	switch s := m["ssh"].(type) {
-	case bool:
-		cp.SSH = &s
-	case string:
-		var b bool
-		if s == "true" || s == "1" {
-			b = true
-		} else if s == "false" || s == "0" || s == "" {
-			b = false
-		} else {
-			unexpectedTypeCmd(m, "ssh")
-		}
-		cp.SSH = &b
-	case nil:
-	default:
-		unexpectedTypeCmd(m, "ssh")
+		unexpectedTypeCmd(m, "middlewares")
 	}
 }
 

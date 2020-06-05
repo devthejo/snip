@@ -36,8 +36,7 @@ type Play struct {
 	Dependencies []string
 	PostInstall  []string
 
-	Sudo bool
-	SSH  bool
+	Middlewares []string
 
 	Depth       int
 	HasChildren bool
@@ -49,16 +48,6 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 	var loopSequential bool
 	if cp.LoopSequential != nil {
 		loopSequential = *cp.LoopSequential
-	}
-
-	var sudo bool
-	if cp.Sudo != nil {
-		sudo = *cp.Sudo
-	}
-
-	var ssh bool
-	if cp.SSH != nil {
-		ssh = *cp.SSH
 	}
 
 	p := &Play{
@@ -74,8 +63,7 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 		// Dependencies: ,
 		// PostInstall: ,
 
-		Sudo: sudo,
-		SSH:  ssh,
+		Middlewares: cp.Middlewares,
 
 		Depth:       cp.Depth,
 		HasChildren: cp.HasChildren,
