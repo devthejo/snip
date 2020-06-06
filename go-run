@@ -1,4 +1,7 @@
 #!/bin/sh
+
+set -e
+
 if [ -e snip.json ]; then
   rm snip.json
 fi

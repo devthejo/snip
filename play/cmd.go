@@ -150,10 +150,21 @@ func (cmd *Cmd) Main() error {
 		return cmd.RunFunc()
 	})
 
+	originalVars := make(map[string]string)
+	for k, v := range cmd.Vars {
+		originalVars[k] = v
+	}
+	originalArgs := make([]string, len(cmd.Args))
+	for i, v := range cmd.Args {
+		originalArgs[i] = v
+	}
 	mutableCmd := &middleware.MutableCmd{
-		Command: cmd.Command,
-		Args:    cmd.Args,
-		Vars:    cmd.Vars,
+		Command:         cmd.Command,
+		Args:            cmd.Args,
+		Vars:            cmd.Vars,
+		OriginalCommand: cmd.Command,
+		OriginalArgs:    originalArgs,
+		OriginalVars:    originalVars,
 	}
 
 	wrapped := func() error {

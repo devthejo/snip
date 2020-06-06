@@ -21,11 +21,4 @@ type Config struct {
 	MarkdownOutput string `mapstructure:"MARKDOWN_OUTPUT" json:"markdown_output"`
 
 	ShutdownTimeout time.Duration `mapstructure:"SHUTDOWN_TIMEOUT" json:"shutdownTimeout,omitempty"`
-
-	SSHHost     string `mapstructure:"SSH_HOST" json:"ssh_host"`
-	SSHPort     int    `mapstructure:"SSH_PORT" json:"ssh_port"`
-	SSHUser     string `mapstructure:"SSH_USER" json:"ssh_user"`
-	SSHFile     string `mapstructure:"SSH_FILE" json:"ssh_file"`
-	SSHPass     string `mapstructure:"SSH_PASS" json:"ssh_pass"`
-	SSHRetryMax int    `mapstructure:"SSH_RETRY_MAX" json:"ssh_retry_max"`
 }

@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e
+
 BINDIR=`dirname $0`
 for filename in $BINDIR/middlewares/*.go; do
   echo "go build -buildmode=plugin -o $BINDIR/middlewares/$(basename "$filename" .go).so $filename"

@@ -12,13 +12,6 @@ const (
 	FlagMarkdownOutputDesc = "markdown output file"
 
 	FlagShutdownTimeoutDesc = "shutdown timeout"
-
-	FlagSSHHostDesc     = "SSH host address"
-	FlagSSHPortDesc     = "SSH port number"
-	FlagSSHUserDesc     = "SSH user name"
-	FlagSSHFileDesc     = "SSH key file path"
-	FlagSSHPassDesc     = "SSH password (to use with user or to unlock key file if provided)"
-	FlagSSHRetryMaxDesc = "SSH maximum retry attempts"
 )
 
 var (
@@ -31,11 +24,4 @@ var (
 	FlagMarkdownOutputDefault = "snip.md"
 
 	FlagShutdownTimeoutDefault = "5"
-
-	FlagSSHHostDefault     = "localhost"
-	FlagSSHPortDefault     = 22
-	FlagSSHUserDefault     = ""
-	FlagSSHFileDefault     = ""
-	FlagSSHPassDefault     = ""
-	FlagSSHRetryMaxDefault = 3
 )

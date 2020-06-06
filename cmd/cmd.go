@@ -37,13 +37,6 @@ func CmdRoot(app App) *cobra.Command {
 	pFlags.BoolP("log-force-colors", "", config.FlagLogForceColorsDefault, config.FlagLogForceColorsDesc)
 	pFlags.StringP("cwd", "", "", config.FlagCWDDesc)
 
-	pFlags.String("ssh-host", config.FlagSSHHostDefault, config.FlagSSHHostDesc)
-	pFlags.Int("ssh-port", config.FlagSSHPortDefault, config.FlagSSHPortDesc)
-	pFlags.String("ssh-user", config.FlagSSHUserDefault, config.FlagSSHUserDesc)
-	pFlags.String("ssh-file", config.FlagSSHFileDefault, config.FlagSSHFileDesc)
-	pFlags.String("ssh-pass", config.FlagSSHPassDefault, config.FlagSSHPassDesc)
-	pFlags.Int("ssh-retry-max", config.FlagSSHRetryMaxDefault, config.FlagSSHRetryMaxDesc)
-
 	v := app.GetViper()
 
 	v.BindPFlag("CONFIG", pFlags.Lookup("config"))
