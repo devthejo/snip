@@ -12,5 +12,5 @@ type App interface {
 	GetConfig() *config.Config
 	GetNow() time.Time
 	GetMainProc() *proc.Main
-	GetMiddlewareApply(k string) middleware.Apply
+	GetMiddleware(k string) middleware.Func
 }

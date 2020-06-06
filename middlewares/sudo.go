@@ -1,7 +1,11 @@
 package main
 
-import "fmt"
+import (
+	"gitlab.com/youtopia.earth/ops/snip/middleware"
+)
 
-func Apply(cmd string) string {
-	return fmt.Sprintf("sudo %v", cmd)
+func Middleware(mutableCmd *middleware.MutableCmd, next func() error) error {
+	mutableCmd.Args = append([]string{mutableCmd.Command}, mutableCmd.Args...)
+	mutableCmd.Command = "sudo"
+	return next()
 }

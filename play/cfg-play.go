@@ -86,10 +86,10 @@ func (cp *CfgPlay) ParseMapRun(m map[string]interface{}, override bool) {
 	cp.ParseDependencies(m, override)
 	cp.ParsePostInstall(m, override)
 	cp.ParseMiddlewares(m, override)
-	cp.ParseCfgPlay(m, override)
+	cp.ParsePlay(m, override)
 }
 
-func (cp *CfgPlay) ParseCfgPlay(m map[string]interface{}, override bool) {
+func (cp *CfgPlay) ParsePlay(m map[string]interface{}, override bool) {
 	if !override && cp.CfgPlay != nil {
 		return
 	}

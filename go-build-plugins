@@ -1,6 +1,11 @@
 #!/bin/sh
 
-for filename in middlewares/*.go; do
-  echo "go build -buildmode=plugin -o middlewares/$(basename "$filename" .go).so $filename"
-  go build -buildmode=plugin -o middlewares/$(basename "$filename" .go).so $filename
+BINDIR=`dirname $0`
+for filename in $BINDIR/middlewares/*.go; do
+  echo "go build -buildmode=plugin -o $BINDIR/middlewares/$(basename "$filename" .go).so $filename"
+  go build -buildmode=plugin -o $BINDIR/middlewares/$(basename "$filename" .go).so $filename
 done
+
+if [ "$1" != "" ]; then
+  cp $BINDIR/middlewares/*.so "$1/middlewares/"
+fi

@@ -9,6 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"gitlab.com/youtopia.earth/ops/snip/config"
+	"gitlab.com/youtopia.earth/ops/snip/middleware"
 	"gitlab.com/youtopia.earth/ops/snip/proc"
 	"gitlab.com/youtopia.earth/ops/snip/tools"
 )
@@ -118,41 +119,54 @@ func (cmd *Cmd) Run() error {
 	return cmd.Thread.Run(cmd.Main)
 }
 
-func (cmd *Cmd) ApplyMiddlewares() {
-	app := cmd.App
-	for _, k := range cmd.Middlewares {
-		apply := app.GetMiddlewareApply(k)
-		wrapped := apply(cmd.Command)
-		logrus.Warn(wrapped)
-		// cmd.Command = command.Wrap()
-	}
-
-}
-
-func (cmd *Cmd) Main() error {
-
-	cmd.ApplyMiddlewares()
-
-	var labels []string
-
-	labelsStr := ""
-	for _, label := range labels {
-		labelsStr = labelsStr + "[" + label + "]"
-	}
-
-	cmd.Logger.Info("⮞ playing " + labelsStr)
-	cmd.Logger.Debugf("vars: %v", tools.JsonEncode(cmd.Vars))
-
+func (cmd *Cmd) RunFunc() error {
 	commandSlice := append([]string{cmd.Command}, cmd.Args...)
-
 	commandHook := func(c *exec.Cmd) error {
 		c.Env = tools.EnvToPairs(cmd.Vars)
 		return nil
 	}
-
 	cmd.Logger.Debugf("command: %v", shellquote.Join(commandSlice...))
-
 	cmd.Thread.RunCmd(commandSlice, cmd.Logger, commandHook)
-
 	return cmd.Thread.Error
+}
+
+func (cmd *Cmd) Main() error {
+
+	app := cmd.App
+
+	cmd.Logger.Info("⮞ playing")
+	cmd.Logger.Debugf("vars: %v", tools.JsonEncode(cmd.Vars))
+
+	var runStack []middleware.Func
+
+	for _, k := range cmd.Middlewares {
+		middleware := app.GetMiddleware(k)
+		runStack = append(runStack, middleware)
+	}
+	runStack = append(runStack, func(mutableCmd *middleware.MutableCmd, next func() error) error {
+		cmd.Command = mutableCmd.Command
+		cmd.Args = mutableCmd.Args
+		cmd.Vars = mutableCmd.Vars
+		return cmd.RunFunc()
+	})
+
+	mutableCmd := &middleware.MutableCmd{
+		Command: cmd.Command,
+		Args:    cmd.Args,
+		Vars:    cmd.Vars,
+	}
+
+	wrapped := func() error {
+		return nil
+	}
+	for i := len(runStack) - 1; i >= 0; i-- {
+		current := runStack[i]
+		next := wrapped
+		wrapped = func() error {
+			return current(mutableCmd, next)
+		}
+	}
+
+	return wrapped()
+
 }

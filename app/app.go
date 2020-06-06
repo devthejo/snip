@@ -115,13 +115,14 @@ func (app *App) GetMiddlewarePlugin(k string) *plugin.Plugin {
 	}
 	return app.Middlewares[k]
 }
-func (app *App) GetMiddlewareApply(k string) middleware.Apply {
+func (app *App) GetMiddleware(k string) middleware.Func {
 	plug := app.GetMiddlewarePlugin(k)
-	symCommand, err := plug.Lookup("Apply")
+	symRun, err := plug.Lookup("Middleware")
 	errors.Check(err)
-	command, ok := symCommand.(func(string) string)
+	// run, ok := symRun.(middleware.Func)
+	run, ok := symRun.(func(*middleware.MutableCmd, func() error) error)
 	if !ok {
 		logrus.Fatalf("unexpected type from module symbol on middleware %v", k)
 	}
-	return command
+	return run
 }

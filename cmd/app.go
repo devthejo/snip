@@ -19,5 +19,5 @@ type App interface {
 	OnPreRun(*cobra.Command)
 	GetNow() time.Time
 	GetMainProc() *proc.Main
-	GetMiddlewareApply(string) middleware.Apply
+	GetMiddleware(string) middleware.Func
 }
