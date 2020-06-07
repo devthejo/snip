@@ -8,11 +8,11 @@ import (
 	"sync"
 
 	scp "github.com/bramvdbogaerde/go-scp"
-	"github.com/bramvdbogaerde/go-scp/auth"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
 
 	"gitlab.com/youtopia.earth/ops/snip/errors"
+	"gitlab.com/youtopia.earth/ops/snip/sshclient"
 )
 
 var uploadedByHostRegistry map[string]map[string]bool
@@ -26,7 +26,7 @@ func GetUploadedByHostRegistry() map[string]map[string]bool {
 	return uploadedByHostRegistry
 }
 
-func Upload(cfg *Config, localPath string) error {
+func Upload(cfg *sshclient.Config, localPath string) error {
 
 	uploadMutex.Lock()
 	r := GetUploadedByHostRegistry()
@@ -64,23 +64,11 @@ func Upload(cfg *Config, localPath string) error {
 
 	return err
 }
-func uploadTry(cfg *Config, localPath string) error {
+func uploadTry(cfg *sshclient.Config, localPath string) error {
 
-	var clientConfig ssh.ClientConfig
-	if cfg.File != "" {
-		if cfg.Pass != "" {
-			var err error
-			clientConfig, err = auth.PrivateKeyWithPassphrase(cfg.User, []byte(cfg.Pass), cfg.File, ssh.InsecureIgnoreHostKey())
-			errors.Check(err)
-		} else {
-			var err error
-			clientConfig, err = auth.PrivateKey(cfg.User, cfg.File, ssh.InsecureIgnoreHostKey())
-			errors.Check(err)
-		}
-	} else {
-		var err error
-		clientConfig, err = auth.PasswordKey(cfg.User, cfg.Pass, ssh.InsecureIgnoreHostKey())
-		errors.Check(err)
+	clientConfig, err := cfg.ClientConfig()
+	if err != nil {
+		return err
 	}
 	client := scp.NewClient(cfg.Host+":"+strconv.Itoa(cfg.Port), &clientConfig)
 
