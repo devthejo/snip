@@ -168,8 +168,10 @@ func (cmd *Cmd) Main() error {
 		OriginalVars:    originalVars,
 	}
 	middlewareConfig := &middleware.Config{
-		MutableCmd: mutableCmd,
-		Logger:     cmd.Logger,
+		MutableCmd:    mutableCmd,
+		Context:       cmd.Thread.Context,
+		ContextCancel: cmd.Thread.ContextCancel,
+		Logger:        cmd.Logger,
 	}
 
 	wrapped := func() error {

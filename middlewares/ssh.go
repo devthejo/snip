@@ -24,7 +24,7 @@ func Middleware(middlewareConfig *middleware.Config, next func() error) error {
 		}
 	}
 
-	err := ssh.Exec(cfg, mutableCmd, logger)
+	err := ssh.Exec(cfg, middlewareConfig)
 	if err != nil {
 		return err
 	}

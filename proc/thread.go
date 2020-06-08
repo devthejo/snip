@@ -11,6 +11,7 @@ import (
 	"github.com/opencontainers/runc/libcontainer/user"
 	"github.com/sirupsen/logrus"
 
+	"gitlab.com/youtopia.earth/ops/snip/errors"
 	"gitlab.com/youtopia.earth/ops/snip/tools"
 )
 
@@ -107,14 +108,24 @@ func (thr *Thread) Exec(runMain func() error) {
 
 		if exitError, ok := err.(*exec.ExitError); ok {
 			thr.ExecExitCode = exitError.ExitCode()
+		} else if exitError, ok := err.(*errors.ErrorWithCode); ok {
+			logrus.Warn("exitError")
+			thr.ExecExitCode = exitError.Code
 		} else {
 			thr.ExecExitCode = 1
 		}
 
 		if thr.ExecExitCode > 0 {
-			thr.Logger.WithFields(logrus.Fields{
-				"exitCode": thr.ExecExitCode,
-			}).Errorf("thread exec error: %v", err)
+			switch thr.ExecExitCode {
+			case 141:
+				thr.Logger.WithFields(logrus.Fields{
+					"exitCode": thr.ExecExitCode,
+				}).Warnf("thread exec error: %v", err)
+			default:
+				thr.Logger.WithFields(logrus.Fields{
+					"exitCode": thr.ExecExitCode,
+				}).Errorf("thread exec error: %v", err)
+			}
 		}
 
 		if thr.Context.Err() == context.DeadlineExceeded {

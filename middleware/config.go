@@ -1,8 +1,14 @@
 package middleware
 
-import "github.com/sirupsen/logrus"
+import (
+	"context"
+
+	"github.com/sirupsen/logrus"
+)
 
 type Config struct {
-	MutableCmd *MutableCmd
-	Logger     *logrus.Entry
+	Context       context.Context
+	ContextCancel context.CancelFunc
+	MutableCmd    *MutableCmd
+	Logger        *logrus.Entry
 }

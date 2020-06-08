@@ -7,12 +7,16 @@ import (
 	shellquote "github.com/kballard/go-shellquote"
 	"github.com/kvz/logstreamer"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/crypto/ssh"
 
+	"gitlab.com/youtopia.earth/ops/snip/errors"
 	"gitlab.com/youtopia.earth/ops/snip/middleware"
 	"gitlab.com/youtopia.earth/ops/snip/sshclient"
 )
 
-func Exec(cfg *sshclient.Config, mutableCmd *middleware.MutableCmd, logger *logrus.Entry) error {
+func Exec(cfg *sshclient.Config, middlewareConfig *middleware.Config) error {
+	mutableCmd := middlewareConfig.MutableCmd
+	logger := middlewareConfig.Logger
 	client, err := sshclient.CreateClient(cfg)
 	if err != nil {
 		return err
@@ -61,11 +65,27 @@ func Exec(cfg *sshclient.Config, mutableCmd *middleware.MutableCmd, logger *logr
 
 	logger.Debugf("remote command: %v", runCmd)
 
+	go func() {
+		select {
+		case <-middlewareConfig.Context.Done():
+			logger.Debug(`sending stopsignal`)
+			session.Signal(ssh.SIGTERM)
+			session.Close()
+			return
+		}
+	}()
+
 	if err := session.Start(runCmd); err != nil {
 		return err
 	}
 
 	if err := session.Wait(); err != nil {
+		if err.Error() == "Process exited with status 141 from signal PIPE" {
+			return &errors.ErrorWithCode{
+				Err:  err,
+				Code: 141,
+			}
+		}
 		return err
 	}
 
