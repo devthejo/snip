@@ -15,15 +15,21 @@ import (
 	"gitlab.com/youtopia.earth/ops/snip/sshclient"
 )
 
-var uploadedByHostRegistry map[string]map[string]bool
+var uploadedByHostRegistry map[string]map[string]*UploadState
 var once sync.Once
 var uploadMutex = &sync.Mutex{}
 
-func GetUploadedByHostRegistry() map[string]map[string]bool {
+func GetUploadedByHostRegistry() map[string]map[string]*UploadState {
 	once.Do(func() {
-		uploadedByHostRegistry = make(map[string]map[string]bool)
+		uploadedByHostRegistry = make(map[string]map[string]*UploadState)
 	})
 	return uploadedByHostRegistry
+}
+
+type UploadState struct {
+	Uploading bool
+	Ready     bool
+	Wg        sync.WaitGroup
 }
 
 func Upload(cfg *sshclient.Config, localPath string, logger *logrus.Entry) error {
@@ -31,13 +37,24 @@ func Upload(cfg *sshclient.Config, localPath string, logger *logrus.Entry) error
 	uploadMutex.Lock()
 	r := GetUploadedByHostRegistry()
 	if r[cfg.Host] == nil {
-		r[cfg.Host] = make(map[string]bool)
+		r[cfg.Host] = make(map[string]*UploadState)
 	}
-	if r[cfg.Host][localPath] {
+	if r[cfg.Host][localPath] == nil {
+		r[cfg.Host][localPath] = &UploadState{}
+	}
+	if r[cfg.Host][localPath].Ready {
 		uploadMutex.Unlock()
 		return nil
 	}
-	r[cfg.Host][localPath] = true
+	if r[cfg.Host][localPath].Uploading {
+		r[cfg.Host][localPath].Wg.Wait()
+		if r[cfg.Host][localPath].Ready {
+			uploadMutex.Unlock()
+			return nil
+		}
+	}
+	r[cfg.Host][localPath].Wg.Add(1)
+	r[cfg.Host][localPath].Uploading = true
 	uploadMutex.Unlock()
 
 	retryCount := 0
@@ -56,11 +73,13 @@ func Upload(cfg *sshclient.Config, localPath string, logger *logrus.Entry) error
 		logger.Debug("retrying... ")
 	}
 
-	if err != nil {
-		uploadMutex.Lock()
-		r[cfg.Host][localPath] = false
-		uploadMutex.Unlock()
+	if err == nil {
+		r[cfg.Host][localPath].Ready = true
+	} else {
+		r[cfg.Host][localPath].Ready = false
 	}
+	r[cfg.Host][localPath].Uploading = false
+	r[cfg.Host][localPath].Wg.Done()
 
 	return err
 }
