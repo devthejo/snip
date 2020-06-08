@@ -334,6 +334,7 @@ func (cp *CfgPlay) ParseMiddlewares(m map[string]interface{}, override bool) {
 		errors.Check(err)
 		cp.Middlewares = middlewares
 	case nil:
+		cp.Middlewares = cp.ParentCfgPlay.Middlewares
 	default:
 		unexpectedTypeCmd(m, "middlewares")
 	}
