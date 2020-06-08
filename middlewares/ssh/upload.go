@@ -26,7 +26,7 @@ func GetUploadedByHostRegistry() map[string]map[string]bool {
 	return uploadedByHostRegistry
 }
 
-func Upload(cfg *sshclient.Config, localPath string) error {
+func Upload(cfg *sshclient.Config, localPath string, logger *logrus.Entry) error {
 
 	uploadMutex.Lock()
 	r := GetUploadedByHostRegistry()
@@ -43,17 +43,17 @@ func Upload(cfg *sshclient.Config, localPath string) error {
 	retryCount := 0
 	var err error
 	for {
-		err = uploadTry(cfg, localPath)
+		err = uploadTry(cfg, localPath, logger)
 		if err == nil {
 			break
 		}
-		logrus.Warn(err)
+		logger.Warn(err)
 		if retryCount == cfg.MaxRetry {
 			break
 		}
 		retryCount = retryCount + 1
-		logrus.Warnf("attempt %v/%v failed", retryCount, cfg.MaxRetry)
-		logrus.Debug("retrying... ")
+		logger.Warnf("attempt %v/%v failed", retryCount, cfg.MaxRetry)
+		logger.Debug("retrying... ")
 	}
 
 	if err != nil {
@@ -64,7 +64,7 @@ func Upload(cfg *sshclient.Config, localPath string) error {
 
 	return err
 }
-func uploadTry(cfg *sshclient.Config, localPath string) error {
+func uploadTry(cfg *sshclient.Config, localPath string, logger *logrus.Entry) error {
 
 	clientConfig, err := cfg.ClientConfig()
 	if err != nil {
@@ -72,16 +72,16 @@ func uploadTry(cfg *sshclient.Config, localPath string) error {
 	}
 	client := scp.NewClient(cfg.Host+":"+strconv.Itoa(cfg.Port), &clientConfig)
 
-	remotePath := "/home/" + cfg.User + "/.snip/" + localPath
+	remotePath := GetRemotePath(cfg.User, localPath)
 
-	logrus.Debugf("connecting to %v via ssh", cfg.Host)
+	logger.Debugf("connecting to %v via ssh", cfg.Host)
 	// err := client.Connect()
 	sshClient, err := ssh.Dial("tcp", client.Host, client.ClientConfig)
 	if err != nil {
-		logrus.Warnf("connection to %v via ssh failed", cfg.Host)
+		logger.Warnf("connection to %v via ssh failed", cfg.Host)
 		return err
 	}
-	logrus.Debugf("connected to %v", cfg.Host)
+	logger.Debugf("connected to %v", cfg.Host)
 	client.Conn = sshClient.Conn
 	client.Session, err = sshClient.NewSession()
 
@@ -93,7 +93,7 @@ func uploadTry(cfg *sshclient.Config, localPath string) error {
 	defer client.Close()
 	defer f.Close()
 
-	logrus.Debugf("uploading script %v", remotePath)
+	logger.Debugf("uploading script %v", remotePath)
 
 	var mkdirErrB bytes.Buffer
 	client.Session.Stderr = &mkdirErrB
@@ -102,7 +102,7 @@ func uploadTry(cfg *sshclient.Config, localPath string) error {
 	errors.Check(err)
 	mkdirErr := mkdirErrB.String()
 	if mkdirErr != "" {
-		logrus.Warn(mkdirErr)
+		logger.Warn(mkdirErr)
 	}
 	client.Session.Close()
 

@@ -4,6 +4,7 @@ import (
 	"plugin"
 	"time"
 
+	cmap "github.com/orcaman/concurrent-map"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -26,7 +27,7 @@ type App struct {
 	Now      time.Time
 	MainProc *proc.Main
 
-	Middlewares map[string]*plugin.Plugin
+	Middlewares cmap.ConcurrentMap
 }
 
 func New() *App {
@@ -51,7 +52,7 @@ func NewApp() *App {
 	app.Config = app.ConfigLoader.Config
 	app.Viper = app.ConfigLoader.Viper
 
-	app.Middlewares = make(map[string]*plugin.Plugin)
+	app.Middlewares = cmap.New()
 
 	return app
 }
@@ -103,24 +104,26 @@ func (app *App) GetMainProc() *proc.Main {
 	return app.MainProc
 }
 
-func (app *App) GetMiddlewares() map[string]*plugin.Plugin {
-	return app.Middlewares
-}
 func (app *App) GetMiddlewarePlugin(k string) *plugin.Plugin {
-	if _, ok := app.Middlewares[k]; !ok {
+	plugInterface, ok := app.Middlewares.Get(k)
+	var plug *plugin.Plugin
+	if ok {
+		plug = plugInterface.(*plugin.Plugin)
+	} else {
 		mod := "./middlewares/" + k + ".so"
-		plug, err := plugin.Open(mod)
+		var err error
+		plug, err = plugin.Open(mod)
 		errors.Check(err)
-		app.Middlewares[k] = plug
+		app.Middlewares.Set(k, plug)
 	}
-	return app.Middlewares[k]
+	return plug
 }
 func (app *App) GetMiddleware(k string) middleware.Func {
 	plug := app.GetMiddlewarePlugin(k)
 	symRun, err := plug.Lookup("Middleware")
 	errors.Check(err)
 	// run, ok := symRun.(middleware.Func)
-	run, ok := symRun.(func(*middleware.MutableCmd, func() error) error)
+	run, ok := symRun.(func(*middleware.Config, func() error) error)
 	if !ok {
 		logrus.Fatalf("unexpected type from module symbol on middleware %v", k)
 	}

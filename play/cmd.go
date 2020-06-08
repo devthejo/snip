@@ -143,7 +143,8 @@ func (cmd *Cmd) Main() error {
 		middleware := app.GetMiddleware(k)
 		runStack = append(runStack, middleware)
 	}
-	runStack = append(runStack, func(mutableCmd *middleware.MutableCmd, next func() error) error {
+	runStack = append(runStack, func(middlewareConfig *middleware.Config, next func() error) error {
+		mutableCmd := middlewareConfig.MutableCmd
 		cmd.Command = mutableCmd.Command
 		cmd.Args = mutableCmd.Args
 		cmd.Vars = mutableCmd.Vars
@@ -166,6 +167,10 @@ func (cmd *Cmd) Main() error {
 		OriginalArgs:    originalArgs,
 		OriginalVars:    originalVars,
 	}
+	middlewareConfig := &middleware.Config{
+		MutableCmd: mutableCmd,
+		Logger:     cmd.Logger,
+	}
 
 	wrapped := func() error {
 		return nil
@@ -174,7 +179,7 @@ func (cmd *Cmd) Main() error {
 		current := runStack[i]
 		next := wrapped
 		wrapped = func() error {
-			return current(mutableCmd, next)
+			return current(middlewareConfig, next)
 		}
 	}
 

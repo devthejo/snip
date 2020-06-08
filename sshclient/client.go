@@ -4,7 +4,6 @@ import (
 	"strconv"
 	"time"
 
-	"gitlab.com/youtopia.earth/ops/snip/errors"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -21,7 +20,7 @@ func CreateClient(cfg *Config) (*Client, error) {
 	var clientConfig ssh.ClientConfig
 	clientConfig, err = cfg.ClientConfig()
 	c := &Client{}
-	if err != nil {
+	if err == nil {
 		c.Host = cfg.Host + ":" + strconv.Itoa(cfg.Port)
 		c.ClientConfig = &clientConfig
 	}
@@ -42,19 +41,8 @@ func (c *Client) Connect() error {
 	return nil
 }
 
-func (c *Client) GetNewSession() (*ssh.Session, error) {
+func (c *Client) NewSession() (*ssh.Session, error) {
 	return c.Client.NewSession()
-}
-func (c *Client) NewSession() *ssh.Session {
-	session, err := c.GetNewSession()
-	errors.Check(err)
-	return session
-}
-
-func (c *Client) Run(cmd string) error {
-	session := c.NewSession()
-	defer session.Close()
-	return session.Run(cmd)
 }
 
 func (c *Client) Close() {

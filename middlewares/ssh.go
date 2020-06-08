@@ -8,20 +8,23 @@ import (
 	"gitlab.com/youtopia.earth/ops/snip/sshclient"
 )
 
-func Middleware(mutableCmd *middleware.MutableCmd, next func() error) error {
+func Middleware(middlewareConfig *middleware.Config, next func() error) error {
+
+	mutableCmd := middlewareConfig.MutableCmd
+	logger := middlewareConfig.Logger
 
 	commandBin := mutableCmd.OriginalCommand
 
 	cfg := sshclient.CreateConfig(mutableCmd.Vars)
 
-	if strings.Contains(commandBin, "/") {
-		err := ssh.Upload(cfg, commandBin)
+	if strings.Contains(commandBin, "/") && !strings.HasPrefix(commandBin, "/") {
+		err := ssh.Upload(cfg, commandBin, logger)
 		if err != nil {
 			return err
 		}
 	}
 
-	err := ssh.Exec(cfg, mutableCmd)
+	err := ssh.Exec(cfg, mutableCmd, logger)
 	if err != nil {
 		return err
 	}
