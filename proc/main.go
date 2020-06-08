@@ -57,7 +57,7 @@ func (proc *Main) MainOpener() {
 func (proc *Main) MainCloser() {
 	<-proc.MainChan
 	if proc.Ended {
-		logrus.Info("done")
+		logrus.Info("🗸 done")
 	} else {
 		logrus.Info("shutdown signal received")
 		proc.Cancel()
