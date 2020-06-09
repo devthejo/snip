@@ -92,7 +92,7 @@ func CreateCmd(ccmd *CfgCmd, ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 	cmd.Thread.ExecUser = cmd.ExecUser
 
 	if cmd.ExecTimeout != nil {
-		cmd.Thread.SetTimeout(*cmd.ExecTimeout)
+		cmd.Thread.SetTimeout(cmd.ExecTimeout)
 	}
 
 	return cmd

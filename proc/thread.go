@@ -70,8 +70,9 @@ func (c *Thread) Done() <-chan struct{} {
 	return c.Context.Done()
 }
 
-func (thr *Thread) SetTimeout(timeout time.Duration) {
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+func (thr *Thread) SetTimeout(timeout *time.Duration) {
+	thr.ExecTimeout = timeout
+	ctx, cancel := context.WithTimeout(context.Background(), *thr.ExecTimeout)
 	thr.Context = ctx
 	thr.ContextCancel = cancel
 }
