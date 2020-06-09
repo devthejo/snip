@@ -42,17 +42,6 @@ type Thread struct {
 func CreateThread(app App) *Thread {
 	thr := &Thread{}
 	thr.WaitGroup = &sync.WaitGroup{}
-
-	var ctx context.Context
-	var cancel context.CancelFunc
-	if thr.ExecTimeout != nil {
-		ctx, cancel = context.WithTimeout(context.Background(), *thr.ExecTimeout)
-	} else {
-		ctx, cancel = context.WithCancel(context.Background())
-	}
-	thr.Context = ctx
-	thr.ContextCancel = cancel
-
 	thr.App = app
 	thr.MainProc = app.GetMainProc()
 	return thr
@@ -79,6 +68,12 @@ func (c *Thread) Cancel() {
 }
 func (c *Thread) Done() <-chan struct{} {
 	return c.Context.Done()
+}
+
+func (thr *Thread) SetTimeout(timeout time.Duration) {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	thr.Context = ctx
+	thr.ContextCancel = cancel
 }
 
 func (thr *Thread) Exec(runMain func() error) {

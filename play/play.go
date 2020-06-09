@@ -197,7 +197,7 @@ func (p *Play) Run() error {
 
 	var errSlice []error
 
-	runLoopSeq := func(loop *LoopRow) {
+	runLoopSeq := func(loop *LoopRow) error {
 		if loop.IsLoopRowItem {
 			logrus.Info(strings.Repeat("  ", p.Depth+2) + "⦿ " + loop.Name)
 		}
@@ -215,25 +215,33 @@ func (p *Play) Run() error {
 				errSlice = append(errSlice, err)
 			}
 		}
+
+		if len(errSlice) > 0 {
+			return multierr.Combine(errSlice...)
+		}
+		return nil
 	}
 
 	var wg sync.WaitGroup
-	var runLoopRow func(loop *LoopRow)
+	var runLoopRow func(loop *LoopRow) error
 
 	if p.LoopSequential {
 		runLoopRow = runLoopSeq
 	} else {
-		runLoopRow = func(loop *LoopRow) {
+		runLoopRow = func(loop *LoopRow) error {
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
 				runLoopSeq(loop)
 			}()
+			return nil
 		}
 	}
 
 	for _, loop := range p.LoopRow {
-		runLoopRow(loop)
+		if err := runLoopRow(loop); err != nil {
+			break
+		}
 	}
 	wg.Wait()
 

@@ -83,28 +83,24 @@ func (proc *Main) Done() <-chan struct{} {
 }
 
 func (proc *Main) Run(f func() error) {
-	if err := proc.RunMain(f); err != nil {
-		proc.ExitCode = 1
-	}
+	proc.RunMain(f)
 	os.Exit(proc.ExitCode)
 }
 
-func (proc *Main) RunMain(f func() error) error {
+func (proc *Main) RunMain(f func() error) {
 
 	proc.MainOpener()
 
-	if err := f(); err != nil {
-		return err
-	}
-
 	go func() {
+		err := f()
+		if err != nil {
+			proc.ExitCode = 1
+		}
 		proc.WaitGroup.Wait()
 		proc.End()
 	}()
 
 	proc.MainCloser()
-
-	return nil
 }
 
 func (proc *Main) End() {

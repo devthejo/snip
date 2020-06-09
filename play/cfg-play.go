@@ -169,15 +169,9 @@ func (cp *CfgPlay) ParseExecTimeout(m map[string]interface{}, override bool) {
 	if !override && cp.ExecTimeout != nil {
 		return
 	}
-	switch v := m["timeout"].(type) {
-	case string:
-		timeout, err := decode.Duration(v)
-		errors.Check(err)
-		cp.ExecTimeout = &timeout
-	case nil:
-	default:
-		unexpectedTypeCmd(m, "timeout")
-	}
+	timeout, err := decode.Duration(m["timeout"])
+	errors.Check(err)
+	cp.ExecTimeout = &timeout
 }
 func (cp *CfgPlay) ParseExecUser(m map[string]interface{}, override bool) {
 
