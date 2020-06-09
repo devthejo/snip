@@ -3,9 +3,12 @@ package play
 import (
 	"strconv"
 	"strings"
+	"syscall"
+	"time"
 
 	shellquote "github.com/kballard/go-shellquote"
 	"github.com/mgutz/ansi"
+	"github.com/opencontainers/runc/libcontainer/user"
 	cmap "github.com/orcaman/concurrent-map"
 	"github.com/sirupsen/logrus"
 
@@ -41,6 +44,9 @@ type CfgPlay struct {
 
 	Depth       int
 	HasChildren bool
+
+	ExecUser    *user.ExecUser
+	ExecTimeout *time.Duration
 }
 
 func CreateCfgPlay(app App, m map[string]interface{}, parentCfgPlay *CfgPlay) *CfgPlay {
@@ -77,6 +83,8 @@ func (cp *CfgPlay) ParseMap(m map[string]interface{}) {
 func (cp *CfgPlay) ParseMapRun(m map[string]interface{}, override bool) {
 	cp.ParseKey(m, override)
 	cp.ParseTitle(m, override)
+	cp.ParseExecTimeout(m, override)
+	cp.ParseExecUser(m, override)
 	cp.ParseLoopSets(m, override)
 	cp.ParseLoopOn(m, override)
 	cp.ParseLoopSequential(m, override)
@@ -155,6 +163,55 @@ func (cp *CfgPlay) ParseTitle(m map[string]interface{}, override bool) {
 	default:
 		unexpectedTypeCmd(m, "title")
 	}
+}
+
+func (cp *CfgPlay) ParseExecTimeout(m map[string]interface{}, override bool) {
+	if !override && cp.ExecTimeout != nil {
+		return
+	}
+	switch v := m["timeout"].(type) {
+	case string:
+		timeout, err := decode.Duration(v)
+		errors.Check(err)
+		cp.ExecTimeout = &timeout
+	case nil:
+	default:
+		unexpectedTypeCmd(m, "timeout")
+	}
+}
+func (cp *CfgPlay) ParseExecUser(m map[string]interface{}, override bool) {
+
+	if !override && cp.ExecUser != nil {
+		return
+	}
+	var userName string
+	switch v := m["user"].(type) {
+	case string:
+		userName = v
+	case nil:
+		if cp.ParentCfgPlay != nil {
+			cp.ExecUser = cp.ParentCfgPlay.ExecUser
+		}
+	default:
+		unexpectedTypeCmd(m, "user")
+	}
+	if userName == "" {
+		return
+	}
+
+	defaultExecUser := user.ExecUser{
+		Uid:  syscall.Getuid(),
+		Gid:  syscall.Getgid(),
+		Home: "/",
+	}
+	passwdPath, err := user.GetPasswdPath()
+	errors.Check(err)
+	groupPath, err := user.GetGroupPath()
+	errors.Check(err)
+	execUser, err := user.GetExecUserPath(userName, &defaultExecUser, passwdPath, groupPath)
+	errors.Check(err)
+
+	cp.ExecUser = execUser
 }
 
 func (cp *CfgPlay) ParseLoopSets(m map[string]interface{}, override bool) {
@@ -325,7 +382,7 @@ func (cp *CfgPlay) ParsePostInstall(m map[string]interface{}, override bool) {
 }
 
 func (cp *CfgPlay) ParseMiddlewares(m map[string]interface{}, override bool) {
-	if !override && cp.PostInstall == nil {
+	if !override && cp.Middlewares == nil {
 		return
 	}
 	switch m["middlewares"].(type) {
@@ -334,7 +391,9 @@ func (cp *CfgPlay) ParseMiddlewares(m map[string]interface{}, override bool) {
 		errors.Check(err)
 		cp.Middlewares = middlewares
 	case nil:
-		cp.Middlewares = cp.ParentCfgPlay.Middlewares
+		if cp.ParentCfgPlay != nil {
+			cp.Middlewares = cp.ParentCfgPlay.Middlewares
+		}
 	default:
 		unexpectedTypeCmd(m, "middlewares")
 	}

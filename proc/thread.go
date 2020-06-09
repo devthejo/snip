@@ -21,8 +21,9 @@ type Thread struct {
 	ExecRunning  bool
 	ExecExited   bool
 	ExecExitCode int
-	ExecUser     *user.ExecUser
-	ExecTimeout  time.Duration
+
+	ExecUser    *user.ExecUser
+	ExecTimeout *time.Duration
 
 	Context       context.Context
 	ContextCancel context.CancelFunc
@@ -44,8 +45,8 @@ func CreateThread(app App) *Thread {
 
 	var ctx context.Context
 	var cancel context.CancelFunc
-	if thr.ExecTimeout > 0 {
-		ctx, cancel = context.WithTimeout(context.Background(), thr.ExecTimeout)
+	if thr.ExecTimeout != nil {
+		ctx, cancel = context.WithTimeout(context.Background(), *thr.ExecTimeout)
 	} else {
 		ctx, cancel = context.WithCancel(context.Background())
 	}
@@ -66,6 +67,8 @@ func (thr *Thread) Run(runMain func() error) error {
 		thr.Cancel()
 	}()
 
+	thr.WaitGroup.Add(1)
+
 	go thr.Exec(runMain)
 	thr.WaitGroup.Wait()
 
@@ -81,8 +84,6 @@ func (c *Thread) Done() <-chan struct{} {
 func (thr *Thread) Exec(runMain func() error) {
 
 	thr.ExecRunning = true
-
-	thr.WaitGroup.Add(1)
 
 	thr.CommandStopper = func(c *exec.Cmd) error {
 		go func(c *exec.Cmd) {
@@ -105,6 +106,7 @@ func (thr *Thread) Exec(runMain func() error) {
 	err := runMain()
 
 	if err != nil {
+		thr.Error = err
 
 		if exitError, ok := err.(*exec.ExitError); ok {
 			thr.ExecExitCode = exitError.ExitCode()
@@ -134,7 +136,6 @@ func (thr *Thread) Exec(runMain func() error) {
 			}).Warnf("thread exec timeout fail")
 		}
 
-		thr.Error = err
 	}
 
 	thr.ExecRunning = false

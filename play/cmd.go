@@ -4,8 +4,10 @@ import (
 	"context"
 	"os/exec"
 	"strings"
+	"time"
 
 	shellquote "github.com/kballard/go-shellquote"
+	"github.com/opencontainers/runc/libcontainer/user"
 	"github.com/sirupsen/logrus"
 
 	"gitlab.com/youtopia.earth/ops/snip/config"
@@ -27,6 +29,9 @@ type Cmd struct {
 	Vars    map[string]string
 
 	Middlewares []string
+
+	ExecUser    *user.ExecUser
+	ExecTimeout *time.Duration
 
 	IsMD   bool
 	Logger *logrus.Entry
@@ -56,6 +61,8 @@ func CreateCmd(ccmd *CfgCmd, ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 		IsMD:          ccmd.IsMD,
 		Middlewares:   parentPlay.Middlewares,
 		Thread:        proc.CreateThread(app),
+		ExecUser:      parentPlay.ExecUser,
+		ExecTimeout:   parentPlay.ExecTimeout,
 	}
 
 	depth := ccmd.Depth
@@ -81,6 +88,9 @@ func CreateCmd(ccmd *CfgCmd, ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 	logger = logger.WithContext(loggerCtx)
 	cmd.Logger = logger
 	cmd.Thread.Logger = logger
+
+	cmd.Thread.ExecUser = cmd.ExecUser
+	cmd.Thread.ExecTimeout = cmd.ExecTimeout
 
 	return cmd
 }
@@ -136,8 +146,7 @@ func (cmd *Cmd) RunFunc() error {
 		return nil
 	}
 	cmd.Logger.Debugf("command: %v", shellquote.Join(commandSlice...))
-	cmd.Thread.RunCmd(commandSlice, cmd.Logger, commandHook)
-	return cmd.Thread.Error
+	return cmd.Thread.RunCmd(commandSlice, cmd.Logger, commandHook)
 }
 
 func (cmd *Cmd) Main() error {

@@ -4,7 +4,9 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
+	"github.com/opencontainers/runc/libcontainer/user"
 	cmap "github.com/orcaman/concurrent-map"
 	"github.com/sirupsen/logrus"
 	"go.uber.org/multierr"
@@ -28,6 +30,9 @@ type Play struct {
 	Vars map[string]*Var
 
 	LoopSequential bool
+
+	ExecUser    *user.ExecUser
+	ExecTimeout *time.Duration
 
 	RegisterVars []string
 
@@ -58,6 +63,9 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 
 		LoopSequential: loopSequential,
 		CheckCommand:   cp.CheckCommand,
+
+		ExecUser:    cp.ExecUser,
+		ExecTimeout: cp.ExecTimeout,
 
 		// RegisterVars: cp.RegisterVars,
 		// Dependencies: ,
