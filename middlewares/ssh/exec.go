@@ -55,7 +55,7 @@ func Exec(cfg *sshclient.Config, middlewareConfig *middleware.Config) error {
 
 	var setenvSlice []string
 	setenv := ""
-	for k, v := range mutableCmd.Vars {
+	for k, v := range mutableCmd.EnvMap() {
 		setenvSlice = append(setenvSlice, k+"="+v)
 	}
 	setenv = shellquote.Join(setenvSlice...)

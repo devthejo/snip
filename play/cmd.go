@@ -33,6 +33,16 @@ type Cmd struct {
 	Depth  int
 }
 
+func (cmd *Cmd) EnvMap() map[string]string {
+	m := make(map[string]string)
+	for k, v := range cmd.Vars {
+		if k[0:1] != "@" {
+			m[k] = v
+		}
+	}
+	return m
+}
+
 func CreateCmd(ccmd *CfgCmd, ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 	parentPlay := parentLoopRow.ParentPlay
 	app := ccmd.CfgPlay.App
@@ -122,7 +132,7 @@ func (cmd *Cmd) Run() error {
 func (cmd *Cmd) RunFunc() error {
 	commandSlice := append([]string{cmd.Command}, cmd.Args...)
 	commandHook := func(c *exec.Cmd) error {
-		c.Env = tools.EnvToPairs(cmd.Vars)
+		c.Env = tools.EnvToPairs(cmd.EnvMap())
 		return nil
 	}
 	cmd.Logger.Debugf("command: %v", shellquote.Join(commandSlice...))

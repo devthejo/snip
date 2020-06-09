@@ -26,12 +26,12 @@ type Config struct {
 }
 
 func CreateConfig(vars map[string]string) *Config {
-	SSHHost := vars["SSH_HOST"]
+	SSHHost := vars["@SSH_HOST"]
 	if SSHHost == "" {
 		SSHHost = "localhost"
 	}
 
-	SSHPortStr := vars["SSH_PORT"]
+	SSHPortStr := vars["@SSH_PORT"]
 	var SSHPort int
 	if SSHPortStr == "" {
 		SSHPort = 22
@@ -41,16 +41,16 @@ func CreateConfig(vars map[string]string) *Config {
 		errors.Check(err)
 	}
 
-	SSHUser := vars["SSH_USER"]
+	SSHUser := vars["@SSH_USER"]
 	if SSHUser == "" {
 		currentUser, err := user.Current()
 		errors.Check(err)
 		SSHUser = currentUser.Username
 	}
 
-	SSHPass := vars["SSH_PASS"]
-	SSHSock := vars["SSH_SOCK"]
-	SSHFile := vars["SSH_FILE"]
+	SSHPass := vars["@SSH_PASS"]
+	SSHSock := vars["@SSH_SOCK"]
+	SSHFile := vars["@SSH_FILE"]
 
 	if SSHSock == "" && SSHPass == "" && SSHFile == "" {
 		SSHSock = os.Getenv("SSH_AUTH_SOCK")
@@ -66,7 +66,7 @@ func CreateConfig(vars map[string]string) *Config {
 		SSHFile = filepath.Join(dir, SSHFile[2:])
 	}
 
-	SSHMaxRetryStr := vars["SSH_MAX_RETRY"]
+	SSHMaxRetryStr := vars["@SSH_MAX_RETRY"]
 	var SSHMaxRetry int
 	if SSHMaxRetryStr == "" {
 		SSHMaxRetry = 3
