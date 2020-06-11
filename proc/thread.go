@@ -8,7 +8,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/opencontainers/runc/libcontainer/user"
 	"github.com/sirupsen/logrus"
 
 	"gitlab.com/youtopia.earth/ops/snip/errors"
@@ -22,7 +21,7 @@ type Thread struct {
 	ExecExited   bool
 	ExecExitCode int
 
-	ExecUser    *user.ExecUser
+	ExecUser    string
 	ExecTimeout *time.Duration
 
 	Context       context.Context
@@ -157,9 +156,6 @@ func (thr *Thread) ExpandCmdEnv(commandSlice []string) []string {
 
 func (thr *Thread) RunCmd(commandSlice []string, args ...interface{}) error {
 	commandSlice = thr.ExpandCmdEnv(commandSlice)
-	if thr.ExecUser != nil {
-		args = append(args, thr.ExecUser)
-	}
 	args = append(args, thr.Context)
 	args = append(args, thr.CommandStopper)
 	return tools.RunCmd(commandSlice, args...)

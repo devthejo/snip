@@ -3,12 +3,10 @@ package play
 import (
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 
 	shellquote "github.com/kballard/go-shellquote"
 	"github.com/mgutz/ansi"
-	"github.com/opencontainers/runc/libcontainer/user"
 	cmap "github.com/orcaman/concurrent-map"
 	"github.com/sirupsen/logrus"
 
@@ -45,7 +43,7 @@ type CfgPlay struct {
 	Depth       int
 	HasChildren bool
 
-	ExecUser    *user.ExecUser
+	ExecUser    string
 	ExecTimeout *time.Duration
 }
 
@@ -175,13 +173,12 @@ func (cp *CfgPlay) ParseExecTimeout(m map[string]interface{}, override bool) {
 }
 func (cp *CfgPlay) ParseExecUser(m map[string]interface{}, override bool) {
 
-	if !override && cp.ExecUser != nil {
+	if !override && cp.ExecUser != "" {
 		return
 	}
-	var userName string
 	switch v := m["user"].(type) {
 	case string:
-		userName = v
+		cp.ExecUser = v
 	case nil:
 		if cp.ParentCfgPlay != nil {
 			cp.ExecUser = cp.ParentCfgPlay.ExecUser
@@ -189,23 +186,6 @@ func (cp *CfgPlay) ParseExecUser(m map[string]interface{}, override bool) {
 	default:
 		unexpectedTypeCmd(m, "user")
 	}
-	if userName == "" {
-		return
-	}
-
-	defaultExecUser := user.ExecUser{
-		Uid:  syscall.Getuid(),
-		Gid:  syscall.Getgid(),
-		Home: "/",
-	}
-	passwdPath, err := user.GetPasswdPath()
-	errors.Check(err)
-	groupPath, err := user.GetGroupPath()
-	errors.Check(err)
-	execUser, err := user.GetExecUserPath(userName, &defaultExecUser, passwdPath, groupPath)
-	errors.Check(err)
-
-	cp.ExecUser = execUser
 }
 
 func (cp *CfgPlay) ParseLoopSets(m map[string]interface{}, override bool) {

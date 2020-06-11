@@ -27,7 +27,7 @@ func Exec(cfg *sshclient.Config, middlewareConfig *middleware.Config) error {
 	}
 	defer client.Close()
 
-	commandSlice := append([]string{}, mutableCmd.Args...)
+	commandSlice := append([]string{mutableCmd.Command}, mutableCmd.Args...)
 	command := shellquote.Join(commandSlice...)
 
 	cwd := GetSnipPath(cfg.User)

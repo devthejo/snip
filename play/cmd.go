@@ -7,7 +7,6 @@ import (
 	"time"
 
 	shellquote "github.com/kballard/go-shellquote"
-	"github.com/opencontainers/runc/libcontainer/user"
 	"github.com/sirupsen/logrus"
 
 	"gitlab.com/youtopia.earth/ops/snip/config"
@@ -30,7 +29,7 @@ type Cmd struct {
 
 	Middlewares []string
 
-	ExecUser    *user.ExecUser
+	ExecUser    string
 	ExecTimeout *time.Duration
 
 	IsMD   bool

@@ -6,7 +6,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/opencontainers/runc/libcontainer/user"
 	cmap "github.com/orcaman/concurrent-map"
 	"github.com/sirupsen/logrus"
 	"go.uber.org/multierr"
@@ -31,7 +30,7 @@ type Play struct {
 
 	LoopSequential bool
 
-	ExecUser    *user.ExecUser
+	ExecUser    string
 	ExecTimeout *time.Duration
 
 	RegisterVars []string

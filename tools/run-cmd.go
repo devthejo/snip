@@ -7,14 +7,12 @@ import (
 	"syscall"
 
 	"github.com/kvz/logstreamer"
-	"github.com/opencontainers/runc/libcontainer/user"
 	"github.com/sirupsen/logrus"
 )
 
 func RunCmd(commandSlice []string, args ...interface{}) error {
 
 	var ctx context.Context
-	var execUser *user.ExecUser
 	var hookFuncs []func(*exec.Cmd) error
 	var logger *logrus.Entry
 	for _, argif := range args {
@@ -25,8 +23,6 @@ func RunCmd(commandSlice []string, args ...interface{}) error {
 			ctx = arg
 		case func(cmd *exec.Cmd) error:
 			hookFuncs = append(hookFuncs, arg)
-		case *user.ExecUser:
-			execUser = arg
 		default:
 			logrus.Fatalf(`invalid argument for tools.RunCmd type:"%T",value:"%v"`, argif, argif)
 		}
@@ -66,15 +62,6 @@ func RunCmd(commandSlice []string, args ...interface{}) error {
 	// Create a dedicated pidgroup used to forward signals to main process and all children
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Setpgid: true,
-	}
-
-	if execUser != nil {
-		uid := uint32(execUser.Uid)
-		gid := uint32(execUser.Gid)
-		cmd.SysProcAttr.Credential = &syscall.Credential{Uid: uid, Gid: gid}
-		cmd.Env = append(cmd.Env,
-			"HOME="+execUser.Home,
-		)
 	}
 
 	for _, hookFunc := range hookFuncs {
