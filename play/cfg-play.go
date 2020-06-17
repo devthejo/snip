@@ -38,13 +38,15 @@ type CfgPlay struct {
 	Dependencies []string
 	PostInstall  []string
 
-	Middlewares []string
-
 	Depth       int
 	HasChildren bool
 
 	ExecUser    string
 	ExecTimeout *time.Duration
+
+	Loader      interface{}
+	Middlewares *[]string
+	Runner      string
 }
 
 func CreateCfgPlay(app App, m map[string]interface{}, parentCfgPlay *CfgPlay) *CfgPlay {
@@ -91,7 +93,9 @@ func (cp *CfgPlay) ParseMapRun(m map[string]interface{}, override bool) {
 	cp.ParseCheckCommand(m, override)
 	cp.ParseDependencies(m, override)
 	cp.ParsePostInstall(m, override)
+	cp.ParseLoader(m, override)
 	cp.ParseMiddlewares(m, override)
+	cp.ParseRunner(m, override)
 	cp.ParsePlay(m, override)
 }
 
@@ -126,11 +130,7 @@ func (cp *CfgPlay) ParsePlay(m map[string]interface{}, override bool) {
 	case string:
 		c, err := shellquote.Split(v)
 		errors.Check(err)
-		cmd := &CfgCmd{}
-		cmd.CfgPlay = cp
-		cmd.Depth = cp.Depth + 1
-		cmd.Parse(c)
-		cp.CfgPlay = cmd
+		cp.CfgPlay = CreateCfgCmd(cp, c)
 	case nil:
 	default:
 		unexpectedTypeCfgPlay(m, "play")
@@ -169,7 +169,9 @@ func (cp *CfgPlay) ParseExecTimeout(m map[string]interface{}, override bool) {
 	}
 	timeout, err := decode.Duration(m["timeout"])
 	errors.Check(err)
-	cp.ExecTimeout = &timeout
+	if timeout != 0 {
+		cp.ExecTimeout = &timeout
+	}
 }
 func (cp *CfgPlay) ParseExecUser(m map[string]interface{}, override bool) {
 
@@ -285,7 +287,7 @@ func (cp *CfgPlay) ParseVars(m map[string]interface{}, override bool) {
 }
 
 func (cp *CfgPlay) ParseRegisterVars(m map[string]interface{}, override bool) {
-	if !override && cp.RegisterVars == nil {
+	if !override && cp.RegisterVars != nil {
 		return
 	}
 	switch v := m["register_vars"].(type) {
@@ -326,7 +328,7 @@ func (cp *CfgPlay) ParseCheckCommand(m map[string]interface{}, override bool) {
 	}
 }
 func (cp *CfgPlay) ParseDependencies(m map[string]interface{}, override bool) {
-	if !override && cp.Dependencies == nil {
+	if !override && cp.Dependencies != nil {
 		return
 	}
 	switch m["dependencies"].(type) {
@@ -341,7 +343,7 @@ func (cp *CfgPlay) ParseDependencies(m map[string]interface{}, override bool) {
 }
 
 func (cp *CfgPlay) ParsePostInstall(m map[string]interface{}, override bool) {
-	if !override && cp.PostInstall == nil {
+	if !override && cp.PostInstall != nil {
 		return
 	}
 	switch m["post_install"].(type) {
@@ -355,15 +357,46 @@ func (cp *CfgPlay) ParsePostInstall(m map[string]interface{}, override bool) {
 	}
 }
 
+func (cp *CfgPlay) ParseLoader(m map[string]interface{}, override bool) {
+	if !override && cp.Loader != nil {
+		return
+	}
+	switch v := m["loader"].(type) {
+	case string:
+		cp.Loader = v
+	case []string:
+		s, err := decode.ToStrings(v)
+		errors.Check(err)
+		cp.Loader = s
+	case nil:
+	default:
+		unexpectedTypeCmd(m, "loader")
+	}
+}
+func (cp *CfgPlay) ParseRunner(m map[string]interface{}, override bool) {
+	if !override && cp.Runner != "" {
+		return
+	}
+	switch v := m["runner"].(type) {
+	case string:
+		cp.Runner = v
+	case nil:
+		if cp.ParentCfgPlay != nil {
+			cp.Runner = cp.ParentCfgPlay.Runner
+		}
+	default:
+		unexpectedTypeCmd(m, "runner")
+	}
+}
 func (cp *CfgPlay) ParseMiddlewares(m map[string]interface{}, override bool) {
-	if !override && cp.Middlewares == nil {
+	if !override && cp.Middlewares != nil {
 		return
 	}
 	switch m["middlewares"].(type) {
 	case []interface{}:
 		middlewares, err := decode.ToStrings(m["middlewares"])
 		errors.Check(err)
-		cp.Middlewares = middlewares
+		cp.Middlewares = &middlewares
 	case nil:
 		if cp.ParentCfgPlay != nil {
 			cp.Middlewares = cp.ParentCfgPlay.Middlewares

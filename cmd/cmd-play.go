@@ -36,5 +36,8 @@ func CmdPlay(app App) *cobra.Command {
 	flags.String("build-dir", config.FlagBuildDirDefault, config.FlagBuildDirDesc)
 	flags.String("shutdown-timeout", config.FlagShutdownTimeoutDefault, config.FlagShutdownTimeoutDesc)
 
+	flags.String("runner", config.FlagRunnerDefault, config.FlagRunnerDesc)
+	flags.String("loaders", config.FlagLoadersDefault, config.FlagLoadersDesc)
+
 	return cmd
 }

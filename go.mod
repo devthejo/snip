@@ -11,6 +11,8 @@ require (
 	github.com/golang-commonmark/mdurl v0.0.0-20180910110917-8d018c6567d6 // indirect
 	github.com/golang-commonmark/puny v0.0.0-20180910110745-050be392d8b8 // indirect
 	github.com/google/go-jsonnet v0.15.0
+	github.com/google/goexpect v0.0.0-20191001010744-5b6988669ffa
+	github.com/google/goterm v0.0.0-20190703233501-fc88cf888a3f
 	github.com/imdario/mergo v0.3.9
 	github.com/joho/godotenv v1.3.0 // indirect
 	github.com/json-iterator/go v1.1.9
@@ -19,7 +21,7 @@ require (
 	github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b
 	github.com/mitchellh/mapstructure v1.3.0
 	github.com/ogier/pflag v0.0.1 // indirect
-	github.com/opencontainers/runc v0.1.1
+	github.com/opencontainers/runc v0.1.1 // indirect
 	github.com/orcaman/concurrent-map v0.0.0-20190826125027-8c72a8bb44f6
 	github.com/sirupsen/logrus v1.5.0
 	github.com/spf13/cobra v1.0.0

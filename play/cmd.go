@@ -2,15 +2,19 @@ package play
 
 import (
 	"context"
-	"os/exec"
+	"io"
+	"os"
 	"strings"
 	"time"
 
+	expect "github.com/google/goexpect"
 	shellquote "github.com/kballard/go-shellquote"
 	"github.com/sirupsen/logrus"
 
 	"gitlab.com/youtopia.earth/ops/snip/config"
-	"gitlab.com/youtopia.earth/ops/snip/middleware"
+	snipplugin "gitlab.com/youtopia.earth/ops/snip/plugin"
+	"gitlab.com/youtopia.earth/ops/snip/plugin/middleware"
+	"gitlab.com/youtopia.earth/ops/snip/plugin/runner"
 	"gitlab.com/youtopia.earth/ops/snip/proc"
 	"gitlab.com/youtopia.earth/ops/snip/tools"
 )
@@ -23,18 +27,22 @@ type Cmd struct {
 	ParentLoopRow *LoopRow
 	CfgCmd        *CfgCmd
 
-	Command string
-	Args    []string
+	Command []string
 	Vars    map[string]string
-
-	Middlewares []string
 
 	ExecUser    string
 	ExecTimeout *time.Duration
 
-	IsMD   bool
 	Logger *logrus.Entry
 	Depth  int
+
+	Middlewares []*middleware.Middleware
+	Runner      *runner.Runner
+
+	RequiredFiles map[string]string
+
+	Expect []expect.Batcher
+	Stdin  io.Reader
 }
 
 func (cmd *Cmd) EnvMap() map[string]string {
@@ -51,17 +59,22 @@ func CreateCmd(ccmd *CfgCmd, ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 	parentPlay := parentLoopRow.ParentPlay
 	app := ccmd.CfgPlay.App
 
+	thr := proc.CreateThread(app)
+
 	cmd := &Cmd{
 		App:           app,
 		ParentLoopRow: parentLoopRow,
 		CfgCmd:        ccmd,
 		Command:       ccmd.Command,
-		Args:          ccmd.Args,
-		IsMD:          ccmd.IsMD,
-		Middlewares:   parentPlay.Middlewares,
-		Thread:        proc.CreateThread(app),
-		ExecUser:      parentPlay.ExecUser,
-		ExecTimeout:   parentPlay.ExecTimeout,
+
+		Middlewares: ccmd.Middlewares,
+		Runner:      ccmd.Runner,
+
+		RequiredFiles: ccmd.RequiredFiles,
+
+		Thread:      thr,
+		ExecUser:    parentPlay.ExecUser,
+		ExecTimeout: parentPlay.ExecTimeout,
 	}
 
 	depth := ccmd.Depth
@@ -86,12 +99,10 @@ func CreateCmd(ccmd *CfgCmd, ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 	loggerCtx := context.WithValue(context.Background(), config.LogContextKey("indentation"), cmd.Depth+1)
 	logger = logger.WithContext(loggerCtx)
 	cmd.Logger = logger
-	cmd.Thread.Logger = logger
-
-	cmd.Thread.ExecUser = cmd.ExecUser
+	thr.Logger = logger
 
 	if cmd.ExecTimeout != nil {
-		cmd.Thread.SetTimeout(cmd.ExecTimeout)
+		thr.SetTimeout(cmd.ExecTimeout)
 	}
 
 	return cmd
@@ -137,57 +148,66 @@ func (cmd *Cmd) GetTreeKeyParts() []string {
 	return parts
 }
 
+func (cmd *Cmd) ExpandCmdEnvMapper(key string) string {
+	if val, ok := cmd.Vars[key]; ok {
+		return val
+	}
+	return ""
+}
+func (cmd *Cmd) ExpandCmdEnv(commandSlice []string) []string {
+	expandedCmd := make([]string, len(commandSlice))
+	for i, str := range commandSlice {
+		expandedCmd[i] = os.Expand(str, cmd.ExpandCmdEnvMapper)
+	}
+	return expandedCmd
+}
+
 func (cmd *Cmd) Run() error {
 	return cmd.Thread.Run(cmd.Main)
 }
 
-func (cmd *Cmd) RunFunc() error {
-	commandSlice := append([]string{cmd.Command}, cmd.Args...)
-	commandHook := func(c *exec.Cmd) error {
-		c.Env = tools.EnvToPairs(cmd.EnvMap())
-		return nil
-	}
-	cmd.Logger.Debugf("command: %v", shellquote.Join(commandSlice...))
-	return cmd.Thread.RunCmd(commandSlice, cmd.Logger, commandHook)
-}
-
-func (cmd *Cmd) Main() error {
-
-	app := cmd.App
-
-	cmd.Logger.Info("⮞ playing")
-	cmd.Logger.Debugf("vars: %v", tools.JsonEncode(cmd.Vars))
-
-	var runStack []middleware.Func
-
-	for _, k := range cmd.Middlewares {
-		middleware := app.GetMiddleware(k)
-		runStack = append(runStack, middleware)
-	}
-	runStack = append(runStack, func(middlewareConfig *middleware.Config, next func() error) error {
-		mutableCmd := middlewareConfig.MutableCmd
-		cmd.Command = mutableCmd.Command
-		cmd.Args = mutableCmd.Args
-		cmd.Vars = mutableCmd.Vars
-		return cmd.RunFunc()
-	})
-
+func (cmd *Cmd) CreateMutableCmd() *snipplugin.MutableCmd {
 	originalVars := make(map[string]string)
 	for k, v := range cmd.Vars {
 		originalVars[k] = v
 	}
-	originalArgs := make([]string, len(cmd.Args))
-	for i, v := range cmd.Args {
-		originalArgs[i] = v
+	originalCommand := make([]string, len(cmd.Command))
+	copy(originalCommand, cmd.Command)
+
+	requiredFiles := make(map[string]string)
+	for k, v := range cmd.RequiredFiles {
+		requiredFiles[k] = v
 	}
-	mutableCmd := &middleware.MutableCmd{
+
+	cfg := cmd.App.GetConfig()
+
+	pluginCfg := &snipplugin.AppConfig{
+		BuildDir:    cfg.BuildDir,
+		SnippetsDir: cfg.SnippetsDir,
+	}
+
+	mutableCmd := &snipplugin.MutableCmd{
+		AppConfig:       pluginCfg,
 		Command:         cmd.Command,
-		Args:            cmd.Args,
 		Vars:            cmd.Vars,
-		OriginalCommand: cmd.Command,
-		OriginalArgs:    originalArgs,
+		OriginalCommand: originalCommand,
 		OriginalVars:    originalVars,
+		RequiredFiles:   requiredFiles,
+		Expect:          cmd.Expect,
+		Runner:          cmd.CfgCmd.CfgPlay.Runner,
+		Stdin:           cmd.Stdin,
 	}
+	return mutableCmd
+}
+
+func (cmd *Cmd) ApplyMiddlewares() error {
+	var middlewareStack []*middleware.Middleware
+
+	for _, middleware := range cmd.Middlewares {
+		middlewareStack = append(middlewareStack, middleware)
+	}
+
+	mutableCmd := cmd.CreateMutableCmd()
 	middlewareConfig := &middleware.Config{
 		MutableCmd:    mutableCmd,
 		Context:       cmd.Thread.Context,
@@ -195,17 +215,74 @@ func (cmd *Cmd) Main() error {
 		Logger:        cmd.Logger,
 	}
 
-	wrapped := func() error {
-		return nil
+	wrapped := func() (bool, error) {
+		return false, nil
 	}
-	for i := len(runStack) - 1; i >= 0; i-- {
-		current := runStack[i]
+	for i := len(middlewareStack) - 1; i >= 0; i-- {
+		current := middlewareStack[i]
 		next := wrapped
-		wrapped = func() error {
-			return current(middlewareConfig, next)
+		wrapped = func() (bool, error) {
+			ok, err := current.Apply(middlewareConfig)
+			if err != nil || !ok {
+				return ok, err
+			}
+			return next()
 		}
 	}
 
-	return wrapped()
+	if _, err := wrapped(); err != nil {
+		return err
+	}
+
+	cmd.Command = mutableCmd.Command
+	cmd.Vars = mutableCmd.Vars
+	cmd.RequiredFiles = mutableCmd.RequiredFiles
+	cmd.Expect = mutableCmd.Expect
+	cmd.Stdin = mutableCmd.Stdin
+	if mutableCmd.Runner != cmd.CfgCmd.CfgPlay.Runner {
+		cmd.Runner = cmd.App.GetRunner(mutableCmd.Runner)
+	}
+
+	return nil
+}
+
+func (cmd *Cmd) RunRunner() error {
+
+	r := cmd.Runner
+
+	runCfg := &runner.Config{
+		Context:       cmd.Thread.Context,
+		ContextCancel: cmd.Thread.ContextCancel,
+		Logger:        cmd.Logger,
+		Vars:          cmd.Vars,
+		Command:       cmd.Command,
+		RequiredFiles: cmd.RequiredFiles,
+		Expect:        cmd.Expect,
+		Stdin:         cmd.Stdin,
+	}
+	return r.Run(runCfg)
+}
+
+func (cmd *Cmd) Main() error {
+
+	logger := cmd.Logger
+	logger.Info("⮞ playing")
+
+	var err error
+
+	err = cmd.ApplyMiddlewares()
+	if err != nil {
+		return err
+	}
+
+	logger.Debugf("vars: %v", tools.JsonEncode(cmd.Vars))
+	logger.Debugf("command: %v", shellquote.Join(cmd.Command...))
+
+	err = cmd.RunRunner()
+	if err != nil {
+		return err
+	}
+
+	return nil
 
 }

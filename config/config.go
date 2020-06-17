@@ -21,4 +21,7 @@ type Config struct {
 	MarkdownOutput string `mapstructure:"MARKDOWN_OUTPUT" json:"markdown_output"`
 
 	ShutdownTimeout time.Duration `mapstructure:"SHUTDOWN_TIMEOUT" json:"shutdownTimeout,omitempty"`
+
+	Runner  string   `mapstructure:"RUNNER" json:"runner,omitempty"`
+	Loaders []string `mapstructure:"LOADERS" json:"loaders,omitempty"`
 }

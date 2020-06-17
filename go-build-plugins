@@ -3,11 +3,20 @@
 set -e
 
 BINDIR=`dirname $0`
-for filename in $BINDIR/middlewares/*.go; do
-  echo "go build -buildmode=plugin -o $BINDIR/middlewares/$(basename "$filename" .go).so $filename"
-  go build -buildmode=plugin -o $BINDIR/middlewares/$(basename "$filename" .go).so $filename
+for type_dirname in $BINDIR/plugins/*; do
+  if [ ! -d "$type_dirname" ]; then
+    continue;
+  fi
+  for plugin_dirname in $type_dirname/*; do
+    if [ ! -e "$plugin_dirname" ] || [ ! -d "$plugin_dirname" ]; then
+      continue;
+    fi
+    echo "go build -buildmode=plugin -o $type_dirname/$(basename "$plugin_dirname").so $plugin_dirname"
+    go build -buildmode=plugin -o $type_dirname/$(basename "$plugin_dirname").so $plugin_dirname
+    if [ "$1" != "" ]; then
+      mkdir -p "$1/plugins/$(basename "$type_dirname")/"
+      echo "cp $type_dirname/$(basename "$plugin_dirname").so $1/plugins/$(basename "$type_dirname")/"
+      cp $type_dirname/$(basename "$plugin_dirname").so $1/plugins/$(basename "$type_dirname")/
+    fi
+  done
 done
-
-if [ "$1" != "" ]; then
-  cp $BINDIR/middlewares/*.so "$1/middlewares/"
-fi

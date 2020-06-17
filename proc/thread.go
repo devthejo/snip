@@ -2,16 +2,12 @@ package proc
 
 import (
 	"context"
-	"os"
 	"os/exec"
-	"sync"
-	"syscall"
 	"time"
 
 	"github.com/sirupsen/logrus"
 
 	"gitlab.com/youtopia.earth/ops/snip/errors"
-	"gitlab.com/youtopia.earth/ops/snip/tools"
 )
 
 type Thread struct {
@@ -21,28 +17,26 @@ type Thread struct {
 	ExecExited   bool
 	ExecExitCode int
 
-	ExecUser    string
 	ExecTimeout *time.Duration
 
-	Context       context.Context
-	ContextCancel context.CancelFunc
-	WaitGroup     *sync.WaitGroup
+	Context       *context.Context
+	ContextCancel *context.CancelFunc
 	MainProc      *Main
 
-	CommandStopper func(*exec.Cmd) error
-
 	Logger *logrus.Entry
-
-	Vars map[string]string
 
 	Error error
 }
 
 func CreateThread(app App) *Thread {
 	thr := &Thread{}
-	thr.WaitGroup = &sync.WaitGroup{}
 	thr.App = app
 	thr.MainProc = app.GetMainProc()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	thr.Context = &ctx
+	thr.ContextCancel = &cancel
+
 	return thr
 }
 
@@ -55,44 +49,27 @@ func (thr *Thread) Run(runMain func() error) error {
 		thr.Cancel()
 	}()
 
-	thr.WaitGroup.Add(1)
-
-	go thr.Exec(runMain)
-	thr.WaitGroup.Wait()
+	thr.Exec(runMain)
 
 	return thr.Error
 }
 func (c *Thread) Cancel() {
-	c.ContextCancel()
+	(*c.ContextCancel)()
 }
 func (c *Thread) Done() <-chan struct{} {
-	return c.Context.Done()
+	return (*c.Context).Done()
 }
 
 func (thr *Thread) SetTimeout(timeout *time.Duration) {
 	thr.ExecTimeout = timeout
-	ctx, cancel := context.WithTimeout(context.Background(), *thr.ExecTimeout)
-	thr.Context = ctx
-	thr.ContextCancel = cancel
+	ctx, cancel := context.WithTimeout(*thr.Context, *thr.ExecTimeout)
+	thr.Context = &ctx
+	thr.ContextCancel = &cancel
 }
 
 func (thr *Thread) Exec(runMain func() error) {
 
 	thr.ExecRunning = true
-
-	thr.CommandStopper = func(c *exec.Cmd) error {
-		go func(c *exec.Cmd) {
-			select {
-			case <-thr.Done():
-				if c.Process != nil && thr.ExecRunning {
-					thr.Logger.Debug(`sending stopsignal`)
-					c.Process.Signal(syscall.SIGTERM)
-				}
-				return
-			}
-		}(c)
-		return nil
-	}
 
 	mainWg := thr.App.GetMainProc().WaitGroup
 	mainWg.Add(1)
@@ -106,7 +83,6 @@ func (thr *Thread) Exec(runMain func() error) {
 		if exitError, ok := err.(*exec.ExitError); ok {
 			thr.ExecExitCode = exitError.ExitCode()
 		} else if exitError, ok := err.(*errors.ErrorWithCode); ok {
-			logrus.Warn("exitError")
 			thr.ExecExitCode = exitError.Code
 		} else {
 			thr.ExecExitCode = 1
@@ -125,7 +101,7 @@ func (thr *Thread) Exec(runMain func() error) {
 			}
 		}
 
-		if thr.Context.Err() == context.DeadlineExceeded {
+		if (*thr.Context).Err() == context.DeadlineExceeded {
 			thr.Logger.WithFields(logrus.Fields{
 				"timeout": thr.ExecTimeout,
 			}).Warnf("thread exec timeout fail")
@@ -137,26 +113,4 @@ func (thr *Thread) Exec(runMain func() error) {
 	thr.ExecExited = true
 
 	thr.Cancel()
-	thr.WaitGroup.Done()
-}
-
-func (thr *Thread) ExpandCmdEnvMapper(key string) string {
-	if val, ok := thr.Vars[key]; ok {
-		return val
-	}
-	return ""
-}
-func (thr *Thread) ExpandCmdEnv(commandSlice []string) []string {
-	expandedCmd := make([]string, len(commandSlice))
-	for i, str := range commandSlice {
-		expandedCmd[i] = os.Expand(str, thr.ExpandCmdEnvMapper)
-	}
-	return expandedCmd
-}
-
-func (thr *Thread) RunCmd(commandSlice []string, args ...interface{}) error {
-	commandSlice = thr.ExpandCmdEnv(commandSlice)
-	args = append(args, thr.Context)
-	args = append(args, thr.CommandStopper)
-	return tools.RunCmd(commandSlice, args...)
 }

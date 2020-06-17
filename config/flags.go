@@ -12,6 +12,9 @@ const (
 	FlagMarkdownOutputDesc = "markdown output file"
 
 	FlagShutdownTimeoutDesc = "shutdown timeout"
+
+	FlagRunnerDesc  = "default runner"
+	FlagLoadersDesc = "default loaders"
 )
 
 var (
@@ -24,4 +27,7 @@ var (
 	FlagMarkdownOutputDefault = "snip.md"
 
 	FlagShutdownTimeoutDefault = "5"
+
+	FlagRunnerDefault  = "sh"
+	FlagLoadersDefault = `["markdown"]`
 )

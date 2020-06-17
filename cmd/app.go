@@ -7,7 +7,9 @@ import (
 	"github.com/spf13/viper"
 
 	"gitlab.com/youtopia.earth/ops/snip/config"
-	"gitlab.com/youtopia.earth/ops/snip/middleware"
+	"gitlab.com/youtopia.earth/ops/snip/plugin/loader"
+	"gitlab.com/youtopia.earth/ops/snip/plugin/middleware"
+	"gitlab.com/youtopia.earth/ops/snip/plugin/runner"
 	"gitlab.com/youtopia.earth/ops/snip/proc"
 )
 
@@ -19,5 +21,7 @@ type App interface {
 	OnPreRun(*cobra.Command)
 	GetNow() time.Time
 	GetMainProc() *proc.Main
-	GetMiddleware(string) middleware.Func
+	GetLoader(string) *loader.Loader
+	GetMiddleware(string) *middleware.Middleware
+	GetRunner(string) *runner.Runner
 }

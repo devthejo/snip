@@ -12,7 +12,9 @@ import (
 	"gitlab.com/youtopia.earth/ops/snip/cmd"
 	"gitlab.com/youtopia.earth/ops/snip/config"
 	"gitlab.com/youtopia.earth/ops/snip/errors"
-	"gitlab.com/youtopia.earth/ops/snip/middleware"
+	"gitlab.com/youtopia.earth/ops/snip/plugin/loader"
+	"gitlab.com/youtopia.earth/ops/snip/plugin/middleware"
+	"gitlab.com/youtopia.earth/ops/snip/plugin/runner"
 	"gitlab.com/youtopia.earth/ops/snip/proc"
 )
 
@@ -27,7 +29,7 @@ type App struct {
 	Now      time.Time
 	MainProc *proc.Main
 
-	Middlewares cmap.ConcurrentMap
+	Plugins cmap.ConcurrentMap
 }
 
 func New() *App {
@@ -52,7 +54,8 @@ func NewApp() *App {
 	app.Config = app.ConfigLoader.Config
 	app.Viper = app.ConfigLoader.Viper
 
-	app.Middlewares = cmap.New()
+	app.Plugins = cmap.New()
+	app.LoadNativePlugins()
 
 	return app
 }
@@ -104,28 +107,78 @@ func (app *App) GetMainProc() *proc.Main {
 	return app.MainProc
 }
 
-func (app *App) GetMiddlewarePlugin(k string) *plugin.Plugin {
-	plugInterface, ok := app.Middlewares.Get(k)
-	var plug *plugin.Plugin
+func (app *App) GetPlugin(k string) interface{} {
+	plugInterface, ok := app.Plugins.Get(k)
+	var plug interface{}
 	if ok {
-		plug = plugInterface.(*plugin.Plugin)
+		plug = plugInterface
 	} else {
-		mod := "./middlewares/" + k + ".so"
+		mod := "./plugins/" + k + ".so"
 		var err error
 		plug, err = plugin.Open(mod)
 		errors.Check(err)
-		app.Middlewares.Set(k, plug)
+		app.Plugins.Set(k, plug)
 	}
 	return plug
 }
-func (app *App) GetMiddleware(k string) middleware.Func {
-	plug := app.GetMiddlewarePlugin(k)
-	symRun, err := plug.Lookup("Middleware")
-	errors.Check(err)
-	// run, ok := symRun.(middleware.Func)
-	run, ok := symRun.(func(*middleware.Config, func() error) error)
-	if !ok {
-		logrus.Fatalf("unexpected type from module symbol on middleware %v", k)
+
+func (app *App) GetLoader(k string) *loader.Loader {
+	plug := app.GetPlugin("loaders/" + k)
+	var run *loader.Loader
+	switch v := plug.(type) {
+	case *plugin.Plugin:
+		sym, err := v.Lookup("Loader")
+		errors.Check(err)
+		var ok bool
+		run, ok = sym.(*loader.Loader)
+		if !ok {
+			logrus.Fatalf("unexpected type from module symbol on loader plugin %s: %T", k, sym)
+		}
+	case *loader.Loader:
+		run = v
 	}
 	return run
+}
+
+func (app *App) GetMiddleware(k string) *middleware.Middleware {
+	plug := app.GetPlugin("middlewares/" + k)
+	var run *middleware.Middleware
+	switch v := plug.(type) {
+	case *plugin.Plugin:
+		sym, err := v.Lookup("Middleware")
+		errors.Check(err)
+		var ok bool
+		run, ok = sym.(*middleware.Middleware)
+		if !ok {
+			logrus.Fatalf("unexpected type from module symbol on middleware plugin %s: %T", k, sym)
+		}
+	case *middleware.Middleware:
+		run = v
+	}
+	return run
+}
+
+func (app *App) GetRunner(k string) *runner.Runner {
+	plug := app.GetPlugin("runners/" + k)
+	var run *runner.Runner
+	switch v := plug.(type) {
+	case *plugin.Plugin:
+		sym, err := v.Lookup("Runner")
+		errors.Check(err)
+		var ok bool
+		run, ok = sym.(*runner.Runner)
+		if !ok {
+			logrus.Fatalf("unexpected type from module symbol on runner plugin %s: %T", k, sym)
+		}
+	case *runner.Runner:
+		run = v
+	}
+	return run
+}
+
+func (app *App) LoadNativePlugins() {
+	// app.Plugins.Set("loaders/")
+	// app.Plugins.Set("middlewares/")
+	// app.Plugins.Set("runners/ssh", )
+
 }
