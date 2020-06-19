@@ -4,7 +4,9 @@ import (
 	"context"
 	"io"
 
+	cache "github.com/patrickmn/go-cache"
 	"github.com/sirupsen/logrus"
+
 	expect "gitlab.com/youtopia.earth/ops/snip/goexpect"
 )
 
@@ -12,6 +14,8 @@ type Config struct {
 	Context       context.Context
 	ContextCancel context.CancelFunc
 	Logger        *logrus.Entry
+
+	Cache *cache.Cache
 
 	Command []string
 	Vars    map[string]string

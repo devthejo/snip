@@ -27,7 +27,9 @@ var (
 				destAbs := snipDir + dest
 				dir := filepath.Dir(destAbs)
 				os.MkdirAll(dir, os.ModePerm)
-				_, err := tools.CopyOnce(src, destAbs)
+				_, err := tools.RequiredOnce(cfg.Cache, []string{"local", destAbs}, src, func() (interface{}, error) {
+					return tools.Copy(src, destAbs)
+				})
 				if err != nil {
 					return err
 				}

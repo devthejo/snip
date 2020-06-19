@@ -3,6 +3,7 @@ package cmd
 import (
 	"time"
 
+	cache "github.com/patrickmn/go-cache"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -20,6 +21,7 @@ type App interface {
 	GetConfigFile() *string
 	OnPreRun(*cobra.Command)
 	GetNow() time.Time
+	GetCache() *cache.Cache
 	GetMainProc() *proc.Main
 	GetLoader(string) *loader.Loader
 	GetMiddleware(string) *middleware.Middleware

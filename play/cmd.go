@@ -261,6 +261,7 @@ func (cmd *Cmd) RunRunner() error {
 		Context:       cmd.Thread.Context,
 		ContextCancel: cmd.Thread.ContextCancel,
 		Logger:        cmd.Logger,
+		Cache:         cmd.App.GetCache(),
 		Vars:          cmd.Vars,
 		Command:       cmd.Command,
 		RequiredFiles: cmd.RequiredFiles,

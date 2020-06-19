@@ -17,6 +17,7 @@ import (
 	"gitlab.com/youtopia.earth/ops/snip/plugin/runner"
 	"gitlab.com/youtopia.earth/ops/snip/sshclient"
 	"gitlab.com/youtopia.earth/ops/snip/sshutils"
+	"gitlab.com/youtopia.earth/ops/snip/tools"
 )
 
 var (
@@ -28,7 +29,10 @@ var (
 			sshCfg := sshclient.CreateConfig(cfg.Vars)
 
 			for src, dest := range cfg.RequiredFiles {
-				err := sshutils.Upload(sshCfg, src, dest, logger)
+				_, err := tools.RequiredOnce(cfg.Cache, []string{"host", sshCfg.Host, dest}, src, func() (interface{}, error) {
+					err := sshutils.Upload(sshCfg, src, dest, logger)
+					return nil, err
+				})
 				if err != nil {
 					return err
 				}

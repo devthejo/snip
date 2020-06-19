@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"sync"
 
 	scp "github.com/bramvdbogaerde/go-scp"
 	"github.com/sirupsen/logrus"
@@ -15,47 +14,7 @@ import (
 	"gitlab.com/youtopia.earth/ops/snip/sshclient"
 )
 
-var uploadedByHostRegistry map[string]map[string]*UploadState
-var once sync.Once
-var uploadMutex = &sync.Mutex{}
-
-func GetUploadedByHostRegistry() map[string]map[string]*UploadState {
-	once.Do(func() {
-		uploadedByHostRegistry = make(map[string]map[string]*UploadState)
-	})
-	return uploadedByHostRegistry
-}
-
-type UploadState struct {
-	Uploading bool
-	Ready     bool
-	Wg        sync.WaitGroup
-}
-
 func Upload(cfg *sshclient.Config, src string, dest string, logger *logrus.Entry) error {
-
-	uploadMutex.Lock()
-	r := GetUploadedByHostRegistry()
-	if r[cfg.Host] == nil {
-		r[cfg.Host] = make(map[string]*UploadState)
-	}
-	if r[cfg.Host][dest] == nil {
-		r[cfg.Host][dest] = &UploadState{}
-	}
-	if r[cfg.Host][dest].Ready {
-		uploadMutex.Unlock()
-		return nil
-	}
-	if r[cfg.Host][dest].Uploading {
-		r[cfg.Host][dest].Wg.Wait()
-		if r[cfg.Host][dest].Ready {
-			uploadMutex.Unlock()
-			return nil
-		}
-	}
-	r[cfg.Host][dest].Wg.Add(1)
-	r[cfg.Host][dest].Uploading = true
-	uploadMutex.Unlock()
 
 	retryCount := 0
 	var err error
@@ -72,14 +31,6 @@ func Upload(cfg *sshclient.Config, src string, dest string, logger *logrus.Entry
 		logger.Warnf("attempt %v/%v failed", retryCount, cfg.MaxRetry)
 		logger.Debug("retrying... ")
 	}
-
-	if err == nil {
-		r[cfg.Host][dest].Ready = true
-	} else {
-		r[cfg.Host][dest].Ready = false
-	}
-	r[cfg.Host][dest].Uploading = false
-	r[cfg.Host][dest].Wg.Done()
 
 	return err
 }

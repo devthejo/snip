@@ -21,8 +21,6 @@ func RenderEnv(src string, envMap map[string]string) (string, error) {
 	vm.NativeFunction(NativeFunctionEnv(envMap))
 	vm.NativeFunction(NativeFunctionEnviron(envMap))
 
-	vm.NativeFunction(NativeFunctionK1YEnvIs(envMap))
-
 	var bytes []byte
 	var err error
 	bytes, err = ioutil.ReadFile(src)

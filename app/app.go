@@ -5,6 +5,7 @@ import (
 	"time"
 
 	cmap "github.com/orcaman/concurrent-map"
+	cache "github.com/patrickmn/go-cache"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -37,6 +38,8 @@ type App struct {
 	MainProc *proc.Main
 
 	Plugins cmap.ConcurrentMap
+
+	Cache *cache.Cache
 }
 
 func New() *App {
@@ -51,6 +54,8 @@ func NewApp() *App {
 	app.ConfigEnvPrefix = "SNIP"
 
 	app.Now = time.Now()
+
+	app.Cache = cache.New(5*time.Minute, 10*time.Minute)
 
 	var configFile string
 	app.ConfigFile = &configFile
@@ -105,6 +110,10 @@ func (app *App) RunCmd() {
 
 func (app *App) GetNow() time.Time {
 	return app.Now
+}
+
+func (app *App) GetCache() *cache.Cache {
+	return app.Cache
 }
 
 func (app *App) GetMainProc() *proc.Main {
