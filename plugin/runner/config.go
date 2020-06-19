@@ -4,13 +4,13 @@ import (
 	"context"
 	"io"
 
-	expect "github.com/google/goexpect"
+	expect "gitlab.com/youtopia.earth/ops/snip/goexpect"
 	"github.com/sirupsen/logrus"
 )
 
 type Config struct {
-	Context       *context.Context
-	ContextCancel *context.CancelFunc
+	Context       context.Context
+	ContextCancel context.CancelFunc
 	Logger        *logrus.Entry
 
 	Command []string
@@ -19,6 +19,8 @@ type Config struct {
 	RequiredFiles map[string]string
 	Expect        []expect.Batcher
 	Stdin         io.Reader
+
+	Closer *func(interface{}) bool
 }
 
 func (cfg *Config) EnvMap() map[string]string {

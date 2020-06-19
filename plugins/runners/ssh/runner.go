@@ -8,7 +8,6 @@ import (
 	shellquote "github.com/kballard/go-shellquote"
 	"github.com/kvz/logstreamer"
 	"github.com/sirupsen/logrus"
-	"gitlab.com/youtopia.earth/ops/snip/errors"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/runner"
 	"gitlab.com/youtopia.earth/ops/snip/sshclient"
 	"gitlab.com/youtopia.earth/ops/snip/sshutils"
@@ -83,8 +82,13 @@ var (
 
 			go func() {
 				select {
-				case <-(*cfg.Context).Done():
+				case <-cfg.Context.Done():
 					logger.Debug(`closing process`)
+					if cfg.Closer != nil {
+						if !(*cfg.Closer)(session) {
+							return
+						}
+					}
 					// session.Signal(ssh.SIGTERM)
 					session.Close()
 					return
@@ -98,12 +102,6 @@ var (
 			}
 
 			if err := session.Wait(); err != nil {
-				if err.Error() == "Process exited with status 141 from signal PIPE" {
-					return &errors.ErrorWithCode{
-						Err:  err,
-						Code: 141,
-					}
-				}
 				return err
 			}
 

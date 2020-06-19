@@ -19,8 +19,8 @@ type Thread struct {
 
 	ExecTimeout *time.Duration
 
-	Context       *context.Context
-	ContextCancel *context.CancelFunc
+	Context       context.Context
+	ContextCancel context.CancelFunc
 	MainProc      *Main
 
 	Logger *logrus.Entry
@@ -34,8 +34,8 @@ func CreateThread(app App) *Thread {
 	thr.MainProc = app.GetMainProc()
 
 	ctx, cancel := context.WithCancel(context.Background())
-	thr.Context = &ctx
-	thr.ContextCancel = &cancel
+	thr.Context = ctx
+	thr.ContextCancel = cancel
 
 	return thr
 }
@@ -54,17 +54,17 @@ func (thr *Thread) Run(runMain func() error) error {
 	return thr.Error
 }
 func (c *Thread) Cancel() {
-	(*c.ContextCancel)()
+	c.ContextCancel()
 }
 func (c *Thread) Done() <-chan struct{} {
-	return (*c.Context).Done()
+	return c.Context.Done()
 }
 
 func (thr *Thread) SetTimeout(timeout *time.Duration) {
 	thr.ExecTimeout = timeout
-	ctx, cancel := context.WithTimeout(*thr.Context, *thr.ExecTimeout)
-	thr.Context = &ctx
-	thr.ContextCancel = &cancel
+	ctx, cancel := context.WithTimeout(thr.Context, *thr.ExecTimeout)
+	thr.Context = ctx
+	thr.ContextCancel = cancel
 }
 
 func (thr *Thread) Exec(runMain func() error) {
@@ -78,6 +78,8 @@ func (thr *Thread) Exec(runMain func() error) {
 	err := runMain()
 
 	if err != nil {
+		_, err = errors.CreateErrorWithCodeFromError(err)
+
 		thr.Error = err
 
 		if exitError, ok := err.(*exec.ExitError); ok {
@@ -90,6 +92,10 @@ func (thr *Thread) Exec(runMain func() error) {
 
 		if thr.ExecExitCode > 0 {
 			switch thr.ExecExitCode {
+			case 129:
+				thr.Logger.WithFields(logrus.Fields{
+					"exitCode": thr.ExecExitCode,
+				}).Warnf("thread exec error: %v", err)
 			case 141:
 				thr.Logger.WithFields(logrus.Fields{
 					"exitCode": thr.ExecExitCode,
@@ -101,7 +107,7 @@ func (thr *Thread) Exec(runMain func() error) {
 			}
 		}
 
-		if (*thr.Context).Err() == context.DeadlineExceeded {
+		if thr.Context.Err() == context.DeadlineExceeded {
 			thr.Logger.WithFields(logrus.Fields{
 				"timeout": thr.ExecTimeout,
 			}).Warnf("thread exec timeout fail")

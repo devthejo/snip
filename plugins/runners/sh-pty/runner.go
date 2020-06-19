@@ -8,9 +8,10 @@ import (
 	"os/user"
 	"path/filepath"
 	"strings"
+	"syscall"
 
-	expect "github.com/google/goexpect"
 	"github.com/kvz/logstreamer"
+	expect "gitlab.com/youtopia.earth/ops/snip/goexpect"
 
 	"gitlab.com/youtopia.earth/ops/snip/plugin/runner"
 	"gitlab.com/youtopia.earth/ops/snip/tools"
@@ -36,17 +37,13 @@ var (
 
 			logger := cfg.Logger
 
-			var opts []expect.Option
-
 			env := cfg.EnvMap()
-			opts = append(opts, expect.SetEnv(tools.EnvToPairs(env)))
 
 			w := logger.Writer()
 			defer w.Close()
 			loggerOut := log.New(w, "", 0)
 			logStreamer := logstreamer.NewLogstreamer(loggerOut, "", true)
 			defer logStreamer.Close()
-			opts = append(opts, expect.Tee(logStreamer))
 			logStreamer.FlushRecord()
 
 			commandSlice := make([]string, len(cfg.Command))
@@ -67,32 +64,41 @@ var (
 			}
 			commandSlice = append([]string{commandPath}, commandSlice[1:]...)
 
-			e, ch, err := expect.Spawn(strings.Join(commandSlice, " "), -1, opts...)
-			if err != nil {
-				return err
-			}
+			var opts []expect.Option
+			opts = append(opts, expect.Tee(logStreamer))
+
+			// opts = append(opts, expect.Verbose(true))
+			// opts = append(opts, expect.VerboseWriter(logStreamer))
+
+			cmd := exec.CommandContext(cfg.Context, commandSlice[0], commandSlice[1:]...)
+			opts = append(opts, expect.SetSysProcAttr(&syscall.SysProcAttr{Setpgid: true}))
+			opts = append(opts, expect.SetEnv(tools.EnvToPairs(env)))
+			e, ch, err := expect.SpawnCommand(cmd, -1, opts...)
+
 			defer e.Close()
 
 			go func() {
 				select {
-				case <-(*cfg.Context).Done():
+				case <-cfg.Context.Done():
 					logger.Debug(`closing process`)
-					if err := e.Close(); err != nil {
-						logger.Warn("failed to kill process: ", err)
+					if cfg.Closer != nil {
+						if !(*cfg.Closer)(cmd) {
+							return
+						}
 					}
 					return
 				}
 			}()
 
+			expected := cfg.Expect
 			if cfg.Stdin != nil {
 				b, err := ioutil.ReadAll(cfg.Stdin)
 				if err != nil {
 					return err
 				}
-				e.Send(string(b))
+				expected = append(expected, &expect.BSnd{S: string(b)})
 			}
-
-			e.ExpectBatch(cfg.Expect, -1)
+			e.ExpectBatch(expected, -1)
 
 			return <-ch
 		},

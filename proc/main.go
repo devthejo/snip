@@ -6,17 +6,17 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/sirupsen/logrus"
 
 	"gitlab.com/youtopia.earth/ops/snip/config"
-	"gitlab.com/youtopia.earth/ops/snip/tools"
 )
 
 type Main struct {
 	App           App
-	Context       *context.Context
-	ContextCancel *context.CancelFunc
+	Context       context.Context
+	ContextCancel context.CancelFunc
 	MainChan      chan os.Signal
 	WaitGroup     *sync.WaitGroup
 	ExitCode      int
@@ -29,8 +29,8 @@ func CreateMain(app App) *Main {
 	proc.App = app
 
 	ctx, cancel := context.WithCancel(context.Background())
-	proc.Context = &ctx
-	proc.ContextCancel = &cancel
+	proc.Context = ctx
+	proc.ContextCancel = cancel
 
 	proc.WaitGroup = &sync.WaitGroup{}
 
@@ -47,7 +47,27 @@ func (proc *Main) GetWaitGroup() *sync.WaitGroup {
 
 func (proc *Main) WaitShutdown() bool {
 	cfg := proc.App.GetConfig()
-	return tools.WaitTimeout(proc.WaitGroup, cfg.ShutdownTimeout)
+
+	chForce := make(chan os.Signal)
+	signal.Notify(chForce, syscall.SIGINT)
+
+	c := make(chan struct{})
+	go func() {
+		defer close(c)
+		proc.WaitGroup.Wait()
+	}()
+	select {
+	case <-c:
+		logrus.Info("workers exited gracefully")
+		return true
+	case <-time.After(cfg.ShutdownTimeout):
+		logrus.Warn("workers killed by timeout")
+		return false
+	case <-chForce:
+		logrus.Warn("workers killed by user")
+		return false
+	}
+
 }
 
 func (proc *Main) MainOpener() {
@@ -59,27 +79,23 @@ func (proc *Main) MainCloser() {
 	if proc.Ended {
 		logrus.Info("🗸 done")
 	} else {
-		logrus.Info("shutdown signal received")
+		logrus.Info("shutdown signal received, cancelling workers...")
 		proc.Cancel()
-
-		if proc.WaitShutdown() {
-			logrus.Info("workers done, shutting down")
-		} else {
-			logrus.Warn("workers timeout, shutting down")
-		}
+		proc.WaitShutdown()
+		logrus.Info("shutting down")
 	}
 }
 
-func (proc *Main) GetContext() *context.Context {
+func (proc *Main) GetContext() context.Context {
 	return proc.Context
 }
 
 func (proc *Main) Cancel() {
-	(*proc.ContextCancel)()
+	proc.ContextCancel()
 }
 
 func (proc *Main) Done() <-chan struct{} {
-	return (*proc.Context).Done()
+	return proc.Context.Done()
 }
 
 func (proc *Main) Run(f func() error) {

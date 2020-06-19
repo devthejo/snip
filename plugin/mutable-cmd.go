@@ -3,7 +3,7 @@ package plugin
 import (
 	"io"
 
-	expect "github.com/google/goexpect"
+	expect "gitlab.com/youtopia.earth/ops/snip/goexpect"
 )
 
 type MutableCmd struct {
@@ -18,6 +18,7 @@ type MutableCmd struct {
 	RequiredFiles map[string]string
 	Expect        []expect.Batcher
 	Stdin         io.Reader
+	Closer        *func(interface{}) bool
 	Runner        string
 }
 

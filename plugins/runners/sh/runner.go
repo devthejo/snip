@@ -7,6 +7,7 @@ import (
 	"os/user"
 	"path/filepath"
 	"strings"
+	"syscall"
 
 	"github.com/kvz/logstreamer"
 
@@ -49,7 +50,7 @@ var (
 				return err
 			}
 
-			cmd := exec.CommandContext(*cfg.Context, commandPath, commandSlice[1:]...)
+			cmd := exec.CommandContext(cfg.Context, commandPath, commandSlice[1:]...)
 
 			if cfg.Stdin != nil {
 				cmd.Stdin = cfg.Stdin
@@ -68,13 +69,16 @@ var (
 			cmd.Stderr = logStreamer
 			logStreamer.FlushRecord()
 
+			cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+
 			go func() {
 				select {
-				case <-(*cfg.Context).Done():
+				case <-cfg.Context.Done():
 					logger.Debug(`closing process`)
-					// cmd.Process.Signal(syscall.SIGTERM)
-					if err := cmd.Process.Kill(); err != nil {
-						logger.Warn("failed to kill process: ", err)
+					if cfg.Closer != nil {
+						if !(*cfg.Closer)(cmd) {
+							return
+						}
 					}
 					return
 				}

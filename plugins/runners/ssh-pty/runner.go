@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	expect "github.com/google/goexpect"
 	"github.com/google/goterm/term"
 	"github.com/kvz/logstreamer"
 	"github.com/sirupsen/logrus"
+	expect "gitlab.com/youtopia.earth/ops/snip/goexpect"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/runner"
 	"gitlab.com/youtopia.earth/ops/snip/sshclient"
 	"gitlab.com/youtopia.earth/ops/snip/sshutils"
@@ -125,9 +125,19 @@ var (
 			defer e.Close()
 
 			go func() {
+				if cfg.Closer != nil {
+					if !(*cfg.Closer)(session) {
+						return
+					}
+				}
 				select {
-				case <-(*cfg.Context).Done():
+				case <-cfg.Context.Done():
 					logger.Debug(`closing process`)
+					if cfg.Closer != nil {
+						if !(*cfg.Closer)(session) {
+							return
+						}
+					}
 					e.Close()
 					return
 				}
@@ -135,6 +145,7 @@ var (
 
 			e.ExpectBatch(cfg.Expect, -1)
 
+			// e.Options(expect.Tee(logStreamer))
 			sep := "#" + strconv.FormatInt(time.Now().UnixNano(), 10) + "#"
 			sepL := len(sep)
 			var enableWrite bool
@@ -153,19 +164,27 @@ var (
 				},
 				Writer: logStreamer,
 			}))
-			send := []string{}
-			send = append(send, `echo "`+sep+`"`)
-			send = append(send, runCmd)
-			send = append(send, "exit")
-			e.Send(strings.Join(send, "&&") + "\n")
+
+			var expected []expect.Batcher
+
+			expected = append(expected, &expect.BSnd{S: `echo "` + sep + `"` + " &&"})
+			expected = append(expected, &expect.BSnd{S: runCmd + "\n"})
 
 			if cfg.Stdin != nil {
 				b, err := ioutil.ReadAll(cfg.Stdin)
 				if err != nil {
 					return err
 				}
-				e.Send(string(b))
+				expected = append(expected, &expect.BSnd{S: string(b)})
 			}
+
+			for _, v := range cfg.Expect {
+				expected = append(expected, v)
+			}
+
+			expected = append(expected, &expect.BSnd{S: "exit\n"})
+
+			e.ExpectBatch(expected, -1)
 
 			return <-ch
 		},

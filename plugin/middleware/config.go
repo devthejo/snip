@@ -9,8 +9,8 @@ import (
 )
 
 type Config struct {
-	Context       *context.Context
-	ContextCancel *context.CancelFunc
+	Context       context.Context
+	ContextCancel context.CancelFunc
 	MutableCmd    *snipplugin.MutableCmd
 	Logger        *logrus.Entry
 }

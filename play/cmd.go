@@ -7,8 +7,7 @@ import (
 	"strings"
 	"time"
 
-	expect "github.com/google/goexpect"
-	shellquote "github.com/kballard/go-shellquote"
+	expect "gitlab.com/youtopia.earth/ops/snip/goexpect"
 	"github.com/sirupsen/logrus"
 
 	"gitlab.com/youtopia.earth/ops/snip/config"
@@ -43,6 +42,8 @@ type Cmd struct {
 
 	Expect []expect.Batcher
 	Stdin  io.Reader
+
+	Closer *func(interface{}) bool
 }
 
 func (cmd *Cmd) EnvMap() map[string]string {
@@ -196,6 +197,7 @@ func (cmd *Cmd) CreateMutableCmd() *snipplugin.MutableCmd {
 		Expect:          cmd.Expect,
 		Runner:          cmd.CfgCmd.CfgPlay.Runner,
 		Stdin:           cmd.Stdin,
+		Closer:          cmd.Closer,
 	}
 	return mutableCmd
 }
@@ -239,6 +241,7 @@ func (cmd *Cmd) ApplyMiddlewares() error {
 	cmd.RequiredFiles = mutableCmd.RequiredFiles
 	cmd.Expect = mutableCmd.Expect
 	cmd.Stdin = mutableCmd.Stdin
+	cmd.Closer = mutableCmd.Closer
 	if mutableCmd.Runner != cmd.CfgCmd.CfgPlay.Runner {
 		cmd.Runner = cmd.App.GetRunner(mutableCmd.Runner)
 	}
@@ -259,6 +262,7 @@ func (cmd *Cmd) RunRunner() error {
 		RequiredFiles: cmd.RequiredFiles,
 		Expect:        cmd.Expect,
 		Stdin:         cmd.Stdin,
+		Closer:        cmd.Closer,
 	}
 	return r.Run(runCfg)
 }
@@ -275,8 +279,9 @@ func (cmd *Cmd) Main() error {
 		return err
 	}
 
-	logger.Debugf("vars: %v", tools.JsonEncode(cmd.Vars))
-	logger.Debugf("command: %v", shellquote.Join(cmd.Command...))
+	// logger.Debugf("vars: %v", tools.JsonEncode(cmd.Vars))
+	logger.Debugf("env: %v", tools.JsonEncode(cmd.EnvMap()))
+	logger.Debugf("command: %v", strings.Join(cmd.Command, " "))
 
 	err = cmd.RunRunner()
 	if err != nil {

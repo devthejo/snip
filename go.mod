@@ -34,4 +34,5 @@ require (
 	go.uber.org/multierr v1.1.0
 	golang.org/x/crypto v0.0.0-20190530122614-20be4c3c3ed5
 	golang.org/x/sys v0.0.0-20190531175056-4c3a928424d2 // indirect
+	google.golang.org/grpc v1.21.0
 )
