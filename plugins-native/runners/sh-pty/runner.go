@@ -41,10 +41,8 @@ var (
 
 			w := logger.Writer()
 			defer w.Close()
-			loggerOut := log.New(w, "", 0)
-			logStreamer := logstreamer.NewLogstreamer(loggerOut, "", true)
+			logStreamer := logstreamer.NewLogstreamer(log.New(w, "", 0), "", false)
 			defer logStreamer.Close()
-			logStreamer.FlushRecord()
 
 			commandSlice := make([]string, len(cfg.Command))
 			for i, p := range cfg.Command {

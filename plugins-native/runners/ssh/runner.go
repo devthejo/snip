@@ -73,12 +73,10 @@ var (
 			})
 			w := loggerSSH.Writer()
 			defer w.Close()
-			loggerOut := log.New(w, "", 0)
-			logStreamer := logstreamer.NewLogstreamer(loggerOut, "", true)
+			logStreamer := logstreamer.NewLogstreamer(log.New(w, "", 0), "", false)
 			defer logStreamer.Close()
 			session.Stdout = logStreamer
 			session.Stderr = logStreamer
-			logStreamer.FlushRecord()
 
 			go func() {
 				select {

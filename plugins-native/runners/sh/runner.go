@@ -62,12 +62,10 @@ var (
 			logger := cfg.Logger
 			w := logger.Writer()
 			defer w.Close()
-			loggerOut := log.New(w, "", 0)
-			logStreamer := logstreamer.NewLogstreamer(loggerOut, "", true)
+			logStreamer := logstreamer.NewLogstreamer(log.New(w, "", 0), "", false)
 			defer logStreamer.Close()
 			cmd.Stdout = logStreamer
 			cmd.Stderr = logStreamer
-			logStreamer.FlushRecord()
 
 			cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 

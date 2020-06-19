@@ -89,6 +89,10 @@ var (
 			if err != nil {
 				return err
 			}
+			sErr, err := session.StderrPipe()
+			if err != nil {
+				return err
+			}
 
 			loggerSSH := logger.WithFields(logrus.Fields{
 				"ssh":  true,
@@ -96,10 +100,8 @@ var (
 			})
 			w := loggerSSH.Writer()
 			defer w.Close()
-			loggerOut := log.New(w, "", 0)
-			logStreamer := logstreamer.NewLogstreamer(loggerOut, "", true)
+			logStreamer := logstreamer.NewLogstreamer(log.New(w, "", 0), "", false)
 			defer logStreamer.Close()
-			logStreamer.FlushRecord()
 
 			err = session.Shell()
 			if err != nil {
@@ -107,8 +109,9 @@ var (
 			}
 
 			e, ch, err := expect.SpawnGeneric(&expect.GenOptions{
-				In:  sIn,
-				Out: sOut,
+				In: sIn,
+				// Out: sOut,
+				Out: io.MultiReader(sOut, sErr),
 				Close: func() error {
 					// session.Signal(ssh.SIGTERM)
 					return session.Close()
@@ -167,8 +170,9 @@ var (
 
 			var expected []expect.Batcher
 
-			expected = append(expected, &expect.BSnd{S: `echo "` + sep + `"` + " &&"})
-			expected = append(expected, &expect.BSnd{S: runCmd + "\n"})
+			expected = append(expected, &expect.BSnd{S: `echo "` + sep + `" &&`})
+			expected = append(expected, &expect.BSnd{S: runCmd})
+			expected = append(expected, &expect.BSnd{S: " && exit\n"})
 
 			if cfg.Stdin != nil {
 				b, err := ioutil.ReadAll(cfg.Stdin)
@@ -181,8 +185,6 @@ var (
 			for _, v := range cfg.Expect {
 				expected = append(expected, v)
 			}
-
-			expected = append(expected, &expect.BSnd{S: "exit\n"})
 
 			e.ExpectBatch(expected, -1)
 
