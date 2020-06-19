@@ -1,4 +1,4 @@
-package main
+package mainNative
 
 import (
 	"os/exec"

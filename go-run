@@ -9,7 +9,9 @@ fi
 export SNIP_CWD=`pwd`
 cd `dirname $0`
 
-./go-build-plugins $SNIP_CWD
+if [ ! -z "$SNIP_GO_BUILD_PLUGINS" ]; then
+  ./go-build-plugins $SNIP_CWD
+fi
 
 if [ ! -t 0 ]; then
   exec cat /dev/stdin | go run "main.go" $@
