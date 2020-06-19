@@ -18,8 +18,11 @@ type MutableCmd struct {
 	RequiredFiles map[string]string
 	Expect        []expect.Batcher
 	Stdin         io.Reader
-	Closer        *func(interface{}) bool
 	Runner        string
+
+	Dir string
+
+	Closer *func(interface{}) bool
 }
 
 func (cmd *MutableCmd) EnvMap() map[string]string {

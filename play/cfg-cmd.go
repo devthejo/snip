@@ -19,6 +19,8 @@ type CfgCmd struct {
 	Middlewares []*middleware.Middleware
 	Runner      *runner.Runner
 
+	Dir string
+
 	RequiredFiles map[string]string
 
 	Depth int
@@ -29,6 +31,7 @@ func CreateCfgCmd(cp *CfgPlay, c []string) *CfgCmd {
 		CfgPlay:       cp,
 		Command:       c,
 		Depth:         cp.Depth + 1,
+		Dir:           cp.Dir,
 		RequiredFiles: make(map[string]string),
 	}
 	ccmd.Parse()

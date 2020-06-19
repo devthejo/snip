@@ -59,6 +59,8 @@ var (
 			env := cfg.EnvMap()
 			cmd.Env = tools.EnvToPairs(env)
 
+			cmd.Dir = cfg.Dir
+
 			logger := cfg.Logger
 			w := logger.Writer()
 			defer w.Close()

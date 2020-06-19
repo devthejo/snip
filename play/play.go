@@ -30,7 +30,6 @@ type Play struct {
 
 	LoopSequential bool
 
-	ExecUser    string
 	ExecTimeout *time.Duration
 
 	RegisterVars []string
@@ -63,7 +62,6 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 		LoopSequential: loopSequential,
 		CheckCommand:   cp.CheckCommand,
 
-		ExecUser:    cp.ExecUser,
 		ExecTimeout: cp.ExecTimeout,
 
 		// RegisterVars: cp.RegisterVars,

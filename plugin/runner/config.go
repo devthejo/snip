@@ -4,8 +4,8 @@ import (
 	"context"
 	"io"
 
-	expect "gitlab.com/youtopia.earth/ops/snip/goexpect"
 	"github.com/sirupsen/logrus"
+	expect "gitlab.com/youtopia.earth/ops/snip/goexpect"
 )
 
 type Config struct {
@@ -19,6 +19,8 @@ type Config struct {
 	RequiredFiles map[string]string
 	Expect        []expect.Batcher
 	Stdin         io.Reader
+
+	Dir string
 
 	Closer *func(interface{}) bool
 }

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/google/goterm/term"
+	shellquote "github.com/kballard/go-shellquote"
 	"github.com/kvz/logstreamer"
 	"github.com/sirupsen/logrus"
 	expect "gitlab.com/youtopia.earth/ops/snip/goexpect"
@@ -24,8 +25,7 @@ var (
 
 			logger := cfg.Logger
 
-			env := cfg.EnvMap()
-			sshCfg := sshclient.CreateConfig(env)
+			sshCfg := sshclient.CreateConfig(cfg.Vars)
 
 			for src, dest := range cfg.RequiredFiles {
 				err := sshutils.Upload(sshCfg, src, dest, logger)
@@ -54,17 +54,7 @@ var (
 
 			command := strings.Join(commandSlice, " ")
 
-			var setenvSlice []string
-			setenv := ""
-			for k, v := range env {
-				setenvSlice = append(setenvSlice, k+"="+v)
-			}
-			setenv = strings.Join(setenvSlice, " ")
-
-			runCmdSlice := []string{setenv, command}
-			runCmd := strings.Join(runCmdSlice, " ")
-
-			logger.Debugf("remote command: %v", runCmd)
+			logger.Debugf("remote command: %v", command)
 
 			var opts []expect.Option
 
@@ -170,9 +160,26 @@ var (
 
 			var expected []expect.Batcher
 
-			expected = append(expected, &expect.BSnd{S: `echo "` + sep + `" &&`})
-			expected = append(expected, &expect.BSnd{S: runCmd})
-			expected = append(expected, &expect.BSnd{S: " && exit\n"})
+			expected = append(expected, &expect.BSnd{S: `echo "` + sep + `"; `})
+
+			if cfg.Dir != "" {
+				expected = append(expected, &expect.BSnd{S: "cd " + cfg.Dir + ";"})
+			}
+
+			var setenvSlice []string
+			var setenv string
+			env := cfg.EnvMap()
+			if len(env) > 0 {
+				for k, v := range env {
+					setenvSlice = append(setenvSlice, k+"="+v)
+				}
+				setenv = "export " + shellquote.Join(setenvSlice...) + ";"
+				expected = append(expected, &expect.BSnd{S: setenv})
+			}
+
+			expected = append(expected, &expect.BSnd{S: command + "; "})
+
+			expected = append(expected, &expect.BSnd{S: "exit\n"})
 
 			if cfg.Stdin != nil {
 				b, err := ioutil.ReadAll(cfg.Stdin)

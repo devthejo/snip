@@ -41,7 +41,8 @@ type CfgPlay struct {
 	Depth       int
 	HasChildren bool
 
-	ExecUser    string
+	Dir string
+
 	ExecTimeout *time.Duration
 
 	Loader      interface{}
@@ -83,8 +84,8 @@ func (cp *CfgPlay) ParseMap(m map[string]interface{}) {
 func (cp *CfgPlay) ParseMapRun(m map[string]interface{}, override bool) {
 	cp.ParseKey(m, override)
 	cp.ParseTitle(m, override)
+	cp.ParseDir(m, override)
 	cp.ParseExecTimeout(m, override)
-	cp.ParseExecUser(m, override)
 	cp.ParseLoopSets(m, override)
 	cp.ParseLoopOn(m, override)
 	cp.ParseLoopSequential(m, override)
@@ -163,6 +164,19 @@ func (cp *CfgPlay) ParseTitle(m map[string]interface{}, override bool) {
 	}
 }
 
+func (cp *CfgPlay) ParseDir(m map[string]interface{}, override bool) {
+	if !override && cp.Dir != "" {
+		return
+	}
+	switch v := m["dir"].(type) {
+	case string:
+		cp.Dir = v
+	case nil:
+	default:
+		unexpectedTypeCmd(m, "dir")
+	}
+}
+
 func (cp *CfgPlay) ParseExecTimeout(m map[string]interface{}, override bool) {
 	if !override && cp.ExecTimeout != nil {
 		return
@@ -171,22 +185,6 @@ func (cp *CfgPlay) ParseExecTimeout(m map[string]interface{}, override bool) {
 	errors.Check(err)
 	if timeout != 0 {
 		cp.ExecTimeout = &timeout
-	}
-}
-func (cp *CfgPlay) ParseExecUser(m map[string]interface{}, override bool) {
-
-	if !override && cp.ExecUser != "" {
-		return
-	}
-	switch v := m["user"].(type) {
-	case string:
-		cp.ExecUser = v
-	case nil:
-		if cp.ParentCfgPlay != nil {
-			cp.ExecUser = cp.ParentCfgPlay.ExecUser
-		}
-	default:
-		unexpectedTypeCmd(m, "user")
 	}
 }
 

@@ -37,8 +37,6 @@ var (
 
 			logger := cfg.Logger
 
-			env := cfg.EnvMap()
-
 			w := logger.Writer()
 			defer w.Close()
 			logStreamer := logstreamer.NewLogstreamer(log.New(w, "", 0), "", false)
@@ -69,8 +67,12 @@ var (
 			// opts = append(opts, expect.VerboseWriter(logStreamer))
 
 			cmd := exec.CommandContext(cfg.Context, commandSlice[0], commandSlice[1:]...)
+
+			cmd.Dir = cfg.Dir
+			cmd.Env = tools.EnvToPairs(cfg.EnvMap())
+
 			opts = append(opts, expect.SetSysProcAttr(&syscall.SysProcAttr{Setpgid: true}))
-			opts = append(opts, expect.SetEnv(tools.EnvToPairs(env)))
+			// opts = append(opts, expect.SetEnv(tools.EnvToPairs(cfg.EnvMap())))
 			e, ch, err := expect.SpawnCommand(cmd, -1, opts...)
 
 			defer e.Close()

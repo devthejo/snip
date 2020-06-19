@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	expect "gitlab.com/youtopia.earth/ops/snip/goexpect"
 	"github.com/sirupsen/logrus"
+	expect "gitlab.com/youtopia.earth/ops/snip/goexpect"
 
 	"gitlab.com/youtopia.earth/ops/snip/config"
 	snipplugin "gitlab.com/youtopia.earth/ops/snip/plugin"
@@ -29,7 +29,6 @@ type Cmd struct {
 	Command []string
 	Vars    map[string]string
 
-	ExecUser    string
 	ExecTimeout *time.Duration
 
 	Logger *logrus.Entry
@@ -42,6 +41,8 @@ type Cmd struct {
 
 	Expect []expect.Batcher
 	Stdin  io.Reader
+
+	Dir string
 
 	Closer *func(interface{}) bool
 }
@@ -71,10 +72,11 @@ func CreateCmd(ccmd *CfgCmd, ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 		Middlewares: ccmd.Middlewares,
 		Runner:      ccmd.Runner,
 
+		Dir: ccmd.Dir,
+
 		RequiredFiles: ccmd.RequiredFiles,
 
 		Thread:      thr,
-		ExecUser:    parentPlay.ExecUser,
 		ExecTimeout: parentPlay.ExecTimeout,
 	}
 
@@ -197,6 +199,7 @@ func (cmd *Cmd) CreateMutableCmd() *snipplugin.MutableCmd {
 		Expect:          cmd.Expect,
 		Runner:          cmd.CfgCmd.CfgPlay.Runner,
 		Stdin:           cmd.Stdin,
+		Dir:             cmd.Dir,
 		Closer:          cmd.Closer,
 	}
 	return mutableCmd
@@ -242,6 +245,7 @@ func (cmd *Cmd) ApplyMiddlewares() error {
 	cmd.Expect = mutableCmd.Expect
 	cmd.Stdin = mutableCmd.Stdin
 	cmd.Closer = mutableCmd.Closer
+	cmd.Dir = mutableCmd.Dir
 	if mutableCmd.Runner != cmd.CfgCmd.CfgPlay.Runner {
 		cmd.Runner = cmd.App.GetRunner(mutableCmd.Runner)
 	}
@@ -263,6 +267,7 @@ func (cmd *Cmd) RunRunner() error {
 		Expect:        cmd.Expect,
 		Stdin:         cmd.Stdin,
 		Closer:        cmd.Closer,
+		Dir:           cmd.Dir,
 	}
 	return r.Run(runCfg)
 }

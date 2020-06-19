@@ -19,8 +19,7 @@ var (
 
 			logger := cfg.Logger
 
-			env := cfg.EnvMap()
-			sshCfg := sshclient.CreateConfig(env)
+			sshCfg := sshclient.CreateConfig(cfg.Vars)
 
 			for src, dest := range cfg.RequiredFiles {
 				err := sshutils.Upload(sshCfg, src, dest, logger)
@@ -49,17 +48,22 @@ var (
 
 			command := shellquote.Join(commandSlice...)
 
-			var setenvSlice []string
-			setenv := ""
-			for k, v := range env {
-				setenvSlice = append(setenvSlice, k+"="+v)
+			var cd string
+			if cfg.Dir != "" {
+				cd = "cd " + cfg.Dir + ";"
 			}
-			setenv = shellquote.Join(setenvSlice...)
 
-			runCmdSlice := []string{setenv, command}
-			runCmd := strings.Join(runCmdSlice, " ")
+			var setenvSlice []string
+			var setenv string
+			env := cfg.EnvMap()
+			if len(env) > 0 {
+				for k, v := range env {
+					setenvSlice = append(setenvSlice, k+"="+v)
+				}
+				setenv = "export " + shellquote.Join(setenvSlice...) + ";"
+			}
 
-			logger.Debugf("remote command: %v", runCmd)
+			logger.Debugf("remote command: %v", command)
 
 			session, err := client.NewSession()
 			if err != nil {
@@ -94,6 +98,8 @@ var (
 			}()
 
 			session.Stdin = cfg.Stdin
+
+			runCmd := strings.Join([]string{cd, setenv, command}, " ")
 
 			if err := session.Start(runCmd); err != nil {
 				return err
