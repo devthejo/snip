@@ -17,12 +17,12 @@ import (
 	"gitlab.com/youtopia.earth/ops/snip/plugin/runner"
 	"gitlab.com/youtopia.earth/ops/snip/proc"
 
-	pluginLoaderMarkdown "gitlab.com/youtopia.earth/ops/snip/plugins/loaders/markdown"
-	pluginMiddlewareSudo "gitlab.com/youtopia.earth/ops/snip/plugins/middlewares/sudo"
-	pluginRunnerSH "gitlab.com/youtopia.earth/ops/snip/plugins/runners/sh"
-	pluginRunnerSHPTY "gitlab.com/youtopia.earth/ops/snip/plugins/runners/sh-pty"
-	pluginRunnerSSH "gitlab.com/youtopia.earth/ops/snip/plugins/runners/ssh"
-	pluginRunnerSSHPTY "gitlab.com/youtopia.earth/ops/snip/plugins/runners/ssh-pty"
+	pluginLoaderMarkdown "gitlab.com/youtopia.earth/ops/snip/plugins-native/loaders/markdown"
+	pluginMiddlewareSudo "gitlab.com/youtopia.earth/ops/snip/plugins-native/middlewares/sudo"
+	pluginRunnerSH "gitlab.com/youtopia.earth/ops/snip/plugins-native/runners/sh"
+	pluginRunnerSHPTY "gitlab.com/youtopia.earth/ops/snip/plugins-native/runners/sh-pty"
+	pluginRunnerSSH "gitlab.com/youtopia.earth/ops/snip/plugins-native/runners/ssh"
+	pluginRunnerSSHPTY "gitlab.com/youtopia.earth/ops/snip/plugins-native/runners/ssh-pty"
 )
 
 type App struct {
