@@ -57,7 +57,7 @@ func BuildBash(cfg *loader.Config) error {
 	}
 	logrus.Debugf("writed bash from md to %v", file)
 
-	cfg.Command[0] = "~/.snip/" + file
+	cfg.Command[0] = filepath.Join("~", ".snip", appCfg.DeploymentName, file)
 
 	cfg.RequiredFiles[file] = file
 

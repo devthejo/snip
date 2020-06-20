@@ -19,7 +19,8 @@ import (
 )
 
 type Cmd struct {
-	App App
+	App       App
+	AppConfig *snipplugin.AppConfig
 
 	Thread *proc.Thread
 
@@ -45,6 +46,8 @@ type Cmd struct {
 	Dir string
 
 	Closer *func(interface{}) bool
+
+	RegisterVars []string
 }
 
 func (cmd *Cmd) EnvMap() map[string]string {
@@ -60,11 +63,18 @@ func (cmd *Cmd) EnvMap() map[string]string {
 func CreateCmd(ccmd *CfgCmd, ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 	parentPlay := parentLoopRow.ParentPlay
 	app := ccmd.CfgPlay.App
+	cfg := app.GetConfig()
 
 	thr := proc.CreateThread(app)
 
 	cmd := &Cmd{
-		App:           app,
+		App: app,
+		AppConfig: &snipplugin.AppConfig{
+			DeploymentName: cfg.DeploymentName,
+			BuildDir:       cfg.BuildDir,
+			SnippetsDir:    cfg.SnippetsDir,
+		},
+
 		ParentLoopRow: parentLoopRow,
 		CfgCmd:        ccmd,
 		Command:       ccmd.Command,
@@ -78,6 +88,8 @@ func CreateCmd(ccmd *CfgCmd, ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 
 		Thread:      thr,
 		ExecTimeout: parentPlay.ExecTimeout,
+
+		RegisterVars: parentPlay.RegisterVars,
 	}
 
 	depth := ccmd.Depth
@@ -182,15 +194,8 @@ func (cmd *Cmd) CreateMutableCmd() *snipplugin.MutableCmd {
 		requiredFiles[k] = v
 	}
 
-	cfg := cmd.App.GetConfig()
-
-	pluginCfg := &snipplugin.AppConfig{
-		BuildDir:    cfg.BuildDir,
-		SnippetsDir: cfg.SnippetsDir,
-	}
-
 	mutableCmd := &snipplugin.MutableCmd{
-		AppConfig:       pluginCfg,
+		AppConfig:       cmd.AppConfig,
 		Command:         cmd.Command,
 		Vars:            cmd.Vars,
 		OriginalCommand: originalCommand,
@@ -258,6 +263,7 @@ func (cmd *Cmd) RunRunner() error {
 	r := cmd.Runner
 
 	runCfg := &runner.Config{
+		AppConfig:     cmd.AppConfig,
 		Context:       cmd.Thread.Context,
 		ContextCancel: cmd.Thread.ContextCancel,
 		Logger:        cmd.Logger,

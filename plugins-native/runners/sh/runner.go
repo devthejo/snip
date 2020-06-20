@@ -22,9 +22,9 @@ var (
 			var err error
 
 			usr, _ := user.Current()
-			snipDir := usr.HomeDir + "/.snip/"
+			snipDir := filepath.Join(usr.HomeDir, ".snip", cfg.AppConfig.DeploymentName)
 			for src, dest := range cfg.RequiredFiles {
-				destAbs := snipDir + dest
+				destAbs := filepath.Join(snipDir, dest)
 				dir := filepath.Dir(destAbs)
 				os.MkdirAll(dir, os.ModePerm)
 				_, err := tools.RequiredOnce(cfg.Cache, []string{"local", destAbs}, src, func() (interface{}, error) {

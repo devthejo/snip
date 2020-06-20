@@ -15,6 +15,8 @@ const (
 
 	FlagRunnerDesc  = "default runner"
 	FlagLoadersDesc = "default loaders"
+
+	FlagDeploymentNameDesc = "deployment name, must be unique to avoid collisions"
 )
 
 var (
@@ -30,4 +32,6 @@ var (
 
 	FlagRunnerDefault  = "sh"
 	FlagLoadersDefault = `["markdown"]`
+
+	FlagDeploymentNameDefault = "default"
 )

@@ -52,8 +52,9 @@ func (ccmd *CfgCmd) LoadLoader() {
 
 	loadCfg := &loader.Config{
 		AppConfig: &snipplugin.AppConfig{
-			BuildDir:    cfg.BuildDir,
-			SnippetsDir: cfg.SnippetsDir,
+			DeploymentName: cfg.DeploymentName,
+			BuildDir:       cfg.BuildDir,
+			SnippetsDir:    cfg.SnippetsDir,
 		},
 		DefaultsPlayProps: make(map[string]interface{}),
 		Command:           ccmd.Command,

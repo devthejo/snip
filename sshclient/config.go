@@ -62,8 +62,7 @@ func CreateConfig(vars map[string]string) *Config {
 	if strings.HasPrefix(SSHFile, "~/") {
 		usr, err := user.Current()
 		errors.Check(err)
-		dir := usr.HomeDir
-		SSHFile = filepath.Join(dir, SSHFile[2:])
+		SSHFile = filepath.Join(usr.HomeDir, SSHFile[2:])
 	}
 
 	SSHMaxRetryStr := vars["@SSH_MAX_RETRY"]

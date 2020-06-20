@@ -1,6 +1,7 @@
 package plugin
 
 type AppConfig struct {
-	BuildDir    string
-	SnippetsDir string
+	DeploymentName string
+	BuildDir       string
+	SnippetsDir    string
 }

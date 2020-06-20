@@ -39,5 +39,7 @@ func CmdPlay(app App) *cobra.Command {
 	flags.String("runner", config.FlagRunnerDefault, config.FlagRunnerDesc)
 	flags.String("loaders", config.FlagLoadersDefault, config.FlagLoadersDesc)
 
+	flags.StringP("deployment-name", "", config.FlagDeploymentNameDefault, config.FlagDeploymentNameDesc)
+
 	return cmd
 }

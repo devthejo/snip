@@ -30,7 +30,8 @@ var (
 
 			for src, dest := range cfg.RequiredFiles {
 				_, err := tools.RequiredOnce(cfg.Cache, []string{"host", sshCfg.Host, dest}, src, func() (interface{}, error) {
-					err := sshutils.Upload(sshCfg, src, dest, logger)
+					destAbs := filepath.Join("/home", sshCfg.User, ".snip", cfg.AppConfig.DeploymentName, dest)
+					err := sshutils.Upload(sshCfg, src, destAbs, logger)
 					return nil, err
 				})
 				if err != nil {

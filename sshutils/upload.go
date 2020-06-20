@@ -42,8 +42,6 @@ func uploadTry(cfg *sshclient.Config, src string, dest string, logger *logrus.En
 	}
 	client := scp.NewClient(cfg.Host+":"+strconv.Itoa(cfg.Port), &clientConfig)
 
-	remotePath := GetRemotePath(cfg.User, dest)
-
 	logger.Debugf("connecting to %v via ssh", cfg.Host)
 	// err := client.Connect()
 	sshClient, err := ssh.Dial("tcp", client.Host, client.ClientConfig)
@@ -63,11 +61,11 @@ func uploadTry(cfg *sshclient.Config, src string, dest string, logger *logrus.En
 	defer client.Close()
 	defer f.Close()
 
-	logger.Debugf("uploading script %v", remotePath)
+	logger.Debugf("uploading script %v", dest)
 
 	var mkdirErrB bytes.Buffer
 	client.Session.Stderr = &mkdirErrB
-	dir := filepath.Dir(remotePath)
+	dir := filepath.Dir(dest)
 	err = client.Session.Run("mkdir -p " + dir)
 	errors.Check(err)
 	mkdirErr := mkdirErrB.String()
@@ -81,7 +79,7 @@ func uploadTry(cfg *sshclient.Config, src string, dest string, logger *logrus.En
 		return err
 	}
 
-	err = client.CopyFile(f, remotePath, "0755")
+	err = client.CopyFile(f, dest, "0755")
 
 	if err != nil {
 		return err

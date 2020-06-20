@@ -24,4 +24,6 @@ type Config struct {
 
 	Runner  string   `mapstructure:"RUNNER" json:"runner,omitempty"`
 	Loaders []string `mapstructure:"LOADERS" json:"loaders,omitempty"`
+
+	DeploymentName string `mapstructure:"DEPLOYMENT_NAME" json:"deployment_name,omitempty"`
 }

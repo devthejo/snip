@@ -8,9 +8,12 @@ import (
 	"github.com/sirupsen/logrus"
 
 	expect "gitlab.com/youtopia.earth/ops/snip/goexpect"
+	snipplugin "gitlab.com/youtopia.earth/ops/snip/plugin"
 )
 
 type Config struct {
+	AppConfig *snipplugin.AppConfig
+
 	Context       context.Context
 	ContextCancel context.CancelFunc
 	Logger        *logrus.Entry
