@@ -57,7 +57,7 @@ var (
 				commandSlice[i] = p
 			}
 
-			command := strings.Join(commandSlice, " ")
+			command := shellquote.Join(commandSlice...)
 
 			logger.Debugf("remote command: %v", command)
 

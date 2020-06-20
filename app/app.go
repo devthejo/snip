@@ -19,6 +19,7 @@ import (
 	"gitlab.com/youtopia.earth/ops/snip/proc"
 
 	pluginLoaderMarkdown "gitlab.com/youtopia.earth/ops/snip/plugins-native/loaders/markdown"
+	pluginMiddlewareSu "gitlab.com/youtopia.earth/ops/snip/plugins-native/middlewares/su"
 	pluginMiddlewareSudo "gitlab.com/youtopia.earth/ops/snip/plugins-native/middlewares/sudo"
 	pluginRunnerSH "gitlab.com/youtopia.earth/ops/snip/plugins-native/runners/sh"
 	pluginRunnerSHPTY "gitlab.com/youtopia.earth/ops/snip/plugins-native/runners/sh-pty"
@@ -195,6 +196,7 @@ func (app *App) GetRunner(k string) *runner.Runner {
 func (app *App) LoadNativePlugins() {
 	app.Plugins.Set("loaders/markdown", &pluginLoaderMarkdown.Loader)
 	app.Plugins.Set("middlewares/sudo", &pluginMiddlewareSudo.Middleware)
+	app.Plugins.Set("middlewares/su", &pluginMiddlewareSu.Middleware)
 	app.Plugins.Set("runners/sh", &pluginRunnerSH.Runner)
 	app.Plugins.Set("runners/sh-pty", &pluginRunnerSHPTY.Runner)
 	app.Plugins.Set("runners/ssh", &pluginRunnerSSH.Runner)

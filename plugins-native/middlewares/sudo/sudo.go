@@ -24,6 +24,12 @@ var (
 				command = append(command, "--stdin")
 			}
 
+			if user, ok := mutableCmd.Vars["@SUDO_USER"]; ok {
+				command = append(command, "--user="+user)
+			}
+
+			command = append(command, "--")
+
 			mutableCmd.Command = append(command, mutableCmd.Command...)
 
 			f := func(iface interface{}) bool {

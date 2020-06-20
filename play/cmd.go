@@ -73,6 +73,7 @@ func CreateCmd(ccmd *CfgCmd, ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 			DeploymentName: cfg.DeploymentName,
 			BuildDir:       cfg.BuildDir,
 			SnippetsDir:    cfg.SnippetsDir,
+			Runner:         cfg.Runner,
 		},
 
 		ParentLoopRow: parentLoopRow,
@@ -219,6 +220,7 @@ func (cmd *Cmd) ApplyMiddlewares() error {
 
 	mutableCmd := cmd.CreateMutableCmd()
 	middlewareConfig := &middleware.Config{
+		AppConfig:     cmd.AppConfig,
 		MutableCmd:    mutableCmd,
 		Context:       cmd.Thread.Context,
 		ContextCancel: cmd.Thread.ContextCancel,

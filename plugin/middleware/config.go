@@ -9,6 +9,7 @@ import (
 )
 
 type Config struct {
+	AppConfig     *snipplugin.AppConfig
 	Context       context.Context
 	ContextCancel context.CancelFunc
 	MutableCmd    *snipplugin.MutableCmd
