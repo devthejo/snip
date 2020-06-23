@@ -20,23 +20,11 @@ var (
 			command := []string{"sudo", "--preserve-env"}
 
 			if pass, ok := mutableCmd.Vars["@SUDO_PASS"]; ok {
-
-				// var enablePTY bool
-				// if enablePTYStr, ok := mutableCmd.Vars["@PTY"]; ok {
-				// 	enablePTY = enablePTYStr == "true"
-				// }
-				//
-				// if enablePTY {
-				// 	mutableCmd.PrependExpect(&expect.BCas{[]expect.Caser{
-				// 		&expect.BCase{
-				// 			R: "[sudo]*",
-				// 			S: pass + "\n",
-				// 		},
-				// 	}})
-				// } else {
-				mutableCmd.PrependExpect(&expect.BSnd{S: pass + "\n"})
-				// }
-
+				command = append(command, "--prompt=[sudo]")
+				mutableCmd.PrependExpect(
+					&expect.BExp{R: "[sudo]"},
+					&expect.BSnd{S: pass + "\n"},
+				)
 				command = append(command, "--stdin")
 			}
 

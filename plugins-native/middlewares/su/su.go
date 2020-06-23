@@ -3,9 +3,10 @@ package mainNative
 import (
 	"os/exec"
 	"strings"
+	// "strings"
 
+	shellquote "github.com/kballard/go-shellquote"
 	expect "gitlab.com/youtopia.earth/ops/snip/goexpect"
-	"golang.org/x/crypto/ssh"
 
 	"gitlab.com/youtopia.earth/ops/snip/plugin"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/middleware"
@@ -55,45 +56,35 @@ var (
 
 			command := []string{"su", "--preserve-env"}
 
-			// var password string
 			if pass, ok := mutableCmd.Vars["@SU_PASS"]; ok {
-				mutableCmd.PrependExpect(&expect.BCas{[]expect.Caser{
-					&expect.BCase{
-						R: strings.Join(promptL10N, "|") + " ?(:|：) ?",
-						S: pass + "\n",
-					},
-				}})
-				// password = pass
+				mutableCmd.PrependExpect(
+					&expect.BExp{R: strings.Join(promptL10N, "|") + " ?(:|：) ?"},
+					&expect.BSnd{S: pass + "\n"},
+				)
 			}
 
 			if user, ok := mutableCmd.Vars["@SU_USER"]; ok {
 				command = append(command, user)
 			}
 
-			// command = append(command, "--command")
-			// mutableCmd.Command = append(command, mutableCmd.Command...)
-
 			originalCommand := mutableCmd.Command
-			// mutableCmd.Command = append(command, `--command="`+shellquote.Join(originalCommand...)+`"`)
-			mutableCmd.Command = append(command, `--command="`+strings.Join(originalCommand, " ")+`"`)
+			mutableCmd.Command = append(command, `--command="`+shellquote.Join(originalCommand...)+`"`)
 
-			// f := func(iface interface{}) bool {
-			// 	switch v := iface.(type) {
-			// 	case *exec.Cmd:
-			// 		// CloseCmd(v, mutableCmd, password)
-			// 	case *ssh.Session:
-			// 		CloseSSH(v, mutableCmd, password)
-			// 	}
-			// 	return true
-			// }
-			// mutableCmd.Closer = &f
+			f := func(iface interface{}) bool {
+				switch v := iface.(type) {
+				case *exec.Cmd:
+					CloseCmd(v, mutableCmd)
+				}
+				return true
+			}
+			mutableCmd.Closer = &f
 
 			return true, nil
 		},
 	}
 )
 
-func CloseCmd(cmd *exec.Cmd, mutableCmd *plugin.MutableCmd, password string) {
+func CloseCmd(cmd *exec.Cmd, mutableCmd *plugin.MutableCmd) {
 	// if cmd.Process == nil {
 	// 	return
 	// }
@@ -107,8 +98,4 @@ func CloseCmd(cmd *exec.Cmd, mutableCmd *plugin.MutableCmd, password string) {
 	// if err := kill.Run(); err != nil {
 	// 	logrus.Warnf("failed to kill: %v", err)
 	// }
-}
-
-func CloseSSH(session *ssh.Session, mutableCmd *plugin.MutableCmd, password string) {
-
 }
