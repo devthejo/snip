@@ -22,9 +22,7 @@ import (
 	pluginMiddlewareSu "gitlab.com/youtopia.earth/ops/snip/plugins-native/middlewares/su"
 	pluginMiddlewareSudo "gitlab.com/youtopia.earth/ops/snip/plugins-native/middlewares/sudo"
 	pluginRunnerSH "gitlab.com/youtopia.earth/ops/snip/plugins-native/runners/sh"
-	pluginRunnerSHPTY "gitlab.com/youtopia.earth/ops/snip/plugins-native/runners/sh-pty"
 	pluginRunnerSSH "gitlab.com/youtopia.earth/ops/snip/plugins-native/runners/ssh"
-	pluginRunnerSSHPTY "gitlab.com/youtopia.earth/ops/snip/plugins-native/runners/ssh-pty"
 )
 
 type App struct {
@@ -198,7 +196,5 @@ func (app *App) LoadNativePlugins() {
 	app.Plugins.Set("middlewares/sudo", &pluginMiddlewareSudo.Middleware)
 	app.Plugins.Set("middlewares/su", &pluginMiddlewareSu.Middleware)
 	app.Plugins.Set("runners/sh", &pluginRunnerSH.Runner)
-	app.Plugins.Set("runners/sh-pty", &pluginRunnerSHPTY.Runner)
 	app.Plugins.Set("runners/ssh", &pluginRunnerSSH.Runner)
-	app.Plugins.Set("runners/ssh-pty", &pluginRunnerSSHPTY.Runner)
 }

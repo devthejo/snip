@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"github.com/sirupsen/logrus"
+	expect "gitlab.com/youtopia.earth/ops/snip/goexpect"
 	"gitlab.com/youtopia.earth/ops/snip/plugin"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/middleware"
-	"golang.org/x/crypto/ssh"
 )
 
 var (
@@ -20,7 +20,23 @@ var (
 			command := []string{"sudo", "--preserve-env"}
 
 			if pass, ok := mutableCmd.Vars["@SUDO_PASS"]; ok {
-				mutableCmd.Stdin = strings.NewReader(pass + "\n")
+
+				// var enablePTY bool
+				// if enablePTYStr, ok := mutableCmd.Vars["@PTY"]; ok {
+				// 	enablePTY = enablePTYStr == "true"
+				// }
+				//
+				// if enablePTY {
+				// 	mutableCmd.PrependExpect(&expect.BCas{[]expect.Caser{
+				// 		&expect.BCase{
+				// 			R: "[sudo]*",
+				// 			S: pass + "\n",
+				// 		},
+				// 	}})
+				// } else {
+				mutableCmd.PrependExpect(&expect.BSnd{S: pass + "\n"})
+				// }
+
 				command = append(command, "--stdin")
 			}
 
@@ -36,8 +52,6 @@ var (
 				switch v := iface.(type) {
 				case *exec.Cmd:
 					CloseCmd(v, mutableCmd)
-				case *ssh.Session:
-					CloseSSH(v, mutableCmd)
 				}
 				return true
 			}
@@ -49,16 +63,14 @@ var (
 )
 
 func CloseCmd(cmd *exec.Cmd, mutableCmd *plugin.MutableCmd) {
-	if cmd.Process == nil {
+	if cmd.Process == nil || !cmd.SysProcAttr.Setpgid {
 		return
 	}
 	kill := exec.Command("sudo", "kill", "-TERM", "--", strconv.Itoa(-cmd.Process.Pid))
-	kill.Stdin = mutableCmd.Stdin
-	if err := kill.Run(); err != nil {
-		logrus.Warn(err)
+	if pass, ok := mutableCmd.Vars["@SUDO_PASS"]; ok {
+		kill.Stdin = strings.NewReader(pass)
 	}
-}
-
-func CloseSSH(session *ssh.Session, mutableCmd *plugin.MutableCmd) {
-
+	if err := kill.Run(); err != nil {
+		logrus.Warnf("failed to kill: %v", err)
+	}
 }

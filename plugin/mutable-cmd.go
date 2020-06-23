@@ -1,8 +1,6 @@
 package plugin
 
 import (
-	"io"
-
 	expect "gitlab.com/youtopia.earth/ops/snip/goexpect"
 )
 
@@ -17,12 +15,19 @@ type MutableCmd struct {
 
 	RequiredFiles map[string]string
 	Expect        []expect.Batcher
-	Stdin         io.Reader
 	Runner        string
 
 	Dir string
 
 	Closer *func(interface{}) bool
+}
+
+func (cmd *MutableCmd) PrependExpect(b ...expect.Batcher) {
+	cmd.Expect = append(b, cmd.Expect...)
+}
+
+func (cmd *MutableCmd) AppendExpect(b ...expect.Batcher) {
+	cmd.Expect = append(cmd.Expect, b...)
 }
 
 func (cmd *MutableCmd) EnvMap() map[string]string {

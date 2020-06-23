@@ -1,6 +1,7 @@
 package mainNative
 
 import (
+	"io"
 	"log"
 	"os"
 	"os/exec"
@@ -9,8 +10,10 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/google/goterm/term"
 	"github.com/kvz/logstreamer"
 
+	expect "gitlab.com/youtopia.earth/ops/snip/goexpect"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/runner"
 	"gitlab.com/youtopia.earth/ops/snip/tools"
 )
@@ -35,43 +38,117 @@ var (
 				}
 			}
 
-			commandSlice := make([]string, len(cfg.Command))
-			for i, p := range cfg.Command {
-				if strings.HasPrefix(p, "~/") {
-					usr, err := user.Current()
-					if err != nil {
-						return err
-					}
-					p = filepath.Join(usr.HomeDir, p[2:])
-				}
-				commandSlice[i] = p
-			}
-
-			commandPath, err := exec.LookPath(commandSlice[0])
-			if err != nil {
-				return err
-			}
-
-			cmd := exec.CommandContext(cfg.Context, commandPath, commandSlice[1:]...)
-
-			if cfg.Stdin != nil {
-				cmd.Stdin = cfg.Stdin
-			}
-
-			env := cfg.EnvMap()
-			cmd.Env = tools.EnvToPairs(env)
-
-			cmd.Dir = cfg.Dir
-
 			logger := cfg.Logger
+
 			w := logger.Writer()
 			defer w.Close()
 			logStreamer := logstreamer.NewLogstreamer(log.New(w, "", 0), "", false)
 			defer logStreamer.Close()
-			cmd.Stdout = logStreamer
-			cmd.Stderr = logStreamer
 
-			cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+			commandSlice := []string{"/bin/sh", "-c", strings.Join(cfg.Command, " ")}
+
+			cmd := exec.CommandContext(cfg.Context, commandSlice[0], commandSlice[1:]...)
+
+			cmd.Dir = cfg.Dir
+
+			env := cfg.EnvMap()
+
+			appCfg := cfg.AppConfig
+			snipPath := filepath.Join(usr.HomeDir, ".snip", appCfg.DeploymentName, appCfg.BuildDir, "snippets")
+			env["SNIP_PATH"] = snipPath
+
+			cmd.Env = tools.EnvToPairs(env)
+
+			var sIn io.WriteCloser
+			var sOut io.Reader
+			var wait func() error
+			var clean func()
+
+			var enablePTY bool
+			if enablePTYStr, ok := cfg.Vars["@PTY"]; ok {
+				enablePTY = enablePTYStr == "true"
+			}
+
+			var pty *term.PTY
+			if enablePTY {
+				pty, err = term.OpenPTY()
+				if err != nil {
+					return err
+				}
+				var t term.Termios
+				t.Raw()
+				t.Set(pty.Slave)
+				cmd.Stdin, cmd.Stdout, cmd.Stderr = pty.Slave, pty.Slave, pty.Slave
+				cmd.SysProcAttr = &syscall.SysProcAttr{
+					Setsid:  true,
+					Setctty: true,
+				}
+				sIn = pty.Master
+				sOut = pty.Master
+				clean = func() {
+					pty.Master.Close()
+				}
+				wait = func() error {
+					if err := cmd.Wait(); err != nil {
+						return err
+					}
+					if err := pty.Slave.Close(); err != nil {
+						return err
+					}
+					return nil
+				}
+			} else {
+				cmd.SysProcAttr = &syscall.SysProcAttr{
+					Setpgid: true,
+				}
+				sIn, err = cmd.StdinPipe()
+				if err != nil {
+					return err
+				}
+				stdout, err := cmd.StdoutPipe()
+				if err != nil {
+					return err
+				}
+				stderr, err := cmd.StderrPipe()
+				if err != nil {
+					return err
+				}
+				sOut = io.MultiReader(stdout, stderr)
+				wait = cmd.Wait
+			}
+
+			if err := cmd.Start(); err != nil {
+				return err
+			}
+
+			e, ch, err := expect.Spawn(&expect.SpawnOptions{
+				In:  sIn,
+				Out: sOut,
+				Close: func() error {
+					sIn.Close()
+					if pty != nil {
+						pty.Close()
+					}
+					if cmd.Process != nil {
+						return cmd.Process.Kill()
+					}
+					return nil
+				},
+				Wait: wait,
+				Check: func() bool {
+					if cmd.Process == nil {
+						return false
+					}
+					// Sending Signal 0 to a process returns nil if process can take a signal , something else if not.
+					return cmd.Process.Signal(syscall.Signal(0)) == nil
+				},
+				Tee: logStreamer,
+				// Verbose: true,
+				// VerboseWriter: logStreamer,
+				Clean: clean,
+			})
+
+			defer e.Close()
 
 			go func() {
 				select {
@@ -82,19 +159,20 @@ var (
 							return
 						}
 					}
+					e.Close()
 					return
 				}
 			}()
 
-			if err = cmd.Start(); err != nil {
-				return err
+			var expected []expect.Batcher
+
+			for _, v := range cfg.Expect {
+				expected = append(expected, v)
 			}
 
-			if err = cmd.Wait(); err != nil {
-				return err
-			}
+			e.ExpectBatch(expected, -1)
 
-			return nil
+			return <-ch
 		},
 	}
 )

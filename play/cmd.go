@@ -2,7 +2,6 @@ package play
 
 import (
 	"context"
-	"io"
 	"os"
 	"strings"
 	"time"
@@ -41,7 +40,6 @@ type Cmd struct {
 	RequiredFiles map[string]string
 
 	Expect []expect.Batcher
-	Stdin  io.Reader
 
 	Dir string
 
@@ -204,7 +202,6 @@ func (cmd *Cmd) CreateMutableCmd() *snipplugin.MutableCmd {
 		RequiredFiles:   requiredFiles,
 		Expect:          cmd.Expect,
 		Runner:          cmd.CfgCmd.CfgPlay.Runner,
-		Stdin:           cmd.Stdin,
 		Dir:             cmd.Dir,
 		Closer:          cmd.Closer,
 	}
@@ -227,30 +224,20 @@ func (cmd *Cmd) ApplyMiddlewares() error {
 		Logger:        cmd.Logger,
 	}
 
-	wrapped := func() (bool, error) {
-		return false, nil
-	}
 	for i := len(middlewareStack) - 1; i >= 0; i-- {
-		current := middlewareStack[i]
-		next := wrapped
-		wrapped = func() (bool, error) {
-			ok, err := current.Apply(middlewareConfig)
-			if err != nil || !ok {
-				return ok, err
-			}
-			return next()
+		ok, err := middlewareStack[i].Apply(middlewareConfig)
+		if err != nil {
+			return err
 		}
-	}
-
-	if _, err := wrapped(); err != nil {
-		return err
+		if !ok {
+			break
+		}
 	}
 
 	cmd.Command = mutableCmd.Command
 	cmd.Vars = mutableCmd.Vars
 	cmd.RequiredFiles = mutableCmd.RequiredFiles
 	cmd.Expect = mutableCmd.Expect
-	cmd.Stdin = mutableCmd.Stdin
 	cmd.Closer = mutableCmd.Closer
 	cmd.Dir = mutableCmd.Dir
 	if mutableCmd.Runner != cmd.CfgCmd.CfgPlay.Runner {
@@ -274,7 +261,6 @@ func (cmd *Cmd) RunRunner() error {
 		Command:       cmd.Command,
 		RequiredFiles: cmd.RequiredFiles,
 		Expect:        cmd.Expect,
-		Stdin:         cmd.Stdin,
 		Closer:        cmd.Closer,
 		Dir:           cmd.Dir,
 	}

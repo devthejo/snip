@@ -13,8 +13,6 @@ github.com/google/go-jsonnet/astgen
 github.com/google/go-jsonnet/internal/errors
 github.com/google/go-jsonnet/internal/parser
 github.com/google/go-jsonnet/internal/program
-# github.com/google/goexpect v0.0.0-20191001010744-5b6988669ffa
-github.com/google/goexpect
 # github.com/google/goterm v0.0.0-20190703233501-fc88cf888a3f
 github.com/google/goterm/term
 # github.com/hashicorp/hcl v1.0.0
@@ -56,6 +54,8 @@ github.com/modern-go/concurrent
 github.com/modern-go/reflect2
 # github.com/orcaman/concurrent-map v0.0.0-20190826125027-8c72a8bb44f6
 github.com/orcaman/concurrent-map
+# github.com/patrickmn/go-cache v2.1.0+incompatible
+github.com/patrickmn/go-cache
 # github.com/pelletier/go-toml v1.2.0
 github.com/pelletier/go-toml
 # github.com/sirupsen/logrus v1.5.0

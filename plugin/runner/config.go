@@ -2,7 +2,6 @@ package runner
 
 import (
 	"context"
-	"io"
 
 	cache "github.com/patrickmn/go-cache"
 	"github.com/sirupsen/logrus"
@@ -25,7 +24,6 @@ type Config struct {
 
 	RequiredFiles map[string]string
 	Expect        []expect.Batcher
-	Stdin         io.Reader
 
 	Dir string
 

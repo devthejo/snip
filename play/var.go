@@ -59,6 +59,7 @@ func ParsesVarsMap(varsI map[string]interface{}, depth int) map[string]*Var {
 			value = make(map[string]interface{})
 			value["value"] = v
 		case bool:
+			value = make(map[string]interface{})
 			if v {
 				value["value"] = "true"
 			} else {

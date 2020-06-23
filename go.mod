@@ -11,7 +11,7 @@ require (
 	github.com/golang-commonmark/mdurl v0.0.0-20180910110917-8d018c6567d6 // indirect
 	github.com/golang-commonmark/puny v0.0.0-20180910110745-050be392d8b8 // indirect
 	github.com/google/go-jsonnet v0.15.0
-	github.com/google/goexpect v0.0.0-20191001010744-5b6988669ffa
+	github.com/google/goexpect v0.0.0-20191001010744-5b6988669ffa // indirect
 	github.com/google/goterm v0.0.0-20190703233501-fc88cf888a3f
 	github.com/imdario/mergo v0.3.9
 	github.com/joho/godotenv v1.3.0 // indirect
