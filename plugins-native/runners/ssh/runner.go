@@ -89,7 +89,6 @@ var (
 			sOut := io.MultiReader(stdout, stderr)
 
 			loggerSSH := logger.WithFields(logrus.Fields{
-				"ssh":  true,
 				"host": sshCfg.Host,
 			})
 			w := loggerSSH.Writer()

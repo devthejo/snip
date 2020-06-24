@@ -255,7 +255,9 @@ func (cmd *Cmd) RunRunner() error {
 		AppConfig:     cmd.AppConfig,
 		Context:       cmd.Thread.Context,
 		ContextCancel: cmd.Thread.ContextCancel,
-		Logger:        cmd.Logger,
+		Logger: cmd.Logger.WithFields(logrus.Fields{
+			"runner": cmd.CfgCmd.CfgPlay.Runner,
+		}),
 		Cache:         cmd.App.GetCache(),
 		Vars:          cmd.Vars,
 		Command:       cmd.Command,
