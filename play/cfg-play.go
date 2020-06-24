@@ -46,7 +46,7 @@ type CfgPlay struct {
 	ExecTimeout *time.Duration
 
 	Loader      interface{}
-	Middlewares *[]string
+	Middlewares *[]*CfgMiddleware
 	Runner      string
 }
 
@@ -390,10 +390,41 @@ func (cp *CfgPlay) ParseMiddlewares(m map[string]interface{}, override bool) {
 	if !override && cp.Middlewares != nil {
 		return
 	}
-	switch m["middlewares"].(type) {
+	switch v := m["middlewares"].(type) {
 	case []interface{}:
-		middlewares, err := decode.ToStrings(m["middlewares"])
-		errors.Check(err)
+		middlewares := make([]*CfgMiddleware, len(v))
+		for i, middlewareI := range v {
+			logrus.Warnf("middlewareI %v", middlewareI)
+			switch middlewareV := middlewareI.(type) {
+			case string:
+				middlewares[i] = &CfgMiddleware{
+					Name: middlewareV,
+				}
+			case map[interface{}]interface{}:
+				middleware := &CfgMiddleware{
+					Name: middlewareV["name"].(string),
+				}
+				if middlewareV["vars"] != nil {
+					varsI, err := decode.ToMap(middlewareV["vars"])
+					errors.Check(err)
+					vars := make(map[string]string, len(varsI))
+					for i, varI := range varsI {
+						switch v := varI.(type) {
+						case string:
+							vars[i] = v
+						default:
+							logrus.Fatalf("unexpected middleware var type %T value %v", varI, varI)
+						}
+					}
+					middleware.Vars = vars
+				}
+				middlewares[i] = middleware
+			// case map[string]string:
+			// case map[string]interface{}:
+			default:
+				logrus.Fatalf("unexpected middleware type %T value %v", middlewareI, middlewareI)
+			}
+		}
 		cp.Middlewares = &middlewares
 	case nil:
 		if cp.ParentCfgPlay != nil {

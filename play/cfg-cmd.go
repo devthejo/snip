@@ -109,7 +109,7 @@ func (ccmd *CfgCmd) ParseMiddlewares() {
 		return
 	}
 	for _, v := range *cp.Middlewares {
-		middleware := app.GetMiddleware(v)
+		middleware := app.GetMiddleware(v.Name)
 		ccmd.Middlewares = append(ccmd.Middlewares, middleware)
 	}
 }
