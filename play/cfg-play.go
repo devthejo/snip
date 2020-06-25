@@ -3,6 +3,7 @@ package play
 import (
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	shellquote "github.com/kballard/go-shellquote"
@@ -507,6 +508,40 @@ func (cp *CfgPlay) GetKey() string {
 		key = strconv.Itoa(cp.Index)
 	}
 	return key
+}
+
+func (cp *CfgPlay) PromptPluginVars() {
+	if cp.Loaders != nil {
+		for _, lr := range *cp.Loaders {
+			o := &sync.Once{}
+			for _, v := range lr.Vars {
+				v.OnPromptMessageOnce("🠶 loader "+lr.Name, o)
+				v.PromptOnEmptyDefault()
+				v.PromptOnEmptyValue()
+				v.HandleRequired(nil, nil)
+			}
+		}
+	}
+	if cp.Middlewares != nil {
+		for _, mr := range *cp.Middlewares {
+			o := &sync.Once{}
+			for _, v := range mr.Vars {
+				v.OnPromptMessageOnce("🠶 middleware "+mr.Name, o)
+				v.PromptOnEmptyDefault()
+				v.PromptOnEmptyValue()
+				v.HandleRequired(nil, nil)
+			}
+		}
+	}
+	if cp.Runner != nil {
+		o := &sync.Once{}
+		for _, v := range cp.Runner.Vars {
+			v.OnPromptMessageOnce("🠶 runner "+cp.Runner.Name, o)
+			v.PromptOnEmptyDefault()
+			v.PromptOnEmptyValue()
+			v.HandleRequired(nil, nil)
+		}
+	}
 }
 
 func (cp *CfgPlay) BuildRoot() *Play {
