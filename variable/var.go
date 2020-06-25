@@ -4,6 +4,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 
 	survey "github.com/AlecAivazis/survey/v2"
 	"github.com/AlecAivazis/survey/v2/terminal"
@@ -28,6 +29,8 @@ type Var struct {
 	PromptIcons           survey.AskOpt
 	PromptSelectOptions   []string
 	PromptMultiSelectGlue string
+
+	OnPrompt func(*Var)
 }
 
 func (vr *Var) Parse(k string, m map[string]interface{}) {
@@ -215,6 +218,11 @@ func (v *Var) PromptVarValue() {
 }
 
 func (v *Var) PromptVar(ref *string, msg string) {
+
+	if v.OnPrompt != nil {
+		v.OnPrompt(v)
+	}
+
 	if v.PromptIcons == nil {
 		v.PromptIcons = survey.WithIcons(func(icons *survey.IconSet) {
 			icons.Question.Text = strings.Repeat("  ", v.Depth+4) + " •"
@@ -383,4 +391,11 @@ func (v *Var) HandleRequired(varsDefault cmap.ConcurrentMap, vars cmap.Concurren
 		logrus.Warnf(strings.Repeat("  ", v.Depth+2)+` variable "%v" is required and cannot be empty`, v.Name)
 	}
 
+}
+
+func (v *Var) OnPromptMessageOnce(msg string, once *sync.Once) {
+	v.OnPrompt = MakeOnPromptOnce(msg, once)
+}
+func (v *Var) OnPromptMessage(msg string) {
+	v.OnPrompt = MakeOnPrompt(msg)
 }

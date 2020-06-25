@@ -398,7 +398,7 @@ func (cp *CfgPlay) ParseLoader(m map[string]interface{}, override bool) {
 				if err != nil {
 					logrus.Fatalf("unexpected loader vars type %T value %v, %v", loaderMap["vars"], loaderMap["vars"], err)
 				}
-				mr.Vars = variable.ParseVarsMap(varsI, cp.Depth)
+				mr.Vars = variable.ParseVarsMap(varsI, cp.Depth+1)
 			}
 			loaders[i] = mr
 		default:
@@ -432,7 +432,7 @@ func (cp *CfgPlay) ParseRunner(m map[string]interface{}, override bool) {
 			if err != nil {
 				logrus.Fatalf("unexpected runner vars type %T value %v, %v", runnerMap["vars"], runnerMap["vars"], err)
 			}
-			rr.Vars = variable.ParseVarsMap(varsI, cp.Depth)
+			rr.Vars = variable.ParseVarsMap(varsI, cp.Depth+1)
 		}
 		cp.Runner = rr
 	case nil:
@@ -476,7 +476,7 @@ func (cp *CfgPlay) ParseMiddlewares(m map[string]interface{}, override bool) {
 					if err != nil {
 						logrus.Fatalf("unexpected middleware vars type %T value %v, %v", middlewareMap["vars"], middlewareMap["vars"], err)
 					}
-					mr.Vars = variable.ParseVarsMap(varsI, cp.Depth)
+					mr.Vars = variable.ParseVarsMap(varsI, cp.Depth+1)
 				}
 				middlewares[i] = mr
 			default:

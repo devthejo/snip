@@ -144,8 +144,32 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 			v.HandleRequired(varsDefault, vars)
 		}
 
-		for _, mr := range *cp.Middlewares {
-			for _, v := range mr.Vars {
+		if cp.Loaders != nil {
+			for _, lr := range *cp.Loaders {
+				o := &sync.Once{}
+				for _, v := range lr.Vars {
+					v.OnPromptMessageOnce("🠶 loader "+lr.Name, o)
+					v.PromptOnEmptyDefault()
+					v.PromptOnEmptyValue()
+					v.HandleRequired(nil, nil)
+				}
+			}
+		}
+		if cp.Middlewares != nil {
+			for _, mr := range *cp.Middlewares {
+				o := &sync.Once{}
+				for _, v := range mr.Vars {
+					v.OnPromptMessageOnce("🠶 middleware "+mr.Name, o)
+					v.PromptOnEmptyDefault()
+					v.PromptOnEmptyValue()
+					v.HandleRequired(nil, nil)
+				}
+			}
+		}
+		if cp.Runner != nil {
+			o := &sync.Once{}
+			for _, v := range cp.Runner.Vars {
+				v.OnPromptMessageOnce("🠶 runner "+cp.Runner.Name, o)
 				v.PromptOnEmptyDefault()
 				v.PromptOnEmptyValue()
 				v.HandleRequired(nil, nil)
