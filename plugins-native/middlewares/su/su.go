@@ -47,21 +47,22 @@ var promptL10N = []string{
 }
 
 var (
-	Middleware = middleware.Middleware{
+	Middleware = middleware.Plugin{
 		Apply: func(cfg *middleware.Config) (bool, error) {
 
+			vars := cfg.MiddlewareVars
 			mutableCmd := cfg.MutableCmd
 
 			command := []string{"su", "--preserve-env"}
 
-			if pass, ok := mutableCmd.Vars["@SU_PASS"]; ok {
+			if pass, ok := vars["PASS"]; ok {
 				mutableCmd.PrependExpect(
 					&expect.BExp{R: strings.Join(promptL10N, "|") + " ?(:|：) ?"},
 					&expect.BSnd{S: pass + "\n"},
 				)
 			}
 
-			if user, ok := mutableCmd.Vars["@SU_USER"]; ok {
+			if user, ok := vars["USER"]; ok {
 				command = append(command, user)
 			}
 

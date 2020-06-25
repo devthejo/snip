@@ -23,7 +23,7 @@ type App interface {
 	GetNow() time.Time
 	GetCache() *cache.Cache
 	GetMainProc() *proc.Main
-	GetLoader(string) *loader.Loader
-	GetMiddleware(string) *middleware.Middleware
-	GetRunner(string) *runner.Runner
+	GetLoader(string) *loader.Plugin
+	GetMiddleware(string) *middleware.Plugin
+	GetRunner(string) *runner.Plugin
 }

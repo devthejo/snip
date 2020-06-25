@@ -9,9 +9,12 @@ import (
 )
 
 type Config struct {
-	AppConfig     *snipplugin.AppConfig
+	AppConfig *snipplugin.AppConfig
+
+	MiddlewareVars map[string]string
+
 	Context       context.Context
 	ContextCancel context.CancelFunc
-	MutableCmd    *snipplugin.MutableCmd
+	MutableCmd    *MutableCmd
 	Logger        *logrus.Entry
 }

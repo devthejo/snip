@@ -20,7 +20,7 @@ import (
 )
 
 var (
-	Runner = runner.Runner{
+	Runner = runner.Plugin{
 		Run: func(cfg *runner.Config) error {
 
 			logger := cfg.Logger

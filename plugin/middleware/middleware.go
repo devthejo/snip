@@ -1,5 +1,11 @@
 package middleware
 
+import (
+	"gitlab.com/youtopia.earth/ops/snip/variable"
+)
+
 type Middleware struct {
-	Apply func(*Config) (bool, error)
+	Name   string
+	Vars   map[string]*variable.Var
+	Plugin *Plugin
 }

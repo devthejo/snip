@@ -13,6 +13,8 @@ import (
 type Config struct {
 	AppConfig *snipplugin.AppConfig
 
+	RunnerVars map[string]string
+
 	Context       context.Context
 	ContextCancel context.CancelFunc
 	Logger        *logrus.Entry

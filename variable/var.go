@@ -1,4 +1,4 @@
-package play
+package variable
 
 import (
 	"os"
@@ -8,8 +8,6 @@ import (
 	"github.com/AlecAivazis/survey/v2/terminal"
 	cmap "github.com/orcaman/concurrent-map"
 	"github.com/sirupsen/logrus"
-	"gitlab.com/youtopia.earth/ops/snip/decode"
-	"gitlab.com/youtopia.earth/ops/snip/errors"
 )
 
 type Var struct {
@@ -29,56 +27,6 @@ type Var struct {
 	PromptIcons           survey.AskOpt
 	PromptSelectOptions   []string
 	PromptMultiSelectGlue string
-}
-
-type PromptType int
-
-const (
-	PromptInput PromptType = iota
-	PromptMultiline
-	PromptPassword
-	PromptConfirm
-	PromptSelect
-	PromptMultiSelect
-	PromptEditor
-	Prompt
-)
-
-func ParsesVarsMap(varsI map[string]interface{}, depth int) map[string]*Var {
-	vars := make(map[string]*Var)
-	for key, val := range varsI {
-		var value map[string]interface{}
-		switch v := val.(type) {
-		case map[string]interface{}:
-			value = v
-		case map[interface{}]interface{}:
-			var err error
-			value, err = decode.ToMap(v)
-			errors.Check(err)
-		case string:
-			value = make(map[string]interface{})
-			value["value"] = v
-		case bool:
-			value = make(map[string]interface{})
-			if v {
-				value["value"] = "true"
-			} else {
-				value["value"] = "false"
-			}
-		case nil:
-			value = make(map[string]interface{})
-			value["value"] = ""
-		default:
-			unexpectedTypeVarValue(key, v)
-		}
-		vr := &Var{
-			Depth: depth,
-		}
-		key = strings.ToUpper(key)
-		vr.Parse(key, value)
-		vars[key] = vr
-	}
-	return vars
 }
 
 func (vr *Var) Parse(k string, m map[string]interface{}) {
@@ -105,11 +53,11 @@ func (vr *Var) ParseRequired(v map[string]interface{}) {
 		} else if s == "false" || s == "0" || s == "" {
 			vr.Required = false
 		} else {
-			unexpectedTypeVar(v, "required")
+			UnexpectedTypeVar(v, "required")
 		}
 	case nil:
 	default:
-		unexpectedTypeVar(v, "required")
+		UnexpectedTypeVar(v, "required")
 	}
 }
 
@@ -119,7 +67,7 @@ func (vr *Var) ParseDefault(v map[string]interface{}) {
 		vr.Default = v["default"].(string)
 	case nil:
 	default:
-		unexpectedTypeVar(v, "default")
+		UnexpectedTypeVar(v, "default")
 	}
 }
 func (vr *Var) ParseValue(v map[string]interface{}) {
@@ -128,7 +76,7 @@ func (vr *Var) ParseValue(v map[string]interface{}) {
 		vr.Value = v["value"].(string)
 	case nil:
 	default:
-		unexpectedTypeVar(v, "value")
+		UnexpectedTypeVar(v, "value")
 	}
 }
 
@@ -156,7 +104,7 @@ func (vr *Var) ParsePrompt(v map[string]interface{}) {
 		vr.Prompt = prompt
 	case nil:
 	default:
-		unexpectedTypeVar(v, "prompt")
+		UnexpectedTypeVar(v, "prompt")
 	}
 }
 
@@ -171,11 +119,11 @@ func (vr *Var) ParsePromptDefault(v map[string]interface{}) {
 		} else if s == "false" || s == "0" || s == "" {
 			vr.PromptDefault = false
 		} else {
-			unexpectedTypeVar(v, "prompt_default")
+			UnexpectedTypeVar(v, "prompt_default")
 		}
 	case nil:
 	default:
-		unexpectedTypeVar(v, "prompt_default")
+		UnexpectedTypeVar(v, "prompt_default")
 	}
 }
 
@@ -190,11 +138,11 @@ func (vr *Var) ParsePromptValue(v map[string]interface{}) {
 		} else if s == "false" || s == "0" || s == "" {
 			vr.PromptValue = false
 		} else {
-			unexpectedTypeVar(v, "prompt_value")
+			UnexpectedTypeVar(v, "prompt_value")
 		}
 	case nil:
 	default:
-		unexpectedTypeVar(v, "prompt_value")
+		UnexpectedTypeVar(v, "prompt_value")
 	}
 }
 
@@ -204,7 +152,7 @@ func (vr *Var) ParsePromptMessage(v map[string]interface{}) {
 		vr.PromptMessage = v["prompt_message"].(string)
 	case nil:
 	default:
-		unexpectedTypeVar(v, "prompt_message")
+		UnexpectedTypeVar(v, "prompt_message")
 	}
 	if vr.PromptMessage == "" {
 		vr.PromptMessage = vr.Name
@@ -217,10 +165,10 @@ func (vr *Var) ParsePromptSelectOptions(v map[string]interface{}) {
 		vr.PromptSelectOptions = v["prompt_select_options"].([]string)
 	case nil:
 		if vr.Prompt == PromptSelect || vr.Prompt == PromptMultiSelect {
-			logrus.Fatalf("unexpected empty play var prompt_select_options for %v", v)
+			logrus.Fatalf("Unexpected empty play var prompt_select_options for %v", v)
 		}
 	default:
-		unexpectedTypeVar(v, "prompt_select_options")
+		UnexpectedTypeVar(v, "prompt_select_options")
 	}
 }
 func (vr *Var) ParsePromptMultiSelectGlue(v map[string]interface{}) {
@@ -232,7 +180,7 @@ func (vr *Var) ParsePromptMultiSelectGlue(v map[string]interface{}) {
 			vr.PromptMultiSelectGlue = ","
 		}
 	default:
-		unexpectedTypeVar(v, "prompt_multi_select_glue")
+		UnexpectedTypeVar(v, "prompt_multi_select_glue")
 	}
 }
 
@@ -361,19 +309,27 @@ func (v *Var) AskMultiSelect(ref *string, msg string) {
 	v.HandleAnswer(err)
 }
 
-func (v *Var) RegisterValueTo(vars cmap.ConcurrentMap) {
+func (v *Var) PromptOnEmptyDefault() {
+	if v.PromptDefault && v.Default == "" {
+		v.PromptVarDefault()
+	}
+}
+
+func (v *Var) PromptOnEmptyValue() {
 	if v.PromptValue && v.Value == "" {
 		v.PromptVarValue()
 	}
+}
+
+func (v *Var) RegisterValueTo(vars cmap.ConcurrentMap) {
+	v.PromptOnEmptyValue()
 	if v.Value != "" {
 		vars.Set(v.Name, v.Value)
 	}
 }
 
 func (v *Var) RegisterDefaultTo(varsDefault cmap.ConcurrentMap) {
-	if v.PromptDefault && v.Default == "" {
-		v.PromptVarDefault()
-	}
+	v.PromptOnEmptyDefault()
 	val, ok := varsDefault.Get(v.Name)
 	if !ok || val == nil || val.(string) == "" {
 		varsDefault.Set(v.Name, v.Default)
@@ -385,30 +341,29 @@ func (v *Var) HandleRequired(varsDefault cmap.ConcurrentMap, vars cmap.Concurren
 		return
 	}
 
-	val, ok := varsDefault.Get(v.Name)
-	if ok && val != nil && val.(string) != "" {
-		return
+	if varsDefault != nil {
+		val, ok := varsDefault.Get(v.Name)
+		if ok && val != nil && val.(string) != "" {
+			return
+		}
 	}
 
-	val, ok = vars.Get(v.Name)
-	if ok && val != nil && val.(string) != "" {
-		return
+	if vars != nil {
+		val, ok := vars.Get(v.Name)
+		if ok && val != nil && val.(string) != "" {
+			return
+		}
 	}
 
 	for {
 		v.PromptVarDefault()
 		if v.Default != "" {
-			varsDefault.Set(v.Name, v.Default)
+			if varsDefault != nil {
+				varsDefault.Set(v.Name, v.Default)
+			}
 			break
 		}
 		logrus.Warnf(strings.Repeat("  ", v.Depth+2)+` variable "%v" is required and cannot be empty`, v.Name)
 	}
 
-}
-
-func unexpectedTypeVarValue(k string, v interface{}) {
-	logrus.Fatalf("unexpected var type %T value %v for key %v", v, v, k)
-}
-func unexpectedTypeVar(m map[string]interface{}, key string) {
-	errors.UnexpectedType(m, key, "var")
 }

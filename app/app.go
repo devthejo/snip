@@ -137,55 +137,55 @@ func (app *App) GetPlugin(k string) interface{} {
 	return plug
 }
 
-func (app *App) GetLoader(k string) *loader.Loader {
+func (app *App) GetLoader(k string) *loader.Plugin {
 	plug := app.GetPlugin("loaders/" + k)
-	var run *loader.Loader
+	var run *loader.Plugin
 	switch v := plug.(type) {
 	case *plugin.Plugin:
 		sym, err := v.Lookup("Loader")
 		errors.Check(err)
 		var ok bool
-		run, ok = sym.(*loader.Loader)
+		run, ok = sym.(*loader.Plugin)
 		if !ok {
 			logrus.Fatalf("unexpected type from module symbol on loader plugin %s: %T", k, sym)
 		}
-	case *loader.Loader:
+	case *loader.Plugin:
 		run = v
 	}
 	return run
 }
 
-func (app *App) GetMiddleware(k string) *middleware.Middleware {
+func (app *App) GetMiddleware(k string) *middleware.Plugin {
 	plug := app.GetPlugin("middlewares/" + k)
-	var run *middleware.Middleware
+	var run *middleware.Plugin
 	switch v := plug.(type) {
 	case *plugin.Plugin:
 		sym, err := v.Lookup("Middleware")
 		errors.Check(err)
 		var ok bool
-		run, ok = sym.(*middleware.Middleware)
+		run, ok = sym.(*middleware.Plugin)
 		if !ok {
 			logrus.Fatalf("unexpected type from module symbol on middleware plugin %s: %T", k, sym)
 		}
-	case *middleware.Middleware:
+	case *middleware.Plugin:
 		run = v
 	}
 	return run
 }
 
-func (app *App) GetRunner(k string) *runner.Runner {
+func (app *App) GetRunner(k string) *runner.Plugin {
 	plug := app.GetPlugin("runners/" + k)
-	var run *runner.Runner
+	var run *runner.Plugin
 	switch v := plug.(type) {
 	case *plugin.Plugin:
 		sym, err := v.Lookup("Runner")
 		errors.Check(err)
 		var ok bool
-		run, ok = sym.(*runner.Runner)
+		run, ok = sym.(*runner.Plugin)
 		if !ok {
 			logrus.Fatalf("unexpected type from module symbol on runner plugin %s: %T", k, sym)
 		}
-	case *runner.Runner:
+	case *runner.Plugin:
 		run = v
 	}
 	return run

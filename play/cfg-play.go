@@ -12,6 +12,10 @@ import (
 
 	"gitlab.com/youtopia.earth/ops/snip/decode"
 	"gitlab.com/youtopia.earth/ops/snip/errors"
+	"gitlab.com/youtopia.earth/ops/snip/plugin/loader"
+	"gitlab.com/youtopia.earth/ops/snip/plugin/middleware"
+	"gitlab.com/youtopia.earth/ops/snip/plugin/runner"
+	"gitlab.com/youtopia.earth/ops/snip/variable"
 )
 
 type CfgPlay struct {
@@ -25,10 +29,10 @@ type CfgPlay struct {
 
 	CfgPlay interface{}
 
-	Vars   map[string]*Var
+	Vars   map[string]*variable.Var
 	LoopOn []*CfgLoopRow
 
-	LoopSets       map[string]map[string]*Var
+	LoopSets       map[string]map[string]*variable.Var
 	LoopSequential *bool
 
 	RegisterVars []string
@@ -45,17 +49,19 @@ type CfgPlay struct {
 
 	ExecTimeout *time.Duration
 
-	Loader      interface{}
-	Middlewares *[]*CfgMiddleware
-	Runner      string
+	ForceLoader bool
+
+	Loaders     *[]*loader.Loader
+	Middlewares *[]*middleware.Middleware
+	Runner      *runner.Runner
 }
 
 func CreateCfgPlay(app App, m map[string]interface{}, parentCfgPlay *CfgPlay) *CfgPlay {
 
 	cp := &CfgPlay{}
 
-	cp.Vars = make(map[string]*Var)
-	cp.LoopSets = make(map[string]map[string]*Var)
+	cp.Vars = make(map[string]*variable.Var)
+	cp.LoopSets = make(map[string]map[string]*variable.Var)
 
 	cp.App = app
 
@@ -203,10 +209,10 @@ func (cp *CfgPlay) ParseLoopSets(m map[string]interface{}, override bool) {
 			case map[string]interface{}:
 				_, hk := cp.LoopSets[loopKey]
 				if !hk || override {
-					cp.LoopSets[loopKey] = ParsesVarsMap(loopV, cp.Depth)
+					cp.LoopSets[loopKey] = variable.ParseVarsMap(loopV, cp.Depth)
 				}
 			default:
-				unexpectedTypeVarValue(loopKey, loopVal)
+				variable.UnexpectedTypeVarValue(loopKey, loopVal)
 			}
 		}
 	case nil:
@@ -230,14 +236,12 @@ func (cp *CfgPlay) ParseLoopOn(m map[string]interface{}, override bool) {
 					logrus.Fatalf("undefined LoopSet %v", loop)
 				}
 				cfgLoopRow = CreateCfgLoopRow(loopI, loop, cp.LoopSets[loop])
-			case map[interface{}]interface{}:
+			case map[interface{}]interface{}, map[string]interface{}:
 				l, err := decode.ToMap(loop)
 				errors.Check(err)
-				cfgLoopRow = CreateCfgLoopRow(loopI, "", ParsesVarsMap(l, cp.Depth))
-			case map[string]interface{}:
-				cfgLoopRow = CreateCfgLoopRow(loopI, "", ParsesVarsMap(loop, cp.Depth))
+				cfgLoopRow = CreateCfgLoopRow(loopI, "", variable.ParseVarsMap(l, cp.Depth))
 			default:
-				unexpectedTypeVarValue(strconv.Itoa(loopI), loopV)
+				variable.UnexpectedTypeVarValue(strconv.Itoa(loopI), loopV)
 			}
 			cp.LoopOn[loopI] = cfgLoopRow
 		}
@@ -260,19 +264,10 @@ func (cp *CfgPlay) ParseLoopSequential(m map[string]interface{}, override bool) 
 
 func (cp *CfgPlay) ParseVars(m map[string]interface{}, override bool) {
 	switch v := m["vars"].(type) {
-	case map[string]interface{}:
+	case map[interface{}]interface{}, map[string]interface{}:
 		m, err := decode.ToMap(v)
 		errors.Check(err)
-		for key, val := range ParsesVarsMap(m, cp.Depth) {
-			_, hk := cp.Vars[key]
-			if override || !hk {
-				cp.Vars[key] = val
-			}
-		}
-	case map[interface{}]interface{}:
-		m, err := decode.ToMap(v)
-		errors.Check(err)
-		for key, val := range ParsesVarsMap(m, cp.Depth) {
+		for key, val := range variable.ParseVarsMap(m, cp.Depth) {
 			_, hk := cp.Vars[key]
 			if override || !hk {
 				cp.Vars[key] = val
@@ -296,7 +291,7 @@ func (cp *CfgPlay) ParseRegisterVars(m map[string]interface{}, override bool) {
 		for _, v := range cp.RegisterVars {
 			key := strings.ToLower(v)
 			if cp.Vars[key] == nil {
-				cp.Vars[key] = &Var{
+				cp.Vars[key] = &variable.Var{
 					Name:  key,
 					Depth: cp.Depth,
 				}
@@ -356,71 +351,134 @@ func (cp *CfgPlay) ParsePostInstall(m map[string]interface{}, override bool) {
 }
 
 func (cp *CfgPlay) ParseLoader(m map[string]interface{}, override bool) {
-	if !override && cp.Loader != nil {
+	if !override && cp.Loaders != nil {
 		return
 	}
+
+	app := cp.App
+
+	var loadersI []interface{}
+
 	switch v := m["loader"].(type) {
-	case string:
-		cp.Loader = v
-	case []string:
-		s, err := decode.ToStrings(v)
-		errors.Check(err)
-		cp.Loader = s
+	case []interface{}:
+		loadersI = v
+	case string, map[string]interface{}, map[interface{}]interface{}:
+		cp.ForceLoader = true
+		loadersI = append(loadersI, v)
 	case nil:
+		if cp.ParentCfgPlay != nil {
+			cp.Loaders = cp.ParentCfgPlay.Loaders
+		}
+		return
 	default:
 		unexpectedTypeCmd(m, "loader")
-	}
-}
-func (cp *CfgPlay) ParseRunner(m map[string]interface{}, override bool) {
-	if !override && cp.Runner != "" {
 		return
 	}
-	switch v := m["runner"].(type) {
+
+	loaders := make([]*loader.Loader, len(loadersI))
+	for i, loaderI := range loadersI {
+		switch loaderV := loaderI.(type) {
+		case string:
+			loaders[i] = &loader.Loader{
+				Name:   loaderV,
+				Plugin: app.GetLoader(loaderV),
+			}
+		case map[interface{}]interface{}, map[string]interface{}:
+			loaderMap, err := decode.ToMap(loaderV)
+			if err != nil {
+				logrus.Fatalf("unexpected loader type %T value %v, %v", loaderV, loaderV, err)
+			}
+			name := loaderMap["name"].(string)
+			mr := &loader.Loader{
+				Name:   name,
+				Plugin: app.GetLoader(name),
+			}
+			if loaderMap["vars"] != nil {
+				varsI, err := decode.ToMap(loaderMap["vars"])
+				if err != nil {
+					logrus.Fatalf("unexpected loader vars type %T value %v, %v", loaderMap["vars"], loaderMap["vars"], err)
+				}
+				mr.Vars = variable.ParseVarsMap(varsI, cp.Depth)
+			}
+			loaders[i] = mr
+		default:
+			logrus.Fatalf("unexpected loader type %T value %v", loaderI, loaderI)
+		}
+	}
+	cp.Loaders = &loaders
+
+}
+func (cp *CfgPlay) ParseRunner(m map[string]interface{}, override bool) {
+	if !override && cp.Runner != nil {
+		return
+	}
+
+	switch runnerV := m["runner"].(type) {
 	case string:
-		cp.Runner = v
+		cp.Runner = &runner.Runner{
+			Name: runnerV,
+		}
+	case map[interface{}]interface{}, map[string]interface{}:
+		runnerMap, err := decode.ToMap(runnerV)
+		if err != nil {
+			logrus.Fatalf("unexpected runner type %T value %v, %v", runnerV, runnerV, err)
+		}
+		name := runnerMap["name"].(string)
+		rr := &runner.Runner{
+			Name: name,
+		}
+		if runnerMap["vars"] != nil {
+			varsI, err := decode.ToMap(runnerMap["vars"])
+			if err != nil {
+				logrus.Fatalf("unexpected runner vars type %T value %v, %v", runnerMap["vars"], runnerMap["vars"], err)
+			}
+			rr.Vars = variable.ParseVarsMap(varsI, cp.Depth)
+		}
+		cp.Runner = rr
 	case nil:
 		if cp.ParentCfgPlay != nil {
 			cp.Runner = cp.ParentCfgPlay.Runner
 		}
 	default:
-		unexpectedTypeCmd(m, "runner")
+		logrus.Fatalf("unexpected runner type %T value %v", runnerV, runnerV)
 	}
 }
+
 func (cp *CfgPlay) ParseMiddlewares(m map[string]interface{}, override bool) {
 	if !override && cp.Middlewares != nil {
 		return
 	}
+
+	app := cp.App
+
 	switch v := m["middlewares"].(type) {
 	case []interface{}:
-		middlewares := make([]*CfgMiddleware, len(v))
+		middlewares := make([]*middleware.Middleware, len(v))
 		for i, middlewareI := range v {
-			logrus.Warnf("middlewareI %v", middlewareI)
 			switch middlewareV := middlewareI.(type) {
 			case string:
-				middlewares[i] = &CfgMiddleware{
-					Name: middlewareV,
+				middlewares[i] = &middleware.Middleware{
+					Name:   middlewareV,
+					Plugin: app.GetMiddleware(middlewareV),
 				}
-			case map[interface{}]interface{}:
-				middleware := &CfgMiddleware{
-					Name: middlewareV["name"].(string),
+			case map[interface{}]interface{}, map[string]interface{}:
+				middlewareMap, err := decode.ToMap(middlewareV)
+				if err != nil {
+					logrus.Fatalf("unexpected middleware type %T value %v, %v", middlewareV, middlewareV, err)
 				}
-				if middlewareV["vars"] != nil {
-					varsI, err := decode.ToMap(middlewareV["vars"])
-					errors.Check(err)
-					vars := make(map[string]string, len(varsI))
-					for i, varI := range varsI {
-						switch v := varI.(type) {
-						case string:
-							vars[i] = v
-						default:
-							logrus.Fatalf("unexpected middleware var type %T value %v", varI, varI)
-						}
+				name := middlewareMap["name"].(string)
+				mr := &middleware.Middleware{
+					Name:   name,
+					Plugin: app.GetMiddleware(name),
+				}
+				if middlewareMap["vars"] != nil {
+					varsI, err := decode.ToMap(middlewareMap["vars"])
+					if err != nil {
+						logrus.Fatalf("unexpected middleware vars type %T value %v, %v", middlewareMap["vars"], middlewareMap["vars"], err)
 					}
-					middleware.Vars = vars
+					mr.Vars = variable.ParseVarsMap(varsI, cp.Depth)
 				}
-				middlewares[i] = middleware
-			// case map[string]string:
-			// case map[string]interface{}:
+				middlewares[i] = mr
 			default:
 				logrus.Fatalf("unexpected middleware type %T value %v", middlewareI, middlewareI)
 			}

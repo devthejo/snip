@@ -1,5 +1,11 @@
 package runner
 
+import (
+	"gitlab.com/youtopia.earth/ops/snip/variable"
+)
+
 type Runner struct {
-	Run func(*Config) error
+	Name   string
+	Vars   map[string]*variable.Var
+	Plugin *Plugin
 }

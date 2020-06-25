@@ -1,6 +1,11 @@
 package loader
 
+import (
+	"gitlab.com/youtopia.earth/ops/snip/variable"
+)
+
 type Loader struct {
-	Load  func(*Config) error
-	Check func([]string) bool
+	Name   string
+	Vars   map[string]*variable.Var
+	Plugin *Plugin
 }

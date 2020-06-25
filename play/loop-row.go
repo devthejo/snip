@@ -1,12 +1,16 @@
 package play
 
-import "strconv"
+import (
+	"strconv"
+
+	"gitlab.com/youtopia.earth/ops/snip/variable"
+)
 
 type LoopRow struct {
 	Name          string
 	Key           string
 	Index         int
-	Vars          map[string]*Var
+	Vars          map[string]*variable.Var
 	ParentPlay    *Play
 	Play          interface{}
 	IsLoopRowItem bool

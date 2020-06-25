@@ -1,11 +1,13 @@
-package plugin
+package middleware
 
 import (
 	expect "gitlab.com/youtopia.earth/ops/snip/goexpect"
+	snipplugin "gitlab.com/youtopia.earth/ops/snip/plugin"
+	"gitlab.com/youtopia.earth/ops/snip/plugin/runner"
 )
 
 type MutableCmd struct {
-	AppConfig *AppConfig
+	AppConfig *snipplugin.AppConfig
 
 	Command []string
 	Vars    map[string]string
@@ -15,7 +17,7 @@ type MutableCmd struct {
 
 	RequiredFiles map[string]string
 	Expect        []expect.Batcher
-	Runner        string
+	Runner        *runner.Runner
 
 	Dir string
 

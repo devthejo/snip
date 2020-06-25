@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	Loader = loader.Loader{
+	Loader = loader.Plugin{
 		Check: func(command []string) bool {
 			return strings.HasSuffix(command[0], ".md")
 		},

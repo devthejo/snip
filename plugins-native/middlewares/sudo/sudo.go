@@ -7,19 +7,19 @@ import (
 
 	"github.com/sirupsen/logrus"
 	expect "gitlab.com/youtopia.earth/ops/snip/goexpect"
-	"gitlab.com/youtopia.earth/ops/snip/plugin"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/middleware"
 )
 
 var (
-	Middleware = middleware.Middleware{
+	Middleware = middleware.Plugin{
 		Apply: func(cfg *middleware.Config) (bool, error) {
 
+			vars := cfg.MiddlewareVars
 			mutableCmd := cfg.MutableCmd
 
 			command := []string{"sudo", "--preserve-env"}
 
-			if pass, ok := mutableCmd.Vars["@SUDO_PASS"]; ok {
+			if pass, ok := vars["PASS"]; ok {
 				command = append(command, "--prompt=[sudo]")
 				mutableCmd.PrependExpect(
 					&expect.BExp{R: "[sudo]"},
@@ -28,7 +28,7 @@ var (
 				command = append(command, "--stdin")
 			}
 
-			if user, ok := mutableCmd.Vars["@SUDO_USER"]; ok {
+			if user, ok := vars["USER"]; ok {
 				command = append(command, "--user="+user)
 			}
 
@@ -39,7 +39,7 @@ var (
 			f := func(iface interface{}) bool {
 				switch v := iface.(type) {
 				case *exec.Cmd:
-					CloseCmd(v, mutableCmd)
+					CloseCmd(v, cfg)
 				}
 				return true
 			}
@@ -50,12 +50,12 @@ var (
 	}
 )
 
-func CloseCmd(cmd *exec.Cmd, mutableCmd *plugin.MutableCmd) {
+func CloseCmd(cmd *exec.Cmd, cfg *middleware.Config) {
 	if cmd.Process == nil || !cmd.SysProcAttr.Setpgid {
 		return
 	}
 	kill := exec.Command("sudo", "kill", "-TERM", "--", strconv.Itoa(-cmd.Process.Pid))
-	if pass, ok := mutableCmd.Vars["@SUDO_PASS"]; ok {
+	if pass, ok := cfg.MiddlewareVars["PASS"]; ok {
 		kill.Stdin = strings.NewReader(pass)
 	}
 	if err := kill.Run(); err != nil {

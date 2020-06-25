@@ -8,6 +8,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	expect "gitlab.com/youtopia.earth/ops/snip/goexpect"
+	"gitlab.com/youtopia.earth/ops/snip/variable"
 
 	"gitlab.com/youtopia.earth/ops/snip/config"
 	snipplugin "gitlab.com/youtopia.earth/ops/snip/plugin"
@@ -180,7 +181,7 @@ func (cmd *Cmd) Run() error {
 	return cmd.Thread.Run(cmd.Main)
 }
 
-func (cmd *Cmd) CreateMutableCmd() *snipplugin.MutableCmd {
+func (cmd *Cmd) CreateMutableCmd() *middleware.MutableCmd {
 	originalVars := make(map[string]string)
 	for k, v := range cmd.Vars {
 		originalVars[k] = v
@@ -193,7 +194,7 @@ func (cmd *Cmd) CreateMutableCmd() *snipplugin.MutableCmd {
 		requiredFiles[k] = v
 	}
 
-	mutableCmd := &snipplugin.MutableCmd{
+	mutableCmd := &middleware.MutableCmd{
 		AppConfig:       cmd.AppConfig,
 		Command:         cmd.Command,
 		Vars:            cmd.Vars,
@@ -201,31 +202,58 @@ func (cmd *Cmd) CreateMutableCmd() *snipplugin.MutableCmd {
 		OriginalVars:    originalVars,
 		RequiredFiles:   requiredFiles,
 		Expect:          cmd.Expect,
-		Runner:          cmd.CfgCmd.CfgPlay.Runner,
+		Runner:          cmd.Runner,
 		Dir:             cmd.Dir,
 		Closer:          cmd.Closer,
 	}
 	return mutableCmd
 }
 
-func (cmd *Cmd) ApplyMiddlewares() error {
-	var middlewareStack []*middleware.Middleware
-
-	for _, middleware := range cmd.Middlewares {
-		middlewareStack = append(middlewareStack, middleware)
+func (cmd *Cmd) GetPluginVarsMap(pluginType string, pluginName string, mVar map[string]*variable.Var) map[string]string {
+	middlewareVars := make(map[string]string)
+	for _, v := range mVar {
+		var val string
+		if v.Default != "" {
+			val = v.Default
+		}
+		k1 := strings.ToUpper("@" + pluginName + "_" + v.Name)
+		if cv, ok := cmd.Vars[k1]; ok {
+			val = cv
+		}
+		k2 := strings.ToUpper("@" + pluginType + "_" + pluginName + "_" + v.Name)
+		if cv, ok := cmd.Vars[k2]; ok {
+			val = cv
+		}
+		if v.Value != "" {
+			val = v.Value
+		}
+		middlewareVars[v.Name] = val
 	}
+	return middlewareVars
+}
+
+func (cmd *Cmd) ApplyMiddlewares() error {
+
+	middlewareStack := cmd.Middlewares
 
 	mutableCmd := cmd.CreateMutableCmd()
-	middlewareConfig := &middleware.Config{
-		AppConfig:     cmd.AppConfig,
-		MutableCmd:    mutableCmd,
-		Context:       cmd.Thread.Context,
-		ContextCancel: cmd.Thread.ContextCancel,
-		Logger:        cmd.Logger,
-	}
 
 	for i := len(middlewareStack) - 1; i >= 0; i-- {
-		ok, err := middlewareStack[i].Apply(middlewareConfig)
+
+		cfgMiddleware := middlewareStack[i]
+
+		middlewareVars := cmd.GetPluginVarsMap("middleware", cfgMiddleware.Name, cfgMiddleware.Vars)
+
+		middlewareConfig := &middleware.Config{
+			AppConfig:      cmd.AppConfig,
+			MiddlewareVars: middlewareVars,
+			MutableCmd:     mutableCmd,
+			Context:        cmd.Thread.Context,
+			ContextCancel:  cmd.Thread.ContextCancel,
+			Logger:         cmd.Logger,
+		}
+
+		ok, err := cfgMiddleware.Plugin.Apply(middlewareConfig)
 		if err != nil {
 			return err
 		}
@@ -240,9 +268,7 @@ func (cmd *Cmd) ApplyMiddlewares() error {
 	cmd.Expect = mutableCmd.Expect
 	cmd.Closer = mutableCmd.Closer
 	cmd.Dir = mutableCmd.Dir
-	if mutableCmd.Runner != cmd.CfgCmd.CfgPlay.Runner {
-		cmd.Runner = cmd.App.GetRunner(mutableCmd.Runner)
-	}
+	cmd.Runner = mutableCmd.Runner
 
 	return nil
 }
@@ -251,12 +277,15 @@ func (cmd *Cmd) RunRunner() error {
 
 	r := cmd.Runner
 
+	runnerVars := cmd.GetPluginVarsMap("runner", r.Name, r.Vars)
+
 	runCfg := &runner.Config{
 		AppConfig:     cmd.AppConfig,
+		RunnerVars:    runnerVars,
 		Context:       cmd.Thread.Context,
 		ContextCancel: cmd.Thread.ContextCancel,
 		Logger: cmd.Logger.WithFields(logrus.Fields{
-			"runner": cmd.CfgCmd.CfgPlay.Runner,
+			"runner": cmd.Runner.Name,
 		}),
 		Cache:         cmd.App.GetCache(),
 		Vars:          cmd.Vars,
@@ -266,7 +295,10 @@ func (cmd *Cmd) RunRunner() error {
 		Closer:        cmd.Closer,
 		Dir:           cmd.Dir,
 	}
-	return r.Run(runCfg)
+	if r.Plugin == nil {
+		r.Plugin = cmd.App.GetRunner(r.Name)
+	}
+	return r.Plugin.Run(runCfg)
 }
 
 func (cmd *Cmd) Main() error {

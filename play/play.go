@@ -11,6 +11,7 @@ import (
 	"go.uber.org/multierr"
 
 	"gitlab.com/youtopia.earth/ops/snip/errors"
+	"gitlab.com/youtopia.earth/ops/snip/variable"
 )
 
 type Play struct {
@@ -26,7 +27,7 @@ type Play struct {
 
 	LoopRow []*LoopRow
 
-	Vars map[string]*Var
+	Vars map[string]*variable.Var
 
 	LoopSequential bool
 
@@ -88,21 +89,22 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 
 	logrus.Info(strings.Repeat("  ", cp.Depth+1) + icon + " " + cp.GetTitle())
 
-	var loops []*CfgLoopRow
+	var loopRows []*CfgLoopRow
 	if len(cp.LoopOn) == 0 {
-		loops = append(loops, &CfgLoopRow{
+		loopRows = append(loopRows, &CfgLoopRow{
 			Name:          "",
 			Key:           "",
 			Index:         0,
-			Vars:          make(map[string]*Var),
+			Vars:          make(map[string]*variable.Var),
 			IsLoopRowItem: false,
 		})
 	} else {
-		loops = cp.LoopOn
+		loopRows = cp.LoopOn
 	}
 
-	p.LoopRow = make([]*LoopRow, len(loops))
-	for i, cfgLoopRow := range loops {
+	p.LoopRow = make([]*LoopRow, len(loopRows))
+	for i, cfgLoopRow := range loopRows {
+
 		loop := &LoopRow{
 			Name:          cfgLoopRow.Name,
 			Key:           cfgLoopRow.Key,
@@ -140,6 +142,14 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 		for _, v := range cp.Vars {
 			v.RegisterDefaultTo(varsDefault)
 			v.HandleRequired(varsDefault, vars)
+		}
+
+		for _, mr := range *cp.Middlewares {
+			for _, v := range mr.Vars {
+				v.PromptOnEmptyDefault()
+				v.PromptOnEmptyValue()
+				v.HandleRequired(nil, nil)
+			}
 		}
 
 		runCtx := &RunCtx{
