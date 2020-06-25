@@ -1,5 +1,6 @@
 package runner
 
 type Plugin struct {
-	Run func(*Config) error
+	UseVars []string
+	Run     func(*Config) error
 }

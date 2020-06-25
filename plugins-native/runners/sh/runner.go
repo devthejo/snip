@@ -20,6 +20,7 @@ import (
 
 var (
 	Runner = runner.Plugin{
+		UseVars: []string{"pty"},
 		Run: func(cfg *runner.Config) error {
 
 			var err error

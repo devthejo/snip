@@ -12,6 +12,7 @@ import (
 
 var (
 	Middleware = middleware.Plugin{
+		UseVars: []string{"user", "pass"},
 		Apply: func(cfg *middleware.Config) (bool, error) {
 
 			vars := cfg.MiddlewareVars
@@ -19,7 +20,7 @@ var (
 
 			command := []string{"sudo", "--preserve-env"}
 
-			if pass, ok := vars["PASS"]; ok {
+			if pass, ok := vars["pass"]; ok {
 				command = append(command, "--prompt=[sudo]")
 				mutableCmd.PrependExpect(
 					&expect.BExp{R: "[sudo]"},
@@ -28,7 +29,7 @@ var (
 				command = append(command, "--stdin")
 			}
 
-			if user, ok := vars["USER"]; ok {
+			if user, ok := vars["user"]; ok {
 				command = append(command, "--user="+user)
 			}
 
@@ -55,7 +56,7 @@ func CloseCmd(cmd *exec.Cmd, cfg *middleware.Config) {
 		return
 	}
 	kill := exec.Command("sudo", "kill", "-TERM", "--", strconv.Itoa(-cmd.Process.Pid))
-	if pass, ok := cfg.MiddlewareVars["PASS"]; ok {
+	if pass, ok := cfg.MiddlewareVars["pass"]; ok {
 		kill.Stdin = strings.NewReader(pass)
 	}
 	if err := kill.Run(); err != nil {

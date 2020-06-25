@@ -209,27 +209,39 @@ func (cmd *Cmd) CreateMutableCmd() *middleware.MutableCmd {
 	return mutableCmd
 }
 
-func (cmd *Cmd) GetPluginVarsMap(pluginType string, pluginName string, mVar map[string]*variable.Var) map[string]string {
-	middlewareVars := make(map[string]string)
-	for _, v := range mVar {
+func (cmd *Cmd) GetPluginVarsMap(pluginType string, pluginName string, useVars []string, mVar map[string]*variable.Var) map[string]string {
+	pVars := make(map[string]string)
+	for _, useV := range useVars {
+
 		var val string
-		if v.Default != "" {
+
+		key := strings.ToUpper(useV)
+
+		v := mVar[key]
+		if v != nil && v.Default != "" {
 			val = v.Default
 		}
-		k1 := strings.ToUpper("@" + pluginName + "_" + v.Name)
+
+		k1 := strings.ToUpper("@" + key)
 		if cv, ok := cmd.Vars[k1]; ok {
 			val = cv
 		}
-		k2 := strings.ToUpper("@" + pluginType + "_" + pluginName + "_" + v.Name)
+		k2 := strings.ToUpper("@" + pluginName + "_" + key)
 		if cv, ok := cmd.Vars[k2]; ok {
 			val = cv
 		}
-		if v.Value != "" {
+		k3 := strings.ToUpper("@" + pluginType + "_" + pluginName + "_" + key)
+		if cv, ok := cmd.Vars[k3]; ok {
+			val = cv
+		}
+
+		if v != nil && v.Value != "" {
 			val = v.Value
 		}
-		middlewareVars[v.Name] = val
+
+		pVars[strings.ToLower(key)] = val
 	}
-	return middlewareVars
+	return pVars
 }
 
 func (cmd *Cmd) ApplyMiddlewares() error {
@@ -242,7 +254,7 @@ func (cmd *Cmd) ApplyMiddlewares() error {
 
 		cfgMiddleware := middlewareStack[i]
 
-		middlewareVars := cmd.GetPluginVarsMap("middleware", cfgMiddleware.Name, cfgMiddleware.Vars)
+		middlewareVars := cmd.GetPluginVarsMap("middleware", cfgMiddleware.Name, cfgMiddleware.Plugin.UseVars, cfgMiddleware.Vars)
 
 		middlewareConfig := &middleware.Config{
 			AppConfig:      cmd.AppConfig,
@@ -277,7 +289,11 @@ func (cmd *Cmd) RunRunner() error {
 
 	r := cmd.Runner
 
-	runnerVars := cmd.GetPluginVarsMap("runner", r.Name, r.Vars)
+	if r.Plugin == nil {
+		r.Plugin = cmd.App.GetRunner(r.Name)
+	}
+
+	runnerVars := cmd.GetPluginVarsMap("runner", r.Name, r.Plugin.UseVars, r.Vars)
 
 	runCfg := &runner.Config{
 		AppConfig:     cmd.AppConfig,
@@ -295,9 +311,7 @@ func (cmd *Cmd) RunRunner() error {
 		Closer:        cmd.Closer,
 		Dir:           cmd.Dir,
 	}
-	if r.Plugin == nil {
-		r.Plugin = cmd.App.GetRunner(r.Name)
-	}
+
 	return r.Plugin.Run(runCfg)
 }
 

@@ -1,6 +1,8 @@
 package play
 
 import (
+	"strings"
+
 	"github.com/sirupsen/logrus"
 	"gitlab.com/youtopia.earth/ops/snip/errors"
 	snipplugin "gitlab.com/youtopia.earth/ops/snip/plugin"
@@ -46,22 +48,24 @@ func (ccmd *CfgCmd) Parse() {
 	ccmd.LoadLoader()
 }
 
-func (ccmd *CfgCmd) GetLoaderVarsMap(mVar map[string]*variable.Var) map[string]string {
-	middlewareVars := make(map[string]string)
-	for _, v := range mVar {
+func (ccmd *CfgCmd) GetLoaderVarsMap(useVars []string, mVar map[string]*variable.Var) map[string]string {
+	pVars := make(map[string]string)
+	for _, useV := range useVars {
+		key := strings.ToUpper(useV)
+		v := mVar[key]
 		var val string
-		if v.Default != "" {
+		if v != nil && v.Default != "" {
 			val = v.Default
 		}
-		if v.Value != "" {
+		if v != nil && v.Value != "" {
 			val = v.Value
 		}
-		middlewareVars[v.Name] = val
+		pVars[strings.ToLower(key)] = val
 	}
-	return middlewareVars
+	return pVars
 }
 
-func (ccmd *CfgCmd) LoadLoader() {
+func (ccmd *CfgCmd) GetLoaderConfig(lr *loader.Loader) *loader.Config {
 	app := ccmd.CfgPlay.App
 	cfg := app.GetConfig()
 
@@ -71,11 +75,9 @@ func (ccmd *CfgCmd) LoadLoader() {
 		SnippetsDir:    cfg.SnippetsDir,
 	}
 
-	lr := ccmd.Loader
+	loaderVars := ccmd.GetLoaderVarsMap(lr.Plugin.UseVars, lr.Vars)
 
-	loaderVars := ccmd.GetLoaderVarsMap(lr.Vars)
-
-	loadCfg := &loader.Config{
+	loaderCfg := &loader.Config{
 		AppConfig:         appConfig,
 		LoaderVars:        loaderVars,
 		DefaultsPlayProps: make(map[string]interface{}),
@@ -83,11 +85,21 @@ func (ccmd *CfgCmd) LoadLoader() {
 		RequiredFiles:     ccmd.RequiredFiles,
 	}
 
-	lr.Plugin.Load(loadCfg)
+	return loaderCfg
 
-	ccmd.Command = loadCfg.Command
-	ccmd.RequiredFiles = loadCfg.RequiredFiles
-	ccmd.CfgPlay.ParseMapAsDefault(loadCfg.DefaultsPlayProps)
+}
+
+func (ccmd *CfgCmd) LoadLoader() {
+
+	lr := ccmd.Loader
+
+	loaderCfg := ccmd.GetLoaderConfig(lr)
+
+	lr.Plugin.Load(loaderCfg)
+
+	ccmd.Command = loaderCfg.Command
+	ccmd.RequiredFiles = loaderCfg.RequiredFiles
+	ccmd.CfgPlay.ParseMapAsDefault(loaderCfg.DefaultsPlayProps)
 }
 
 func (ccmd *CfgCmd) ParseLoader() {
@@ -103,11 +115,13 @@ func (ccmd *CfgCmd) ParseLoader() {
 		cfg := app.GetConfig()
 		for _, v := range cfg.Loaders {
 			loaderPlugin := app.GetLoader(v)
-			if loaderPlugin.Check(ccmd.Command) {
-				ccmd.Loader = &loader.Loader{
-					Name:   v,
-					Plugin: loaderPlugin,
-				}
+			lr := &loader.Loader{
+				Name:   v,
+				Plugin: loaderPlugin,
+			}
+			loaderCfg := ccmd.GetLoaderConfig(lr)
+			if loaderPlugin.Check(loaderCfg) {
+				ccmd.Loader = lr
 				break
 			}
 		}
@@ -118,7 +132,8 @@ func (ccmd *CfgCmd) ParseLoader() {
 	}
 
 	for _, v := range *cp.Loaders {
-		if v.Plugin.Check(ccmd.Command) {
+		loaderCfg := ccmd.GetLoaderConfig(v)
+		if v.Plugin.Check(loaderCfg) {
 			ccmd.Loader = v
 			break
 		}

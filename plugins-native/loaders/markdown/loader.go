@@ -8,8 +8,8 @@ import (
 
 var (
 	Loader = loader.Plugin{
-		Check: func(command []string) bool {
-			return strings.HasSuffix(command[0], ".md")
+		Check: func(cfg *loader.Config) bool {
+			return strings.HasSuffix(cfg.Command[0], ".md")
 		},
 		Load: func(cfg *loader.Config) error {
 			return BuildBash(cfg)

@@ -1,6 +1,7 @@
 package loader
 
 type Plugin struct {
-	Load  func(*Config) error
-	Check func([]string) bool
+	UseVars []string
+	Load    func(*Config) error
+	Check   func(*Config) bool
 }

@@ -1,6 +1,7 @@
 package variable
 
 import (
+	"strconv"
 	"strings"
 
 	"gitlab.com/youtopia.earth/ops/snip/decode"
@@ -21,6 +22,9 @@ func ParseVarsMap(varsI map[string]interface{}, depth int) map[string]*Var {
 		case string:
 			value = make(map[string]interface{})
 			value["value"] = v
+		case int:
+			value = make(map[string]interface{})
+			value["value"] = strconv.Itoa(v)
 		case bool:
 			value = make(map[string]interface{})
 			if v {

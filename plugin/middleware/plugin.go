@@ -1,5 +1,6 @@
 package middleware
 
 type Plugin struct {
-	Apply func(*Config) (bool, error)
+	UseVars []string
+	Apply   func(*Config) (bool, error)
 }

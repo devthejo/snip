@@ -21,11 +21,13 @@ import (
 
 var (
 	Runner = runner.Plugin{
+		UseVars: []string{"pty", "host", "port", "user", "pass", "file", "sock", "max_retry"},
 		Run: func(cfg *runner.Config) error {
 
 			logger := cfg.Logger
 
-			sshCfg := sshclient.CreateConfig(cfg.Vars)
+			vars := cfg.RunnerVars
+			sshCfg := sshclient.CreateConfig(vars)
 
 			for src, dest := range cfg.RequiredFiles {
 				_, err := tools.RequiredOnce(cfg.Cache, []string{"host", sshCfg.Host, dest}, src, func() (interface{}, error) {
@@ -60,7 +62,7 @@ var (
 			}
 
 			var enablePTY bool
-			if enablePTYStr, ok := cfg.Vars["@PTY"]; ok {
+			if enablePTYStr, ok := vars["pty"]; ok {
 				enablePTY = enablePTYStr == "true"
 			}
 

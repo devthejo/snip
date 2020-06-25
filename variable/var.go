@@ -2,6 +2,7 @@ package variable
 
 import (
 	"os"
+	"strconv"
 	"strings"
 
 	survey "github.com/AlecAivazis/survey/v2"
@@ -62,18 +63,34 @@ func (vr *Var) ParseRequired(v map[string]interface{}) {
 }
 
 func (vr *Var) ParseDefault(v map[string]interface{}) {
-	switch v["default"].(type) {
+	switch val := v["default"].(type) {
 	case string:
-		vr.Default = v["default"].(string)
+		vr.Default = val
+	case int:
+		vr.Default = strconv.Itoa(val)
+	case bool:
+		if val {
+			vr.Default = "true"
+		} else {
+			vr.Default = "false"
+		}
 	case nil:
 	default:
 		UnexpectedTypeVar(v, "default")
 	}
 }
 func (vr *Var) ParseValue(v map[string]interface{}) {
-	switch v["value"].(type) {
+	switch val := v["value"].(type) {
 	case string:
-		vr.Value = v["value"].(string)
+		vr.Value = val
+	case int:
+		vr.Value = strconv.Itoa(val)
+	case bool:
+		if val {
+			vr.Value = "true"
+		} else {
+			vr.Value = "false"
+		}
 	case nil:
 	default:
 		UnexpectedTypeVar(v, "value")
