@@ -467,7 +467,15 @@ func (cp *CfgPlay) ParseMiddlewares(m map[string]interface{}, override bool) {
 				if err != nil {
 					logrus.Fatalf("unexpected middleware type %T value %v, %v", middlewareV, middlewareV, err)
 				}
-				name := middlewareMap["name"].(string)
+				var name string
+				switch v := middlewareMap["name"].(type) {
+				case string:
+					name = v
+				case nil:
+					logrus.Fatalf("missing middleware name in %v", middlewareMap)
+				default:
+					logrus.Fatalf("unexpected middleware name type %T value %v", v, v)
+				}
 				mr := &middleware.Middleware{
 					Name:   name,
 					Plugin: app.GetMiddleware(name),

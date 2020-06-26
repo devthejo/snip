@@ -69,8 +69,6 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 		// Dependencies: ,
 		// PostInstall: ,
 
-		// Middlewares: cp.Middlewares,
-
 		Depth:       cp.Depth,
 		HasChildren: cp.HasChildren,
 	}

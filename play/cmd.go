@@ -161,20 +161,6 @@ func (cmd *Cmd) GetTreeKeyParts() []string {
 	return parts
 }
 
-// func (cmd *Cmd) ExpandCmdEnvMapper(key string) string {
-// 	if val, ok := cmd.Vars[key]; ok {
-// 		return val
-// 	}
-// 	return ""
-// }
-// func (cmd *Cmd) ExpandCmdEnv(commandSlice []string) []string {
-// 	expandedCmd := make([]string, len(commandSlice))
-// 	for i, str := range commandSlice {
-// 		expandedCmd[i] = os.Expand(str, cmd.ExpandCmdEnvMapper)
-// 	}
-// 	return expandedCmd
-// }
-
 func (cmd *Cmd) Run() error {
 	return cmd.Thread.Run(cmd.Main)
 }
