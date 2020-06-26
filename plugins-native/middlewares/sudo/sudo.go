@@ -35,6 +35,9 @@ var (
 
 			command = append(command, "--")
 
+			command = append(command, "/bin/sh")
+			command = append(command, "-c")
+
 			mutableCmd.Command = append(command, mutableCmd.Command...)
 
 			f := func(iface interface{}) bool {

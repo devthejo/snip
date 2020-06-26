@@ -49,19 +49,24 @@ var (
 			logStreamer := logstreamer.NewLogstreamer(log.New(w, "", 0), "", false)
 			defer logStreamer.Close()
 
-			commandSlice := []string{"."}
+			// commandSlice := []string{"."}
+			commandSlice := []string{}
 			commandSlice = append(commandSlice, strings.Join(cfg.Command, " ")+";")
 
 			varDirAbs := GetVarsDir(cfg)
 			if err := os.MkdirAll(varDirAbs, os.ModePerm); err != nil {
 				return err
 			}
+			var rVars []string
 			for _, vr := range cfg.RegisterVars {
 				file := filepath.Join(varDirAbs, vr)
-				commandSlice = append(commandSlice, `echo -n "$`+strings.ToUpper(vr)+`">`+file+";")
+				rVars = append(rVars, `echo -n "${`+strings.ToUpper(vr)+`}">`+file+";")
 			}
+			commandSlice = append(commandSlice, strings.Join(rVars, " "))
 
 			commandSlice = []string{"/bin/sh", "-c", strings.Join(commandSlice, " ")}
+
+			// logrus.Warn(commandSlice)
 
 			cmd := exec.CommandContext(cfg.Context, commandSlice[0], commandSlice[1:]...)
 
