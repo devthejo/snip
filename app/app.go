@@ -17,6 +17,7 @@ import (
 	"gitlab.com/youtopia.earth/ops/snip/plugin/middleware"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/runner"
 	"gitlab.com/youtopia.earth/ops/snip/proc"
+	"gitlab.com/youtopia.earth/ops/snip/registry"
 
 	pluginLoaderMarkdown "gitlab.com/youtopia.earth/ops/snip/plugins-native/loaders/markdown"
 	pluginMiddlewareSu "gitlab.com/youtopia.earth/ops/snip/plugins-native/middlewares/su"
@@ -39,6 +40,8 @@ type App struct {
 	Plugins cmap.ConcurrentMap
 
 	Cache *cache.Cache
+
+	VarsRegistry *registry.NsVars
 }
 
 func New() *App {
@@ -55,6 +58,8 @@ func NewApp() *App {
 	app.Now = time.Now()
 
 	app.Cache = cache.New(5*time.Minute, 10*time.Minute)
+
+	app.VarsRegistry = registry.CreateNsVars()
 
 	var configFile string
 	app.ConfigFile = &configFile
@@ -113,6 +118,10 @@ func (app *App) GetNow() time.Time {
 
 func (app *App) GetCache() *cache.Cache {
 	return app.Cache
+}
+
+func (app *App) GetVarsRegistry() *registry.NsVars {
+	return app.VarsRegistry
 }
 
 func (app *App) GetMainProc() *proc.Main {

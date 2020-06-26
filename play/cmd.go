@@ -2,7 +2,6 @@ package play
 
 import (
 	"context"
-	"os"
 	"strings"
 	"time"
 
@@ -47,6 +46,9 @@ type Cmd struct {
 	Closer *func(interface{}) bool
 
 	RegisterVars []string
+
+	TreeKeyParts []string
+	TreeKey      string
 }
 
 func (cmd *Cmd) EnvMap() map[string]string {
@@ -98,6 +100,9 @@ func CreateCmd(ccmd *CfgCmd, ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 	}
 	cmd.Depth = depth
 
+	cmd.TreeKeyParts = cmd.GetTreeKeyParts()
+	cmd.TreeKey = strings.Join(cmd.TreeKeyParts, "|")
+
 	vars := make(map[string]string)
 	for k, v := range ctx.VarsDefault.Items() {
 		vars[k] = v.(string)
@@ -107,9 +112,8 @@ func CreateCmd(ccmd *CfgCmd, ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 	}
 	cmd.Vars = vars
 
-	logKey := cmd.GetTreeKey()
 	logger := logrus.WithFields(logrus.Fields{
-		"tree": logKey,
+		"tree": cmd.TreeKey,
 	})
 	loggerCtx := context.WithValue(context.Background(), config.LogContextKey("indentation"), cmd.Depth+1)
 	logger = logger.WithContext(loggerCtx)
@@ -123,14 +127,6 @@ func CreateCmd(ccmd *CfgCmd, ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 	return cmd
 }
 
-func (cmd *Cmd) GetTreeKey() string {
-	parts := cmd.GetTreeKeyParts()
-	for i, v := range parts {
-		parts[i] = strings.ReplaceAll(v, "|", "-")
-	}
-	return strings.Join(parts, "|")
-
-}
 func (cmd *Cmd) GetTreeKeyParts() []string {
 	var parts []string
 	var parent interface{}
@@ -158,24 +154,26 @@ func (cmd *Cmd) GetTreeKeyParts() []string {
 		if parent == nil {
 			break
 		}
+		part = strings.ReplaceAll(part, "|", "-")
+		part = strings.ReplaceAll(part, "/", "_")
 		parts = append([]string{part}, parts...)
 	}
 	return parts
 }
 
-func (cmd *Cmd) ExpandCmdEnvMapper(key string) string {
-	if val, ok := cmd.Vars[key]; ok {
-		return val
-	}
-	return ""
-}
-func (cmd *Cmd) ExpandCmdEnv(commandSlice []string) []string {
-	expandedCmd := make([]string, len(commandSlice))
-	for i, str := range commandSlice {
-		expandedCmd[i] = os.Expand(str, cmd.ExpandCmdEnvMapper)
-	}
-	return expandedCmd
-}
+// func (cmd *Cmd) ExpandCmdEnvMapper(key string) string {
+// 	if val, ok := cmd.Vars[key]; ok {
+// 		return val
+// 	}
+// 	return ""
+// }
+// func (cmd *Cmd) ExpandCmdEnv(commandSlice []string) []string {
+// 	expandedCmd := make([]string, len(commandSlice))
+// 	for i, str := range commandSlice {
+// 		expandedCmd[i] = os.Expand(str, cmd.ExpandCmdEnvMapper)
+// 	}
+// 	return expandedCmd
+// }
 
 func (cmd *Cmd) Run() error {
 	return cmd.Thread.Run(cmd.Main)
@@ -194,10 +192,22 @@ func (cmd *Cmd) CreateMutableCmd() *middleware.MutableCmd {
 		requiredFiles[k] = v
 	}
 
+	vars := make(map[string]string)
+	for k, v := range cmd.Vars {
+		vars[k] = v
+	}
+	kp := cmd.TreeKeyParts
+	kp = kp[0 : len(kp)-2]
+	varsRegistry := cmd.App.GetVarsRegistry()
+	regVarsMap := varsRegistry.GetMapBySlice(kp)
+	for k, v := range regVarsMap {
+		vars[k] = v
+	}
+
 	mutableCmd := &middleware.MutableCmd{
 		AppConfig:       cmd.AppConfig,
 		Command:         cmd.Command,
-		Vars:            cmd.Vars,
+		Vars:            vars,
 		OriginalCommand: originalCommand,
 		OriginalVars:    originalVars,
 		RequiredFiles:   requiredFiles,
@@ -304,8 +314,11 @@ func (cmd *Cmd) RunRunner() error {
 			"runner": cmd.Runner.Name,
 		}),
 		Cache:         cmd.App.GetCache(),
-		Vars:          cmd.Vars,
+		VarsRegistry:  cmd.App.GetVarsRegistry(),
 		Command:       cmd.Command,
+		Vars:          cmd.Vars,
+		RegisterVars:  cmd.RegisterVars,
+		TreeKeyParts:  cmd.TreeKeyParts,
 		RequiredFiles: cmd.RequiredFiles,
 		Expect:        cmd.Expect,
 		Closer:        cmd.Closer,

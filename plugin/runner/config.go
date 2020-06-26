@@ -8,6 +8,7 @@ import (
 
 	expect "gitlab.com/youtopia.earth/ops/snip/goexpect"
 	snipplugin "gitlab.com/youtopia.earth/ops/snip/plugin"
+	"gitlab.com/youtopia.earth/ops/snip/registry"
 )
 
 type Config struct {
@@ -19,10 +20,14 @@ type Config struct {
 	ContextCancel context.CancelFunc
 	Logger        *logrus.Entry
 
-	Cache *cache.Cache
+	Cache        *cache.Cache
+	VarsRegistry *registry.NsVars
 
-	Command []string
-	Vars    map[string]string
+	Command      []string
+	Vars         map[string]string
+	RegisterVars []string
+
+	TreeKeyParts []string
 
 	RequiredFiles map[string]string
 	Expect        []expect.Batcher

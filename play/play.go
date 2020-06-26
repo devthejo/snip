@@ -65,7 +65,7 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 
 		ExecTimeout: cp.ExecTimeout,
 
-		// RegisterVars: cp.RegisterVars,
+		RegisterVars: cp.RegisterVars,
 		// Dependencies: ,
 		// PostInstall: ,
 

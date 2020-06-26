@@ -2,6 +2,7 @@ package mainNative
 
 import (
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -30,7 +31,9 @@ var (
 			for src, dest := range cfg.RequiredFiles {
 				destAbs := filepath.Join(snipDir, dest)
 				dir := filepath.Dir(destAbs)
-				os.MkdirAll(dir, os.ModePerm)
+				if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+					return err
+				}
 				_, err := tools.RequiredOnce(cfg.Cache, []string{"local", destAbs}, src, func() (interface{}, error) {
 					return tools.Copy(src, destAbs)
 				})
@@ -46,7 +49,19 @@ var (
 			logStreamer := logstreamer.NewLogstreamer(log.New(w, "", 0), "", false)
 			defer logStreamer.Close()
 
-			commandSlice := []string{"/bin/sh", "-c", strings.Join(cfg.Command, " ")}
+			commandSlice := []string{"."}
+			commandSlice = append(commandSlice, strings.Join(cfg.Command, " ")+";")
+
+			varDirAbs := GetVarsDir(cfg)
+			if err := os.MkdirAll(varDirAbs, os.ModePerm); err != nil {
+				return err
+			}
+			for _, vr := range cfg.RegisterVars {
+				file := filepath.Join(varDirAbs, vr)
+				commandSlice = append(commandSlice, `echo -n "$`+strings.ToUpper(vr)+`">`+file+";")
+			}
+
+			commandSlice = []string{"/bin/sh", "-c", strings.Join(commandSlice, " ")}
 
 			cmd := exec.CommandContext(cfg.Context, commandSlice[0], commandSlice[1:]...)
 
@@ -66,7 +81,7 @@ var (
 			var clean func()
 
 			var enablePTY bool
-			if enablePTYStr, ok := cfg.Vars["@PTY"]; ok {
+			if enablePTYStr, ok := cfg.RunnerVars["pty"]; ok {
 				enablePTY = enablePTYStr == "true"
 			}
 
@@ -173,7 +188,57 @@ var (
 
 			e.ExpectBatch(expected, -1)
 
-			return <-ch
+			err = <-ch
+			if err != nil {
+				return err
+			}
+
+			err = registerVarsRetrieve(cfg)
+			if err != nil {
+				return err
+			}
+
+			return nil
 		},
 	}
 )
+
+func GetVarsDir(cfg *runner.Config) string {
+	kp := cfg.TreeKeyParts
+	dp := kp[0 : len(kp)-2]
+	dirParts := make([]string, len(dp))
+	for i := 0; i < len(dp); i++ {
+		var p string
+		if i%2 == 0 {
+			p = "key"
+		} else {
+			p = "row"
+		}
+		p += "."
+		p += dp[i]
+		dirParts[i] = p
+	}
+	varDir := filepath.Join(dirParts...)
+
+	appCfg := cfg.AppConfig
+	usr, _ := user.Current()
+	varsPath := filepath.Join(usr.HomeDir, ".snip", appCfg.DeploymentName, "vars")
+	varDirAbs := filepath.Join(varsPath, varDir)
+	return varDirAbs
+}
+
+func registerVarsRetrieve(cfg *runner.Config) error {
+	r := cfg.VarsRegistry
+	varDirAbs := GetVarsDir(cfg)
+	kp := cfg.TreeKeyParts
+	dp := kp[0 : len(kp)-2]
+	for _, vr := range cfg.RegisterVars {
+		file := filepath.Join(varDirAbs, vr)
+		dat, err := ioutil.ReadFile(file)
+		if err != nil {
+			return err
+		}
+		r.SetVarBySlice(dp, vr, string(dat))
+	}
+	return nil
+}
