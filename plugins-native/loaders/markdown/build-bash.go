@@ -59,7 +59,7 @@ func BuildBash(cfg *loader.Config) error {
 	outputAppend("mkdir -p ${SNIP_VARS_TREEPATH}\n")
 	for _, vr := range cfg.RegisterVars {
 		vr = strings.ToUpper(vr)
-		outputAppend(`echo -n "${` + vr + `}">${SNIP_VARS_TREEPATH}/` + vr + "\n")
+		outputAppend(`echo "${` + vr + `}">${SNIP_VARS_TREEPATH}/` + vr + "\n")
 	}
 
 	logrus.Debugf("writed bash from md to %v", file)

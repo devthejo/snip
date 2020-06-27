@@ -84,9 +84,6 @@ var (
 				}
 			}
 
-			sep := "#" + strconv.FormatInt(time.Now().UnixNano(), 10) + "#"
-			wHeadStripper := wHeadStripperMake(sep)
-
 			sIn, err := session.StdinPipe()
 			if err != nil {
 				return err
@@ -97,25 +94,12 @@ var (
 			session.Stdout = pw
 			session.Stderr = pw
 
-			loggerSSH := logger.WithFields(logrus.Fields{
-				"host": sshCfg.Host,
-			})
-			w := loggerSSH.Writer()
-			defer w.Close()
-			logStreamer := logstreamer.NewLogstreamer(log.New(w, "", 0), "", false)
-			defer logStreamer.Close()
-
 			err = session.Shell()
 			if err != nil {
 				return err
 			}
 
-			tee := &WriterModifier{
-				Modifier: wHeadStripper,
-				Writer:   logStreamer,
-			}
-
-			e, ch, err := expect.Spawn(&expect.SpawnOptions{
+			spawnOpts := &expect.SpawnOptions{
 				In:  sIn,
 				Out: sOut,
 				Close: func() error {
@@ -131,8 +115,32 @@ var (
 					pr.Close()
 					return err
 				},
-				Tee: tee,
-			})
+			}
+
+			var expected []expect.Batcher
+
+			if !cfg.Quiet {
+				loggerSSH := logger.WithFields(logrus.Fields{
+					"host": sshCfg.Host,
+				})
+				w := loggerSSH.Writer()
+				defer w.Close()
+				logStreamer := logstreamer.NewLogstreamer(log.New(w, "", 0), "", false)
+				defer logStreamer.Close()
+
+				sep := "#" + strconv.FormatInt(time.Now().UnixNano(), 10) + "#"
+				wHeadStripper := wHeadStripperMake(sep)
+				tee := &WriterModifier{
+					Modifier: wHeadStripper,
+					Writer:   logStreamer,
+				}
+
+				expected = append(expected, &expect.BSnd{S: `echo "` + sep + `"; `})
+
+				spawnOpts.Tee = tee
+			}
+
+			e, ch, err := expect.Spawn(spawnOpts)
 			if err != nil {
 				return err
 			}
@@ -158,10 +166,6 @@ var (
 					return
 				}
 			}()
-
-			var expected []expect.Batcher
-
-			expected = append(expected, &expect.BSnd{S: `echo "` + sep + `"; `})
 
 			if cfg.Dir != "" {
 				expected = append(expected, &expect.BSnd{S: "cd " + cfg.Dir + ";"})
@@ -271,7 +275,9 @@ func registerVarsRetrieve(cfg *runner.Config, client *sshclient.Client) error {
 				return
 			}
 			session.Close()
-			r.SetVarBySlice(dp, vr, string(dat))
+			value := string(dat)
+			value = strings.TrimSuffix(value, "\n")
+			r.SetVarBySlice(dp, vr, value)
 		}(vr)
 	}
 	wg.Wait()

@@ -329,6 +329,9 @@ func (cp *CfgPlay) ParseQuiet(m map[string]interface{}, override bool) {
 			cp.Quiet = &v
 		}
 	case nil:
+		if cp.ParentCfgPlay != nil && cp.ParentCfgPlay.Quiet != nil {
+			cp.Quiet = cp.ParentCfgPlay.Quiet
+		}
 	default:
 		unexpectedTypeCfgPlay(m, "quiet")
 	}

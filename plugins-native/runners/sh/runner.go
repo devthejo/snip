@@ -44,11 +44,6 @@ var (
 
 			logger := cfg.Logger
 
-			w := logger.Writer()
-			defer w.Close()
-			logStreamer := logstreamer.NewLogstreamer(log.New(w, "", 0), "", false)
-			defer logStreamer.Close()
-
 			commandSlice := []string{"/bin/sh", "-c", strings.Join(cfg.Command, " ")}
 
 			cmd := exec.CommandContext(cfg.Context, commandSlice[0], commandSlice[1:]...)
@@ -132,7 +127,7 @@ var (
 				return err
 			}
 
-			e, ch, err := expect.Spawn(&expect.SpawnOptions{
+			spawnOpts := &expect.SpawnOptions{
 				In:  sIn,
 				Out: sOut,
 				Close: func() error {
@@ -153,11 +148,21 @@ var (
 					// Sending Signal 0 to a process returns nil if process can take a signal , something else if not.
 					return cmd.Process.Signal(syscall.Signal(0)) == nil
 				},
-				Tee: logStreamer,
 				// Verbose: true,
 				// VerboseWriter: logStreamer,
 				Clean: clean,
-			})
+			}
+
+			if !cfg.Quiet {
+				w := logger.Writer()
+				defer w.Close()
+				logStreamer := logstreamer.NewLogstreamer(log.New(w, "", 0), "", false)
+				defer logStreamer.Close()
+				
+				spawnOpts.Tee = logStreamer
+			}
+
+			e, ch, err := expect.Spawn(spawnOpts)
 
 			var isClosed bool
 			defer func() {
@@ -229,7 +234,9 @@ func registerVarsRetrieve(cfg *runner.Config) error {
 		if err != nil {
 			return err
 		}
-		r.SetVarBySlice(dp, vr, string(dat))
+		value := string(dat)
+		value = strings.TrimSuffix(value,"\n")
+		r.SetVarBySlice(dp, vr, value)
 	}
 	return nil
 }
