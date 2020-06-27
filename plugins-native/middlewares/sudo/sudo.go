@@ -15,9 +15,11 @@ var (
 
 			command := []string{"sudo", "--preserve-env"}
 
+			command = append(command, "--prompt=[sudo]")
+
 			if pass, ok := vars["pass"]; ok {
 				mutableCmd.PrependExpect(
-					&expect.BExp{R: "[sudo]*"},
+					&expect.BExp{R: "[sudo]"},
 					&expect.BSnd{S: pass + "\n"},
 				)
 				command = append(command, "--stdin")

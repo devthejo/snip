@@ -36,7 +36,10 @@ type CfgPlay struct {
 	LoopSets       map[string]map[string]*variable.Var
 	LoopSequential *bool
 
-	RegisterVars []string
+	RegisterVars   []string
+	RegisterOutput string
+
+	Quiet *bool
 
 	CheckCommand []string
 
@@ -98,6 +101,8 @@ func (cp *CfgPlay) ParseMapRun(m map[string]interface{}, override bool) {
 	cp.ParseLoopSequential(m, override)
 	cp.ParseVars(m, override)
 	cp.ParseRegisterVars(m, override)
+	cp.ParseRegisterOutput(m, override)
+	cp.ParseQuiet(m, override)
 	cp.ParseCheckCommand(m, override)
 	cp.ParseDependencies(m, override)
 	cp.ParsePostInstall(m, override)
@@ -303,6 +308,32 @@ func (cp *CfgPlay) ParseRegisterVars(m map[string]interface{}, override bool) {
 		unexpectedTypeCmd(m, "register_vars")
 	}
 }
+
+func (cp *CfgPlay) ParseRegisterOutput(m map[string]interface{}, override bool) {
+	if !override && cp.RegisterOutput != "" {
+		return
+	}
+	switch v := m["register_output"].(type) {
+	case string:
+		cp.RegisterOutput = v
+	case nil:
+	default:
+		unexpectedTypeCmd(m, "register_vars")
+	}
+}
+
+func (cp *CfgPlay) ParseQuiet(m map[string]interface{}, override bool) {
+	switch v := m["quiet"].(type) {
+	case bool:
+		if cp.Quiet == nil || override {
+			cp.Quiet = &v
+		}
+	case nil:
+	default:
+		unexpectedTypeCfgPlay(m, "quiet")
+	}
+}
+
 func (cp *CfgPlay) ParseCheckCommand(m map[string]interface{}, override bool) {
 	if !override && cp.CheckCommand != nil {
 		return

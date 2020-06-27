@@ -60,6 +60,7 @@ var (
 
 			var sIn io.WriteCloser
 			var sOut io.Reader
+
 			var wait func() error
 			var clean func()
 
@@ -69,6 +70,10 @@ var (
 			}
 
 			var pty *term.PTY
+
+			var pr io.ReadCloser
+			var pw io.WriteCloser
+
 			if enablePTY {
 				pty, err = term.OpenPTY()
 				if err != nil {
@@ -77,7 +82,11 @@ var (
 				var t term.Termios
 				t.Raw()
 				t.Set(pty.Slave)
-				cmd.Stdin, cmd.Stdout, cmd.Stderr = pty.Slave, pty.Slave, pty.Slave
+
+				pw = pty.Slave
+				pr = pty.Slave
+				cmd.Stdin = pty.Slave
+
 				cmd.SysProcAttr = &syscall.SysProcAttr{
 					Setsid:  true,
 					Setctty: true,
@@ -96,6 +105,7 @@ var (
 					}
 					return nil
 				}
+
 			} else {
 				cmd.SysProcAttr = &syscall.SysProcAttr{
 					Setpgid: true,
@@ -104,17 +114,19 @@ var (
 				if err != nil {
 					return err
 				}
-				stdout, err := cmd.StdoutPipe()
-				if err != nil {
+
+				pr, pw = io.Pipe()
+				sOut = pr
+
+				wait = func() error {
+					err := cmd.Wait()
+					pr.Close()
 					return err
 				}
-				stderr, err := cmd.StderrPipe()
-				if err != nil {
-					return err
-				}
-				sOut = io.MultiReader(stdout, stderr)
-				wait = cmd.Wait
 			}
+
+			cmd.Stdout = pw
+			cmd.Stderr = pw
 
 			if err := cmd.Start(); err != nil {
 				return err
@@ -206,7 +218,12 @@ func registerVarsRetrieve(cfg *runner.Config) error {
 	rootPath := getRootPath(cfg)
 	varDirAbs := filepath.Join(rootPath, "vars", varDir)
 	dp := kp[0 : len(kp)-2]
-	for _, vr := range cfg.RegisterVars {
+	var vars []string
+	vars = append(vars, cfg.RegisterVars...)
+	if cfg.RegisterOutput != "" {
+		vars = append(vars, cfg.RegisterOutput)
+	}
+	for _, vr := range vars {
 		file := filepath.Join(varDirAbs, vr)
 		dat, err := ioutil.ReadFile(file)
 		if err != nil {

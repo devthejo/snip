@@ -46,7 +46,9 @@ type Cmd struct {
 
 	Closer *func(interface{}) bool
 
-	RegisterVars []string
+	RegisterVars   []string
+	RegisterOutput string
+	Quiet          bool
 
 	TreeKeyParts []string
 	TreeKey      string
@@ -64,7 +66,8 @@ func (cmd *Cmd) EnvMap() map[string]string {
 
 func CreateCmd(ccmd *CfgCmd, ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 	parentPlay := parentLoopRow.ParentPlay
-	app := ccmd.CfgPlay.App
+	cp := ccmd.CfgPlay
+	app := cp.App
 	cfg := app.GetConfig()
 
 	thr := proc.CreateThread(app)
@@ -91,7 +94,9 @@ func CreateCmd(ccmd *CfgCmd, ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 		Thread:      thr,
 		ExecTimeout: parentPlay.ExecTimeout,
 
-		RegisterVars: parentPlay.RegisterVars,
+		RegisterVars:   parentPlay.RegisterVars,
+		RegisterOutput: cp.RegisterOutput,
+		Quiet:          cp.Quiet != nil && (*cp.Quiet),
 	}
 
 	depth := ccmd.Depth
@@ -304,21 +309,24 @@ func (cmd *Cmd) RunRunner() error {
 		Logger: cmd.Logger.WithFields(logrus.Fields{
 			"runner": cmd.Runner.Name,
 		}),
-		Cache:         cmd.App.GetCache(),
-		VarsRegistry:  cmd.App.GetVarsRegistry(),
-		Command:       cmd.Command,
-		Vars:          vars,
-		RegisterVars:  cmd.RegisterVars,
-		TreeKeyParts:  cmd.TreeKeyParts,
-		RequiredFiles: cmd.RequiredFiles,
-		Expect:        cmd.Expect,
-		Closer:        cmd.Closer,
-		Dir:           cmd.Dir,
+		Cache:          cmd.App.GetCache(),
+		VarsRegistry:   cmd.App.GetVarsRegistry(),
+		Command:        cmd.Command,
+		Vars:           vars,
+		RegisterVars:   cmd.RegisterVars,
+		RegisterOutput: cmd.RegisterOutput,
+		Quiet:          cmd.Quiet,
+		TreeKeyParts:   cmd.TreeKeyParts,
+		RequiredFiles:  cmd.RequiredFiles,
+		Expect:         cmd.Expect,
+		Closer:         cmd.Closer,
+		Dir:            cmd.Dir,
 	}
 
 	appCfg := cmd.AppConfig
 	rootPath := r.Plugin.GetRootPath(runCfg)
-	vars["SNIP_PATH"] = filepath.Join(rootPath, "build", "snippets")
+	vars["SNIP_SNIPPETS_PATH"] = filepath.Join(rootPath, "build", "snippets")
+	vars["SNIP_LAUNCHERS_PATH"] = filepath.Join(rootPath, "build", "launchers")
 	varsDir := appCfg.TreepathVarsDir(cmd.TreeKeyParts)
 	vars["SNIP_VARS_TREEPATH"] = filepath.Join(rootPath, "vars", varsDir)
 

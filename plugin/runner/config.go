@@ -23,9 +23,11 @@ type Config struct {
 	Cache        *cache.Cache
 	VarsRegistry *registry.NsVars
 
-	Command      []string
-	Vars         map[string]string
-	RegisterVars []string
+	Command        []string
+	Vars           map[string]string
+	RegisterVars   []string
+	RegisterOutput string
+	Quiet          bool
 
 	TreeKeyParts []string
 

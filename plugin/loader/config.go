@@ -13,5 +13,6 @@ type Config struct {
 	DefaultsPlayProps map[string]interface{}
 	RequiredFiles     map[string]string
 
-	RegisterVars []string
+	RegisterVars   []string
+	RegisterOutput string
 }

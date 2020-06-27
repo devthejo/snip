@@ -84,19 +84,18 @@ var (
 				}
 			}
 
+			sep := "#" + strconv.FormatInt(time.Now().UnixNano(), 10) + "#"
+			wHeadStripper := wHeadStripperMake(sep)
+
 			sIn, err := session.StdinPipe()
 			if err != nil {
 				return err
 			}
-			stdout, err := session.StdoutPipe()
-			if err != nil {
-				return err
-			}
-			stderr, err := session.StderrPipe()
-			if err != nil {
-				return err
-			}
-			sOut := io.MultiReader(stdout, stderr)
+
+			pr, pw := io.Pipe()
+			sOut := pr
+			session.Stdout = pw
+			session.Stderr = pw
 
 			loggerSSH := logger.WithFields(logrus.Fields{
 				"host": sshCfg.Host,
@@ -111,23 +110,9 @@ var (
 				return err
 			}
 
-			sep := "#" + strconv.FormatInt(time.Now().UnixNano(), 10) + "#"
-			sepL := len(sep)
-			var enableWrite bool
 			tee := &WriterModifier{
-				Modifier: func(data []byte) []byte {
-					if !enableWrite {
-						str := string(data)
-						index := strings.Index(str, sep)
-						if index == -1 {
-							return []byte{}
-						}
-						enableWrite = true
-						data = []byte(str[index+sepL:])
-					}
-					return data
-				},
-				Writer: logStreamer,
+				Modifier: wHeadStripper,
+				Writer:   logStreamer,
 			}
 
 			e, ch, err := expect.Spawn(&expect.SpawnOptions{
@@ -141,8 +126,12 @@ var (
 					_, err := session.SendRequest("dummy", false, nil)
 					return err == nil
 				},
-				Wait: session.Wait,
-				Tee:  tee,
+				Wait: func() error {
+					err := session.Wait()
+					pr.Close()
+					return err
+				},
+				Tee: tee,
 			})
 			if err != nil {
 				return err
@@ -182,8 +171,12 @@ var (
 			var setenv string
 			env := cfg.EnvMap()
 
-			snipPath := filepath.Join(rootPath, "build", "snippets")
-			env["SNIP_PATH"] = snipPath
+			appCfg := cfg.AppConfig
+
+			vars["SNIP_SNIPPETS_PATH"] = filepath.Join(rootPath, "build", "snippets")
+			vars["SNIP_LAUNCHERS_PATH"] = filepath.Join(rootPath, "build", "launchers")
+			varsDir := appCfg.TreepathVarsDir(cfg.TreeKeyParts)
+			vars["SNIP_VARS_TREEPATH"] = filepath.Join(rootPath, "vars", varsDir)
 
 			if len(env) > 0 {
 				for k, v := range env {
@@ -257,7 +250,12 @@ func registerVarsRetrieve(cfg *runner.Config, client *sshclient.Client) error {
 	dp := kp[0 : len(kp)-2]
 	var wg sync.WaitGroup
 	var errs []error
-	for _, vr := range cfg.RegisterVars {
+	var vars []string
+	vars = append(vars, cfg.RegisterVars...)
+	if cfg.RegisterOutput != "" {
+		vars = append(vars, cfg.RegisterOutput)
+	}
+	for _, vr := range vars {
 		wg.Add(1)
 		go func(vs string) {
 			defer wg.Done()
@@ -281,4 +279,21 @@ func registerVarsRetrieve(cfg *runner.Config, client *sshclient.Client) error {
 		return multierr.Combine(errs...)
 	}
 	return nil
+}
+
+func wHeadStripperMake(sep string) func(data []byte) []byte {
+	sepL := len(sep)
+	var enableWrite bool
+	return func(data []byte) []byte {
+		if !enableWrite {
+			str := string(data)
+			index := strings.Index(str, sep)
+			if index == -1 {
+				return []byte{}
+			}
+			enableWrite = true
+			data = []byte(str[index+sepL:])
+		}
+		return data
+	}
 }
