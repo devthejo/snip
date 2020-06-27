@@ -29,11 +29,10 @@ func BuildBash(cfg *loader.Config) error {
 	codeBlocks, defaultsPlayProps := ParseMarkdownFile(cfg)
 	cfg.DefaultsPlayProps = defaultsPlayProps
 
-	appCfg := cfg.AppConfig
 	now := time.Now()
 	nowText := now.Format("2006-01-02 15:04:05")
 
-	file := appCfg.BuildDir + "/snippets/" + mdpath + ".bash"
+	file := "build/snippets/" + mdpath + ".bash"
 	dir := filepath.Dir(file)
 	os.MkdirAll(dir, os.ModePerm)
 
@@ -55,12 +54,17 @@ func BuildBash(cfg *loader.Config) error {
 		content = strings.Trim(content, "\n")
 		outputAppend(content + "\n")
 	}
+
+	outputAppend("\n\n# snip vars export \n")
+	outputAppend("mkdir -p ${SNIP_VARS_TREEPATH}\n")
+	for _, vr := range cfg.RegisterVars {
+		outputAppend(`echo -n "${` + strings.ToUpper(vr) + `}">${SNIP_VARS_TREEPATH}/` + vr + "\n")
+	}
+
 	logrus.Debugf("writed bash from md to %v", file)
 
-	// bin := filepath.Join("~", ".snip", appCfg.DeploymentName, file)
 	bin := filepath.Join("$SNIP_PATH", mdpath+".bash")
-	// cfg.Command[0] = bin
-	cfg.Command = append([]string{".", bin}, cfg.Command[1:]...)
+	cfg.Command[0] = bin
 
 	cfg.RequiredFiles[file] = file
 

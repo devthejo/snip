@@ -21,15 +21,15 @@ import (
 
 var (
 	Runner = runner.Plugin{
-		UseVars: []string{"pty"},
+		UseVars:     []string{"pty"},
+		GetRootPath: getRootPath,
 		Run: func(cfg *runner.Config) error {
 
 			var err error
 
-			usr, _ := user.Current()
-			snipDir := filepath.Join(usr.HomeDir, ".snip", cfg.AppConfig.DeploymentName)
+			rootPath := getRootPath(cfg)
 			for src, dest := range cfg.RequiredFiles {
-				destAbs := filepath.Join(snipDir, dest)
+				destAbs := filepath.Join(rootPath, dest)
 				dir := filepath.Dir(destAbs)
 				if err := os.MkdirAll(dir, os.ModePerm); err != nil {
 					return err
@@ -49,35 +49,13 @@ var (
 			logStreamer := logstreamer.NewLogstreamer(log.New(w, "", 0), "", false)
 			defer logStreamer.Close()
 
-			// commandSlice := []string{"."}
-			commandSlice := []string{}
-			commandSlice = append(commandSlice, strings.Join(cfg.Command, " ")+";")
-
-			varDirAbs := GetVarsDir(cfg)
-			if err := os.MkdirAll(varDirAbs, os.ModePerm); err != nil {
-				return err
-			}
-			var rVars []string
-			for _, vr := range cfg.RegisterVars {
-				file := filepath.Join(varDirAbs, vr)
-				rVars = append(rVars, `echo -n "${`+strings.ToUpper(vr)+`}">`+file+";")
-			}
-			commandSlice = append(commandSlice, strings.Join(rVars, " "))
-
-			commandSlice = []string{"/bin/sh", "-c", strings.Join(commandSlice, " ")}
-
-			// logrus.Warn(commandSlice)
+			commandSlice := []string{"/bin/sh", "-c", strings.Join(cfg.Command, " ")}
 
 			cmd := exec.CommandContext(cfg.Context, commandSlice[0], commandSlice[1:]...)
 
 			cmd.Dir = cfg.Dir
 
 			env := cfg.EnvMap()
-
-			appCfg := cfg.AppConfig
-			snipPath := filepath.Join(usr.HomeDir, ".snip", appCfg.DeploymentName, appCfg.BuildDir, "snippets")
-			env["SNIP_PATH"] = snipPath
-
 			cmd.Env = tools.EnvToPairs(env)
 
 			var sIn io.WriteCloser
@@ -169,11 +147,18 @@ var (
 				Clean: clean,
 			})
 
-			defer e.Close()
+			var isClosed bool
+			defer func() {
+				isClosed = true
+				e.Close()
+			}()
 
 			go func() {
 				select {
 				case <-cfg.Context.Done():
+					if isClosed {
+						return
+					}
 					logger.Debug(`closing process`)
 					if cfg.Closer != nil {
 						if !(*cfg.Closer)(cmd) {
@@ -208,34 +193,18 @@ var (
 	}
 )
 
-func GetVarsDir(cfg *runner.Config) string {
-	kp := cfg.TreeKeyParts
-	dp := kp[0 : len(kp)-2]
-	dirParts := make([]string, len(dp))
-	for i := 0; i < len(dp); i++ {
-		var p string
-		if i%2 == 0 {
-			p = "key"
-		} else {
-			p = "row"
-		}
-		p += "."
-		p += dp[i]
-		dirParts[i] = p
-	}
-	varDir := filepath.Join(dirParts...)
-
-	appCfg := cfg.AppConfig
+func getRootPath(cfg *runner.Config) string {
 	usr, _ := user.Current()
-	varsPath := filepath.Join(usr.HomeDir, ".snip", appCfg.DeploymentName, "vars")
-	varDirAbs := filepath.Join(varsPath, varDir)
-	return varDirAbs
+	return filepath.Join(usr.HomeDir, ".snip", cfg.AppConfig.DeploymentName)
 }
 
 func registerVarsRetrieve(cfg *runner.Config) error {
 	r := cfg.VarsRegistry
-	varDirAbs := GetVarsDir(cfg)
 	kp := cfg.TreeKeyParts
+	appCfg := cfg.AppConfig
+	varDir := appCfg.TreepathVarsDir(kp)
+	rootPath := getRootPath(cfg)
+	varDirAbs := filepath.Join(rootPath, "vars", varDir)
 	dp := kp[0 : len(kp)-2]
 	for _, vr := range cfg.RegisterVars {
 		file := filepath.Join(varDirAbs, vr)

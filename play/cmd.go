@@ -2,6 +2,7 @@ package play
 
 import (
 	"context"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -72,7 +73,6 @@ func CreateCmd(ccmd *CfgCmd, ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 		App: app,
 		AppConfig: &snipplugin.AppConfig{
 			DeploymentName: cfg.DeploymentName,
-			BuildDir:       cfg.BuildDir,
 			SnippetsDir:    cfg.SnippetsDir,
 			Runner:         cfg.Runner,
 		},
@@ -291,6 +291,11 @@ func (cmd *Cmd) RunRunner() error {
 
 	runnerVars := cmd.GetPluginVarsMap("runner", r.Name, r.Plugin.UseVars, r.Vars)
 
+	vars := make(map[string]string)
+	for k, v := range cmd.Vars {
+		vars[k] = v
+	}
+
 	runCfg := &runner.Config{
 		AppConfig:     cmd.AppConfig,
 		RunnerVars:    runnerVars,
@@ -302,7 +307,7 @@ func (cmd *Cmd) RunRunner() error {
 		Cache:         cmd.App.GetCache(),
 		VarsRegistry:  cmd.App.GetVarsRegistry(),
 		Command:       cmd.Command,
-		Vars:          cmd.Vars,
+		Vars:          vars,
 		RegisterVars:  cmd.RegisterVars,
 		TreeKeyParts:  cmd.TreeKeyParts,
 		RequiredFiles: cmd.RequiredFiles,
@@ -310,6 +315,12 @@ func (cmd *Cmd) RunRunner() error {
 		Closer:        cmd.Closer,
 		Dir:           cmd.Dir,
 	}
+
+	appCfg := cmd.AppConfig
+	rootPath := r.Plugin.GetRootPath(runCfg)
+	vars["SNIP_PATH"] = filepath.Join(rootPath, "build", "snippets")
+	varsDir := appCfg.TreepathVarsDir(cmd.TreeKeyParts)
+	vars["SNIP_VARS_TREEPATH"] = filepath.Join(rootPath, "vars", varsDir)
 
 	return r.Plugin.Run(runCfg)
 }

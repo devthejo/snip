@@ -1,17 +1,22 @@
 package mainNative
 
 import (
+	"fmt"
 	"io"
 	"log"
+	"os/user"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/goterm/term"
 	shellquote "github.com/kballard/go-shellquote"
 	"github.com/kvz/logstreamer"
 	"github.com/sirupsen/logrus"
+	"go.uber.org/multierr"
+
 	expect "gitlab.com/youtopia.earth/ops/snip/goexpect"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/runner"
 	"gitlab.com/youtopia.earth/ops/snip/sshclient"
@@ -21,7 +26,8 @@ import (
 
 var (
 	Runner = runner.Plugin{
-		UseVars: []string{"pty", "host", "port", "user", "pass", "file", "sock", "max_retry"},
+		UseVars:     []string{"pty", "host", "port", "user", "pass", "file", "sock", "max_retry"},
+		GetRootPath: getRootPath,
 		Run: func(cfg *runner.Config) error {
 
 			logger := cfg.Logger
@@ -29,9 +35,11 @@ var (
 			vars := cfg.RunnerVars
 			sshCfg := sshclient.CreateConfig(vars)
 
+			rootPath := getRootPath(cfg)
+
 			for src, dest := range cfg.RequiredFiles {
 				_, err := tools.RequiredOnce(cfg.Cache, []string{"host", sshCfg.Host, dest}, src, func() (interface{}, error) {
-					destAbs := filepath.Join("/home", sshCfg.User, ".snip", cfg.AppConfig.DeploymentName, dest)
+					destAbs := filepath.Join(rootPath, dest)
 					err := sshutils.Upload(sshCfg, src, destAbs, logger)
 					return nil, err
 				})
@@ -139,16 +147,18 @@ var (
 			if err != nil {
 				return err
 			}
-			defer e.Close()
 
+			var isClosed bool
+			defer func() {
+				isClosed = true
+				e.Close()
+			}()
 			go func() {
-				if cfg.Closer != nil {
-					if !(*cfg.Closer)(session) {
-						return
-					}
-				}
 				select {
 				case <-cfg.Context.Done():
+					if isClosed {
+						return
+					}
 					logger.Debug(`closing process`)
 					if cfg.Closer != nil {
 						if !(*cfg.Closer)(session) {
@@ -172,8 +182,7 @@ var (
 			var setenv string
 			env := cfg.EnvMap()
 
-			appCfg := cfg.AppConfig
-			snipPath := filepath.Join("/home", sshCfg.User, ".snip", appCfg.DeploymentName, appCfg.BuildDir, "snippets")
+			snipPath := filepath.Join(rootPath, "build", "snippets")
 			env["SNIP_PATH"] = snipPath
 
 			if len(env) > 0 {
@@ -194,7 +203,17 @@ var (
 
 			e.ExpectBatch(expected, -1)
 
-			return <-ch
+			err = <-ch
+			if err != nil {
+				return err
+			}
+
+			err = registerVarsRetrieve(cfg, client)
+			if err != nil {
+				return err
+			}
+
+			return nil
 		},
 	}
 )
@@ -216,4 +235,50 @@ func (w *WriterModifier) Write(data []byte) (n int, err error) {
 }
 func (w *WriterModifier) Close() error {
 	return w.Writer.Close()
+}
+
+func getRootPath(cfg *runner.Config) string {
+	username := cfg.RunnerVars["user"]
+	if username == "" {
+		usr, _ := user.Current()
+		username = usr.Username
+	}
+	return filepath.Join("/home", username, ".snip", cfg.AppConfig.DeploymentName)
+}
+
+func registerVarsRetrieve(cfg *runner.Config, client *sshclient.Client) error {
+
+	r := cfg.VarsRegistry
+	kp := cfg.TreeKeyParts
+	appCfg := cfg.AppConfig
+	varDir := appCfg.TreepathVarsDir(kp)
+	rootPath := getRootPath(cfg)
+	varDirAbs := filepath.Join(rootPath, "vars", varDir)
+	dp := kp[0 : len(kp)-2]
+	var wg sync.WaitGroup
+	var errs []error
+	for _, vr := range cfg.RegisterVars {
+		wg.Add(1)
+		go func(vs string) {
+			defer wg.Done()
+			session, err := client.NewSession()
+			if err != nil {
+				errs = append(errs, err)
+				return
+			}
+			file := filepath.Join(varDirAbs, vr)
+			dat, err := session.Output(fmt.Sprintf("cat %s", file))
+			if err != nil {
+				errs = append(errs, err)
+				return
+			}
+			session.Close()
+			r.SetVarBySlice(dp, vr, string(dat))
+		}(vr)
+	}
+	wg.Wait()
+	if len(errs) > 0 {
+		return multierr.Combine(errs...)
+	}
+	return nil
 }

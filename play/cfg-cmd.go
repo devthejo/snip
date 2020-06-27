@@ -71,7 +71,6 @@ func (ccmd *CfgCmd) GetLoaderConfig(lr *loader.Loader) *loader.Config {
 
 	appConfig := &snipplugin.AppConfig{
 		DeploymentName: cfg.DeploymentName,
-		BuildDir:       cfg.BuildDir,
 		SnippetsDir:    cfg.SnippetsDir,
 	}
 
@@ -83,6 +82,7 @@ func (ccmd *CfgCmd) GetLoaderConfig(lr *loader.Loader) *loader.Config {
 		DefaultsPlayProps: make(map[string]interface{}),
 		Command:           ccmd.Command,
 		RequiredFiles:     ccmd.RequiredFiles,
+		RegisterVars:      ccmd.CfgPlay.RegisterVars,
 	}
 
 	return loaderCfg

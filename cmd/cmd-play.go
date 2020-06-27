@@ -33,7 +33,6 @@ func CmdPlay(app App) *cobra.Command {
 
 	flags := cmd.Flags()
 	flags.String("snippets-dir", config.FlagSnippetsDirDefault, config.FlagSnippetsDirDesc)
-	flags.String("build-dir", config.FlagBuildDirDefault, config.FlagBuildDirDesc)
 	flags.String("shutdown-timeout", config.FlagShutdownTimeoutDefault, config.FlagShutdownTimeoutDesc)
 
 	flags.String("runner", config.FlagRunnerDefault, config.FlagRunnerDesc)

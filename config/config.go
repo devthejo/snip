@@ -16,7 +16,6 @@ type Config struct {
 	Play      map[string]interface{}            `mapstructure:"PLAY" json:"play"`
 
 	SnippetsDir string `mapstructure:"SNIPPETS_DIR" json:"snippets_dir"`
-	BuildDir    string `mapstructure:"BUILD_DIR" json:"build_dir"`
 
 	MarkdownOutput string `mapstructure:"MARKDOWN_OUTPUT" json:"markdown_output"`
 

@@ -8,7 +8,6 @@ const (
 	FlagCWDDesc            = "current working directory"
 
 	FlagSnippetsDirDesc    = "snippets directory"
-	FlagBuildDirDesc       = "bash build directory"
 	FlagMarkdownOutputDesc = "markdown output file"
 
 	FlagShutdownTimeoutDesc = "shutdown timeout"
@@ -25,7 +24,6 @@ var (
 	FlagLogLevelDefault       = "info"
 
 	FlagSnippetsDirDefault    = "snippets"
-	FlagBuildDirDefault       = "build"
 	FlagMarkdownOutputDefault = "snip.md"
 
 	FlagShutdownTimeoutDefault = "5"
