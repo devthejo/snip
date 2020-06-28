@@ -30,33 +30,28 @@ var (
 		GetRootPath: getRootPath,
 		Run: func(cfg *runner.Config) error {
 
-			logger := cfg.Logger
-
 			vars := cfg.RunnerVars
+
 			sshCfg := sshclient.CreateConfig(vars)
-
-			rootPath := getRootPath(cfg)
-
-			for src, dest := range cfg.RequiredFiles {
-				_, err := tools.RequiredOnce(cfg.Cache, []string{"host", sshCfg.Host, dest}, src, func() (interface{}, error) {
-					destAbs := filepath.Join(rootPath, dest)
-					err := sshutils.Upload(sshCfg, src, destAbs, logger)
-					return nil, err
-				})
-				if err != nil {
-					return err
-				}
-			}
-
 			client, err := sshclient.CreateClient(sshCfg)
 			if err != nil {
 				return err
 			}
-
 			if err := client.Connect(); err != nil {
 				return err
 			}
 			defer client.Close()
+
+			if err := installRequiredFiles(cfg); err != nil {
+				return err
+			}
+
+			if err := registerVarsCreateFiles(cfg, client); err != nil {
+				return err
+			}
+
+			logger := cfg.Logger
+			rootPath := getRootPath(cfg)
 
 			commandSlice := []string{"/bin/sh", "-c", strings.Join(cfg.Command, " ")}
 
@@ -243,22 +238,95 @@ func getRootPath(cfg *runner.Config) string {
 	return filepath.Join("/home", username, ".snip", cfg.AppConfig.DeploymentName)
 }
 
-func registerVarsRetrieve(cfg *runner.Config, client *sshclient.Client) error {
-
-	r := cfg.VarsRegistry
+func getVarsPath(cfg *runner.Config) string {
 	kp := cfg.TreeKeyParts
 	appCfg := cfg.AppConfig
 	varDir := appCfg.TreepathVarsDir(kp)
 	rootPath := getRootPath(cfg)
-	varDirAbs := filepath.Join(rootPath, "vars", varDir)
-	dp := kp[0 : len(kp)-2]
+	return filepath.Join(rootPath, "vars", varDir)
+}
+
+func installRequiredFiles(cfg *runner.Config) error {
+	rootPath := getRootPath(cfg)
+	vars := cfg.RunnerVars
+	sshCfg := sshclient.CreateConfig(vars)
+	for src, dest := range cfg.RequiredFiles {
+		_, err := tools.RequiredOnce(cfg.Cache, []string{"host", sshCfg.Host, dest}, src, func() (interface{}, error) {
+			destAbs := filepath.Join(rootPath, dest)
+			err := sshutils.Upload(sshCfg, src, destAbs, cfg.Logger)
+			return nil, err
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func registerVarsCreateFiles(cfg *runner.Config, client *sshclient.Client) error {
+	varsPath := getVarsPath(cfg)
+
+	session, err := client.NewSession()
+	if err != nil {
+		return err
+	}
+	if _, err := session.Output(fmt.Sprintf("mkdir -p %s", varsPath)); err != nil {
+		return err
+	}
+	session.Close()
+
 	var wg sync.WaitGroup
 	var errs []error
+
 	var vars []string
 	vars = append(vars, cfg.RegisterVars...)
 	if cfg.RegisterOutput != "" {
 		vars = append(vars, cfg.RegisterOutput)
 	}
+
+	for _, vr := range vars {
+		wg.Add(1)
+		go func(vs string) {
+			defer wg.Done()
+
+			session, err := client.NewSession()
+			if err != nil {
+				errs = append(errs, err)
+				return
+			}
+			file := filepath.Join(varsPath, vr)
+			if _, err := session.Output(fmt.Sprintf("touch %s", file)); err != nil {
+				errs = append(errs, err)
+				return
+			}
+			session.Close()
+
+		}(vr)
+	}
+	wg.Wait()
+	if len(errs) > 0 {
+		return multierr.Combine(errs...)
+	}
+	return nil
+}
+
+func registerVarsRetrieve(cfg *runner.Config, client *sshclient.Client) error {
+
+	r := cfg.VarsRegistry
+	kp := cfg.TreeKeyParts
+
+	varsPath := getVarsPath(cfg)
+	dp := kp[0 : len(kp)-2]
+
+	var wg sync.WaitGroup
+	var errs []error
+
+	var vars []string
+	vars = append(vars, cfg.RegisterVars...)
+	if cfg.RegisterOutput != "" {
+		vars = append(vars, cfg.RegisterOutput)
+	}
+
 	for _, vr := range vars {
 		wg.Add(1)
 		go func(vs string) {
@@ -268,13 +336,14 @@ func registerVarsRetrieve(cfg *runner.Config, client *sshclient.Client) error {
 				errs = append(errs, err)
 				return
 			}
-			file := filepath.Join(varDirAbs, vr)
+			file := filepath.Join(varsPath, vr)
 			dat, err := session.Output(fmt.Sprintf("cat %s", file))
 			if err != nil {
 				errs = append(errs, err)
 				return
 			}
 			session.Close()
+
 			value := string(dat)
 			value = strings.TrimSuffix(value, "\n")
 			r.SetVarBySlice(dp, vr, value)

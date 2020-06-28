@@ -56,7 +56,6 @@ func BuildBash(cfg *loader.Config) error {
 	}
 
 	outputAppend("\n\n# snip vars export \n")
-	outputAppend("mkdir -p ${SNIP_VARS_TREEPATH}\n")
 	for _, vr := range cfg.RegisterVars {
 		vr = strings.ToUpper(vr)
 		outputAppend(`echo "${` + vr + `}">${SNIP_VARS_TREEPATH}/` + vr + "\n")

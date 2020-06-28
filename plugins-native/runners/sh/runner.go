@@ -25,22 +25,15 @@ var (
 		GetRootPath: getRootPath,
 		Run: func(cfg *runner.Config) error {
 
-			var err error
-
-			rootPath := getRootPath(cfg)
-			for src, dest := range cfg.RequiredFiles {
-				destAbs := filepath.Join(rootPath, dest)
-				dir := filepath.Dir(destAbs)
-				if err := os.MkdirAll(dir, os.ModePerm); err != nil {
-					return err
-				}
-				_, err := tools.RequiredOnce(cfg.Cache, []string{"local", destAbs}, src, func() (interface{}, error) {
-					return tools.Copy(src, destAbs)
-				})
-				if err != nil {
-					return err
-				}
+			if err := installRequiredFiles(cfg); err != nil {
+				return err
 			}
+
+			if err := registerVarsCreateFiles(cfg); err != nil {
+				return err
+			}
+
+			var err error
 
 			logger := cfg.Logger
 
@@ -158,7 +151,7 @@ var (
 				defer w.Close()
 				logStreamer := logstreamer.NewLogstreamer(log.New(w, "", 0), "", false)
 				defer logStreamer.Close()
-				
+
 				spawnOpts.Tee = logStreamer
 			}
 
@@ -215,27 +208,70 @@ func getRootPath(cfg *runner.Config) string {
 	return filepath.Join(usr.HomeDir, ".snip", cfg.AppConfig.DeploymentName)
 }
 
-func registerVarsRetrieve(cfg *runner.Config) error {
-	r := cfg.VarsRegistry
+func getVarsPath(cfg *runner.Config) string {
 	kp := cfg.TreeKeyParts
 	appCfg := cfg.AppConfig
 	varDir := appCfg.TreepathVarsDir(kp)
 	rootPath := getRootPath(cfg)
-	varDirAbs := filepath.Join(rootPath, "vars", varDir)
-	dp := kp[0 : len(kp)-2]
+	return filepath.Join(rootPath, "vars", varDir)
+}
+
+func installRequiredFiles(cfg *runner.Config) error {
+	rootPath := getRootPath(cfg)
+	for src, dest := range cfg.RequiredFiles {
+		destAbs := filepath.Join(rootPath, dest)
+		dir := filepath.Dir(destAbs)
+		if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+			return err
+		}
+		_, err := tools.RequiredOnce(cfg.Cache, []string{"local", destAbs}, src, func() (interface{}, error) {
+			return tools.Copy(src, destAbs)
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func registerVarsCreateFiles(cfg *runner.Config) error {
+	varsPath := getVarsPath(cfg)
 	var vars []string
 	vars = append(vars, cfg.RegisterVars...)
 	if cfg.RegisterOutput != "" {
 		vars = append(vars, cfg.RegisterOutput)
 	}
 	for _, vr := range vars {
-		file := filepath.Join(varDirAbs, vr)
+		file := filepath.Join(varsPath, vr)
+		dir := filepath.Dir(file)
+		if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+			return err
+		}
+		if _, err := os.OpenFile(file, os.O_RDONLY|os.O_CREATE, os.ModePerm); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func registerVarsRetrieve(cfg *runner.Config) error {
+	varsPath := getVarsPath(cfg)
+	kp := cfg.TreeKeyParts
+	dp := kp[0 : len(kp)-2]
+	var vars []string
+	vars = append(vars, cfg.RegisterVars...)
+	if cfg.RegisterOutput != "" {
+		vars = append(vars, cfg.RegisterOutput)
+	}
+	r := cfg.VarsRegistry
+	for _, vr := range vars {
+		file := filepath.Join(varsPath, vr)
 		dat, err := ioutil.ReadFile(file)
 		if err != nil {
 			return err
 		}
 		value := string(dat)
-		value = strings.TrimSuffix(value,"\n")
+		value = strings.TrimSuffix(value, "\n")
 		r.SetVarBySlice(dp, vr, value)
 	}
 	return nil

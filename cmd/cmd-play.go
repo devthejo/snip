@@ -20,9 +20,18 @@ func CmdPlay(app App) *cobra.Command {
 			cfg := app.GetConfig()
 
 			mainFunc := func() error {
+				if err := play.Clean(app); err != nil {
+					return err
+				}
 				cfgPlay := play.CreateCfgPlay(app, cfg.Play, nil)
 				p := cfgPlay.BuildRoot()
-				return p.Start()
+				if err := p.Start(); err != nil {
+					return err
+				}
+				if err := play.Clean(app); err != nil {
+					return err
+				}
+				return nil
 			}
 
 			main := app.GetMainProc()

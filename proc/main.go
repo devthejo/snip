@@ -77,7 +77,11 @@ func (proc *Main) MainOpener() {
 func (proc *Main) MainCloser() {
 	<-proc.MainChan
 	if proc.Ended {
-		logrus.Info("🗸 done")
+		if proc.ExitCode == 0 {
+			logrus.Info("🗸 done")
+		} else {
+			logrus.Error("failed")
+		}
 	} else {
 		logrus.Info("shutdown signal received, cancelling workers...")
 		proc.Cancel()
@@ -110,6 +114,7 @@ func (proc *Main) RunMain(f func() error) {
 	go func() {
 		err := f()
 		if err != nil {
+			logrus.Error(err)
 			proc.ExitCode = 1
 		}
 		proc.WaitGroup.Wait()
