@@ -304,6 +304,9 @@ func (cp *CfgPlay) ParseRegisterVars(m map[string]interface{}, override bool) {
 			}
 		}
 	case nil:
+		if cp.ParentCfgPlay != nil && cp.ParentCfgPlay.RegisterVars != nil {
+			cp.RegisterVars = cp.ParentCfgPlay.RegisterVars
+		}
 	default:
 		unexpectedTypeCmd(m, "register_vars")
 	}

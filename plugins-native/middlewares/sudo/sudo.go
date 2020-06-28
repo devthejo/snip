@@ -25,7 +25,7 @@ var (
 				command = append(command, "--stdin")
 			}
 
-			if user, ok := vars["user"]; ok {
+			if user, ok := vars["user"]; ok && user != "" {
 				command = append(command, "--user="+user)
 			}
 

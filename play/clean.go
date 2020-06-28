@@ -3,7 +3,6 @@ package play
 import (
 	"fmt"
 	"os"
-	"os/user"
 	"path/filepath"
 )
 
@@ -20,8 +19,7 @@ var cleanDirs = []string{
 }
 
 func cleanRootPath(app App) error {
-	usr, _ := user.Current()
-	rootPath := filepath.Join(usr.HomeDir, ".snip", app.GetConfig().DeploymentName)
+	rootPath := GetRootPath(app)
 	for _, d := range cleanDirs {
 		dAbs := filepath.Join(rootPath, d)
 		if err := os.RemoveAll(dAbs); err != nil {

@@ -39,6 +39,8 @@ var (
 
 			commandSlice := []string{"/bin/sh", "-c", strings.Join(cfg.Command, " ")}
 
+			logger.Debugf("final command: %v", commandSlice)
+
 			cmd := exec.CommandContext(cfg.Context, commandSlice[0], commandSlice[1:]...)
 
 			cmd.Dir = cfg.Dir
@@ -211,7 +213,7 @@ func getRootPath(cfg *runner.Config) string {
 func getVarsPath(cfg *runner.Config) string {
 	kp := cfg.TreeKeyParts
 	appCfg := cfg.AppConfig
-	varDir := appCfg.TreepathVarsDir(kp)
+	varDir := appCfg.TreeDirVars(kp)
 	rootPath := getRootPath(cfg)
 	return filepath.Join(rootPath, "vars", varDir)
 }
@@ -225,6 +227,9 @@ func installRequiredFiles(cfg *runner.Config) error {
 			return err
 		}
 		_, err := tools.RequiredOnce(cfg.Cache, []string{"local", destAbs}, src, func() (interface{}, error) {
+			if src == destAbs {
+				return nil, nil
+			}
 			return tools.Copy(src, destAbs)
 		})
 		if err != nil {

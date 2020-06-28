@@ -76,11 +76,13 @@ func (ccmd *CfgCmd) GetLoaderConfig(lr *loader.Loader) *loader.Config {
 
 	loaderVars := ccmd.GetLoaderVarsMap(lr.Plugin.UseVars, lr.Vars)
 
+	command := make([]string, len(ccmd.Command))
+	copy(command, ccmd.Command)
 	loaderCfg := &loader.Config{
 		AppConfig:         appConfig,
 		LoaderVars:        loaderVars,
 		DefaultsPlayProps: make(map[string]interface{}),
-		Command:           ccmd.Command,
+		Command:           command,
 		RequiredFiles:     ccmd.RequiredFiles,
 		RegisterVars:      ccmd.CfgPlay.RegisterVars,
 		RegisterOutput:    ccmd.CfgPlay.RegisterOutput,
@@ -98,7 +100,9 @@ func (ccmd *CfgCmd) LoadLoader() {
 
 	lr.Plugin.Load(loaderCfg)
 
-	ccmd.Command = loaderCfg.Command
+	command := make([]string, len(loaderCfg.Command))
+	copy(command, loaderCfg.Command)
+	ccmd.Command = command
 	ccmd.RequiredFiles = loaderCfg.RequiredFiles
 	ccmd.CfgPlay.ParseMapAsDefault(loaderCfg.DefaultsPlayProps)
 }

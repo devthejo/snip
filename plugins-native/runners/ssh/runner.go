@@ -51,7 +51,6 @@ var (
 			}
 
 			logger := cfg.Logger
-			rootPath := getRootPath(cfg)
 
 			commandSlice := []string{"/bin/sh", "-c", strings.Join(cfg.Command, " ")}
 
@@ -168,14 +167,8 @@ var (
 
 			var setenvSlice []string
 			var setenv string
+
 			env := cfg.EnvMap()
-
-			appCfg := cfg.AppConfig
-
-			vars["SNIP_SNIPPETS_PATH"] = filepath.Join(rootPath, "build", "snippets")
-			vars["SNIP_LAUNCHERS_PATH"] = filepath.Join(rootPath, "build", "launchers")
-			varsDir := appCfg.TreepathVarsDir(cfg.TreeKeyParts)
-			vars["SNIP_VARS_TREEPATH"] = filepath.Join(rootPath, "vars", varsDir)
 
 			if len(env) > 0 {
 				for k, v := range env {
@@ -241,7 +234,7 @@ func getRootPath(cfg *runner.Config) string {
 func getVarsPath(cfg *runner.Config) string {
 	kp := cfg.TreeKeyParts
 	appCfg := cfg.AppConfig
-	varDir := appCfg.TreepathVarsDir(kp)
+	varDir := appCfg.TreeDirVars(kp)
 	rootPath := getRootPath(cfg)
 	return filepath.Join(rootPath, "vars", varDir)
 }

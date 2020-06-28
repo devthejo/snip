@@ -28,9 +28,9 @@ func CmdPlay(app App) *cobra.Command {
 				if err := p.Start(); err != nil {
 					return err
 				}
-				if err := play.Clean(app); err != nil {
-					return err
-				}
+				// if err := play.Clean(app); err != nil {
+				// 	return err
+				// }
 				return nil
 			}
 
