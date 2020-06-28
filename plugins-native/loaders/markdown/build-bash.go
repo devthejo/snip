@@ -106,7 +106,7 @@ func BuildLauncher(cfg *loader.Config) error {
 		vr := strings.ToUpper(cfg.RegisterOutput)
 		outputAppend("exec " + binSnippet + `$@ | tee ${SNIP_VARS_TREEPATH}/` + vr + "\n")
 	} else {
-		outputAppend(binSnippet + "\n")
+		outputAppend("exec " + binSnippet + "$@\n")
 	}
 
 	logrus.Debugf("writed launcher to %v", file)
