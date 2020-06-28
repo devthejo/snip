@@ -104,7 +104,7 @@ func BuildLauncher(cfg *loader.Config) error {
 	binSnippet := filepath.Join("$SNIP_SNIPPETS_PATH", mdpath+".bash")
 	if cfg.RegisterOutput != "" {
 		vr := strings.ToUpper(cfg.RegisterOutput)
-		outputAppend(binSnippet + ` | tee ${SNIP_VARS_TREEPATH}/` + vr + "\n")
+		outputAppend("exec " + binSnippet + `$@ | tee ${SNIP_VARS_TREEPATH}/` + vr + "\n")
 	} else {
 		outputAppend(binSnippet + "\n")
 	}
