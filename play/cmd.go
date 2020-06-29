@@ -49,7 +49,7 @@ type Cmd struct {
 
 	Closer *func(interface{}) bool
 
-	RegisterVars   []string
+	RegisterVars   map[string]bool
 	RegisterOutput string
 	Quiet          bool
 
@@ -78,6 +78,11 @@ func CreateCmd(ccmd *CfgCmd, ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 	command := make([]string, len(ccmd.Command))
 	copy(command, ccmd.Command)
 
+	registerVars := make(map[string]bool)
+	for k, v := range parentPlay.RegisterVars {
+		registerVars[k] = v
+	}
+
 	cmd := &Cmd{
 		App: app,
 		AppConfig: &snipplugin.AppConfig{
@@ -100,7 +105,7 @@ func CreateCmd(ccmd *CfgCmd, ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 		Thread:      thr,
 		ExecTimeout: parentPlay.ExecTimeout,
 
-		RegisterVars:   parentPlay.RegisterVars,
+		RegisterVars:   registerVars,
 		RegisterOutput: cp.RegisterOutput,
 		Quiet:          cp.Quiet != nil && (*cp.Quiet),
 	}
@@ -355,6 +360,11 @@ func (cmd *Cmd) RunRunner() error {
 		vars[k] = v
 	}
 
+	registerVars := make(map[string]bool)
+	for k, v := range cmd.RegisterVars {
+		registerVars[k] = v
+	}
+
 	runCfg := &runner.Config{
 		AppConfig:     cmd.AppConfig,
 		RunnerVars:    runnerVars,
@@ -367,7 +377,7 @@ func (cmd *Cmd) RunRunner() error {
 		VarsRegistry:   cmd.App.GetVarsRegistry(),
 		Command:        cmd.Command,
 		Vars:           vars,
-		RegisterVars:   cmd.RegisterVars,
+		RegisterVars:   registerVars,
 		RegisterOutput: cmd.RegisterOutput,
 		Quiet:          cmd.Quiet,
 		TreeKeyParts:   cmd.TreeKeyParts,

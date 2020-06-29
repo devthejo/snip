@@ -33,7 +33,7 @@ type Play struct {
 
 	ExecTimeout *time.Duration
 
-	RegisterVars []string
+	RegisterVars map[string]bool
 
 	CheckCommand []string
 
@@ -54,6 +54,11 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 		loopSequential = *cp.LoopSequential
 	}
 
+	registerVars := make(map[string]bool)
+	for k, v := range cp.RegisterVars {
+		registerVars[k] = v
+	}
+
 	p := &Play{
 
 		Index: cp.Index,
@@ -65,7 +70,7 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 
 		ExecTimeout: cp.ExecTimeout,
 
-		RegisterVars: cp.RegisterVars,
+		RegisterVars: registerVars,
 		// Dependencies: ,
 		// PostInstall: ,
 

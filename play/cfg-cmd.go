@@ -78,13 +78,17 @@ func (ccmd *CfgCmd) GetLoaderConfig(lr *loader.Loader) *loader.Config {
 
 	command := make([]string, len(ccmd.Command))
 	copy(command, ccmd.Command)
+	registerVars := make(map[string]bool)
+	for k, v := range ccmd.CfgPlay.RegisterVars {
+		registerVars[k] = v
+	}
 	loaderCfg := &loader.Config{
 		AppConfig:         appConfig,
 		LoaderVars:        loaderVars,
 		DefaultsPlayProps: make(map[string]interface{}),
 		Command:           command,
 		RequiredFiles:     ccmd.RequiredFiles,
-		RegisterVars:      ccmd.CfgPlay.RegisterVars,
+		RegisterVars:      registerVars,
 		RegisterOutput:    ccmd.CfgPlay.RegisterOutput,
 	}
 

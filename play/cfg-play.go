@@ -36,7 +36,7 @@ type CfgPlay struct {
 	LoopSets       map[string]map[string]*variable.Var
 	LoopSequential *bool
 
-	RegisterVars   []string
+	RegisterVars   map[string]bool
 	RegisterOutput string
 
 	Quiet *bool
@@ -286,29 +286,57 @@ func (cp *CfgPlay) ParseVars(m map[string]interface{}, override bool) {
 }
 
 func (cp *CfgPlay) ParseRegisterVars(m map[string]interface{}, override bool) {
-	if !override && cp.RegisterVars != nil {
-		return
+
+	tmpV := make(map[string]bool)
+
+	if cp.RegisterVars == nil {
+		cp.RegisterVars = make(map[string]bool)
+		if cp.ParentCfgPlay != nil {
+			for k, v := range cp.ParentCfgPlay.RegisterVars {
+				tmpV[k] = v
+			}
+		}
 	}
+
 	switch v := m["register_vars"].(type) {
 	case []interface{}:
 		s, err := decode.ToStrings(v)
-		errors.Check(err)
-		cp.RegisterVars = s
-		for _, v := range cp.RegisterVars {
-			key := strings.ToLower(v)
-			if cp.Vars[key] == nil {
-				cp.Vars[key] = &variable.Var{
-					Name:  key,
-					Depth: cp.Depth,
-				}
+		if err != nil {
+			logrus.Fatalf("unexpected register_vars type %T value %v, %v", v, v, err)
+		}
+		for _, k := range s {
+			k := strings.ToUpper(k)
+			tmpV[k] = true
+		}
+	case map[interface{}]interface{}, map[string]interface{}:
+		rvm, err := decode.ToMap(v)
+		if err != nil {
+			logrus.Fatalf("unexpected register_vars type %T value %v, %v", v, v, err)
+		}
+		for k, b := range rvm {
+			switch bv := b.(type) {
+			case bool:
+				tmpV[k] = bv
+			default:
+				logrus.Fatalf("unexpected register_vars value type %T value %v, %v", bv, bv, err)
 			}
 		}
 	case nil:
-		if cp.ParentCfgPlay != nil && cp.ParentCfgPlay.RegisterVars != nil {
-			cp.RegisterVars = cp.ParentCfgPlay.RegisterVars
-		}
 	default:
 		unexpectedTypeCmd(m, "register_vars")
+	}
+
+	for k, v := range tmpV {
+		if !v && !override {
+			continue
+		}
+		cp.RegisterVars[k] = v
+		if v && cp.Vars[k] == nil {
+			cp.Vars[k] = &variable.Var{
+				Name:  k,
+				Depth: cp.Depth,
+			}
+		}
 	}
 }
 

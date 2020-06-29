@@ -242,7 +242,11 @@ func installRequiredFiles(cfg *runner.Config) error {
 func registerVarsCreateFiles(cfg *runner.Config) error {
 	varsPath := getVarsPath(cfg)
 	var vars []string
-	vars = append(vars, cfg.RegisterVars...)
+	for vr, b := range cfg.RegisterVars {
+		if b {
+			vars = append(vars, vr)
+		}
+	}
 	if cfg.RegisterOutput != "" {
 		vars = append(vars, cfg.RegisterOutput)
 	}
@@ -264,7 +268,11 @@ func registerVarsRetrieve(cfg *runner.Config) error {
 	kp := cfg.TreeKeyParts
 	dp := kp[0 : len(kp)-2]
 	var vars []string
-	vars = append(vars, cfg.RegisterVars...)
+	for vr, b := range cfg.RegisterVars {
+		if b {
+			vars = append(vars, vr)
+		}
+	}
 	if cfg.RegisterOutput != "" {
 		vars = append(vars, cfg.RegisterOutput)
 	}

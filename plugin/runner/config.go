@@ -25,7 +25,7 @@ type Config struct {
 
 	Command        []string
 	Vars           map[string]string
-	RegisterVars   []string
+	RegisterVars   map[string]bool
 	RegisterOutput string
 	Quiet          bool
 
