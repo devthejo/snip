@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -137,6 +138,8 @@ func CreateCmd(ccmd *CfgCmd, ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 	return cmd
 }
 
+var regNormalizeTreeKeyParts = regexp.MustCompile("[^a-zA-Z0-9-_.]+")
+
 func (cmd *Cmd) GetTreeKeyParts() []string {
 	var parts []string
 	var parent interface{}
@@ -164,8 +167,8 @@ func (cmd *Cmd) GetTreeKeyParts() []string {
 		if parent == nil {
 			break
 		}
-		part = strings.ReplaceAll(part, "|", "-")
-		part = strings.ReplaceAll(part, "/", "_")
+
+		part = regNormalizeTreeKeyParts.ReplaceAllString(part, "_")
 		parts = append([]string{part}, parts...)
 	}
 	return parts
