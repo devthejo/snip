@@ -67,7 +67,6 @@ func BuildBash(cfg *loader.Config) error {
 			continue
 		}
 		vr = strings.ToUpper(vr)
-		logrus.Warn(vr)
 		outputAppend(`echo "${` + vr + `}">${SNIP_VARS_TREEPATH}/` + vr + "\n")
 	}
 

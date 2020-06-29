@@ -13,6 +13,7 @@ import (
 
 	"github.com/google/goterm/term"
 	"github.com/kvz/logstreamer"
+	"github.com/sirupsen/logrus"
 
 	expect "gitlab.com/youtopia.earth/ops/snip/goexpect"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/runner"
@@ -266,7 +267,10 @@ func registerVarsCreateFiles(cfg *runner.Config) error {
 func registerVarsRetrieve(cfg *runner.Config) error {
 	varsPath := getVarsPath(cfg)
 	kp := cfg.TreeKeyParts
-	dp := kp[0 : len(kp)-2]
+	if len(kp) < 3 {
+		return nil
+	}
+	dp := kp[0 : len(kp)-3]
 	var vars []string
 	for vr, b := range cfg.RegisterVars {
 		if b {
@@ -285,7 +289,10 @@ func registerVarsRetrieve(cfg *runner.Config) error {
 		}
 		value := string(dat)
 		value = strings.TrimSuffix(value, "\n")
-		r.SetVarBySlice(dp, vr, value)
+		if value != "" {
+			r.SetVarBySlice(dp, vr, value)
+			logrus.Debugf("registered var %v %v=%v", dp, vr, value)
+		}
 	}
 	return nil
 }

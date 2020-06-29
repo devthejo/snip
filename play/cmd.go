@@ -116,7 +116,7 @@ func CreateCmd(ccmd *CfgCmd, ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 	}
 	cmd.Depth = depth
 
-	cmd.TreeKeyParts = cmd.GetTreeKeyParts()
+	cmd.TreeKeyParts = GetTreeKeyParts(cmd.ParentLoopRow)
 	cmd.TreeKey = strings.Join(cmd.TreeKeyParts, "|")
 
 	vars := make(map[string]string)
@@ -145,40 +145,6 @@ func CreateCmd(ccmd *CfgCmd, ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 
 var regNormalizeTreeKeyParts = regexp.MustCompile("[^a-zA-Z0-9-_.]+")
 
-func (cmd *Cmd) GetTreeKeyParts() []string {
-	var parts []string
-	var parent interface{}
-	parent = cmd.ParentLoopRow
-	for {
-		var part string
-		switch p := parent.(type) {
-		case *LoopRow:
-			if p == nil {
-				parent = nil
-				break
-			}
-			part = p.GetKey()
-			parent = p.ParentPlay
-		case *Play:
-			if p == nil {
-				parent = nil
-				break
-			}
-			part = p.GetKey()
-			parent = p.ParentLoopRow
-		case nil:
-			parent = nil
-		}
-		if parent == nil {
-			break
-		}
-
-		part = regNormalizeTreeKeyParts.ReplaceAllString(part, "_")
-		parts = append([]string{part}, parts...)
-	}
-	return parts
-}
-
 func (cmd *Cmd) Run() error {
 	return cmd.Thread.Run(cmd.Main)
 }
@@ -198,13 +164,6 @@ func (cmd *Cmd) CreateMutableCmd() *middleware.MutableCmd {
 
 	vars := make(map[string]string)
 	for k, v := range cmd.Vars {
-		vars[k] = v
-	}
-	kp := cmd.TreeKeyParts
-	kp = kp[0 : len(kp)-2]
-	varsRegistry := cmd.App.GetVarsRegistry()
-	regVarsMap := varsRegistry.GetMapBySlice(kp)
-	for k, v := range regVarsMap {
 		vars[k] = v
 	}
 

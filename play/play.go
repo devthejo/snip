@@ -25,9 +25,11 @@ type Play struct {
 	Key   string
 	Title string
 
+	TreeKeyParts []string
+
 	LoopRow []*LoopRow
 
-	Vars map[string]*variable.Var
+	// Vars map[string]*variable.Var
 
 	LoopSequential bool
 
@@ -60,6 +62,7 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 	}
 
 	p := &Play{
+		App: cp.App,
 
 		Index: cp.Index,
 		Key:   cp.Key,
@@ -80,6 +83,8 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 
 	p.RunCtx = ctx
 	p.ParentLoopRow = parentLoopRow
+
+	p.TreeKeyParts = GetTreeKeyParts(p)
 
 	var icon string
 	if cp.ParentCfgPlay == nil {
@@ -201,6 +206,8 @@ func (p *Play) Run() error {
 
 	var errSlice []error
 
+	varsRegistry := p.App.GetVarsRegistry()
+
 	runLoopSeq := func(loop *LoopRow) error {
 		if loop.IsLoopRowItem {
 			logrus.Info(strings.Repeat("  ", p.Depth+2) + "⦿ " + loop.Name)
@@ -215,6 +222,14 @@ func (p *Play) Run() error {
 				}
 			}
 		case *Cmd:
+			for i := 0; i < len(pl.TreeKeyParts); i++ {
+				kp := pl.TreeKeyParts[0 : i+1]
+				regVarsMap := varsRegistry.GetMapBySlice(kp)
+				for k, v := range regVarsMap {
+					pl.Vars[k] = v
+				}
+			}
+
 			if err := pl.Run(); err != nil {
 				errSlice = append(errSlice, err)
 			}
@@ -252,6 +267,22 @@ func (p *Play) Run() error {
 	if len(errSlice) > 0 {
 		return multierr.Combine(errSlice...)
 	}
+
+	kp := p.TreeKeyParts
+	if len(p.RegisterVars) > 0 && len(kp) > 2 {
+		varsRegistry := p.App.GetVarsRegistry()
+		dp := kp[0 : len(kp)-2]
+		for k, b := range p.RegisterVars {
+			if !b {
+				continue
+			}
+			value := varsRegistry.GetVarBySlice(kp, k)
+			if value != "" {
+				varsRegistry.SetVarBySlice(dp, k, value)
+			}
+		}
+	}
+
 	return nil
 
 }
