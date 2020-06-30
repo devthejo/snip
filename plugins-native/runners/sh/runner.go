@@ -13,7 +13,6 @@ import (
 
 	"github.com/google/goterm/term"
 	"github.com/kvz/logstreamer"
-	"github.com/sirupsen/logrus"
 
 	expect "gitlab.com/youtopia.earth/ops/snip/goexpect"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/runner"
@@ -292,7 +291,6 @@ func registerVarsRetrieve(cfg *runner.Config) error {
 		value = strings.TrimSuffix(value, "\n")
 		if value != "" {
 			r.SetVarBySlice(dp, vr, value)
-			logrus.Debugf("registered var %v %v=%v", dp, vr, value)
 		}
 	}
 	return nil
