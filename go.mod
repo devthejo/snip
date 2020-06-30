@@ -24,6 +24,7 @@ require (
 	github.com/opencontainers/runc v0.1.1 // indirect
 	github.com/orcaman/concurrent-map v0.0.0-20190826125027-8c72a8bb44f6
 	github.com/patrickmn/go-cache v2.1.0+incompatible
+	github.com/peterbourgon/diskv/v3 v3.0.0
 	github.com/sirupsen/logrus v1.5.0
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/pflag v1.0.5

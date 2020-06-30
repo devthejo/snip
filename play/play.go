@@ -192,7 +192,7 @@ func (p *Play) GetKey() string {
 	return key
 }
 
-func (p *Play) RegisterVarsSave() {
+func (p *Play) RegisterVarsSaveUpAndPersist() {
 	kp := p.TreeKeyParts
 	if len(p.RegisterVars) <= 0 || len(kp) < 3 {
 		return
@@ -204,11 +204,20 @@ func (p *Play) RegisterVarsSave() {
 			continue
 		}
 		value := varsRegistry.GetVarBySlice(kp, vr.Key)
+		if value == "" && vr.Persist {
+			for i := len(kp); i >= 0; i-- {
+				dp2 := kp[0:i]
+				value = varsRegistry.PersistGetVarBySlice(dp2, vr.Key)
+				if value != "" {
+					break
+				}
+			}
+		}
 		if value != "" {
 			varsRegistry.SetVarBySlice(dp, vr.Key, value)
-			// if vr.Persist {
-			//
-			// }
+			if vr.Persist {
+				varsRegistry.PersistSetVarBySlice(dp, vr.Key, value)
+			}
 		}
 	}
 }
@@ -282,7 +291,7 @@ func (p *Play) Run() error {
 		return multierr.Combine(errSlice...)
 	}
 
-	p.RegisterVarsSave()
+	p.RegisterVarsSaveUpAndPersist()
 
 	return nil
 

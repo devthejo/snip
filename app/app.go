@@ -1,6 +1,8 @@
 package app
 
 import (
+	"os/user"
+	"path/filepath"
 	"plugin"
 	"time"
 
@@ -59,8 +61,6 @@ func NewApp() *App {
 
 	app.Cache = cache.New(5*time.Minute, 10*time.Minute)
 
-	app.VarsRegistry = registry.CreateNsVars()
-
 	var configFile string
 	app.ConfigFile = &configFile
 
@@ -98,6 +98,11 @@ func (app *App) OnInitialize() {
 
 func (app *App) OnPreRun(cmd *cobra.Command) {
 	app.ConfigLoader.OnPreRun(cmd)
+
+	usr, _ := user.Current()
+	app.VarsRegistry = registry.CreateNsVars(&registry.NsVarsOptions{
+		BasePath: filepath.Join(usr.HomeDir, ".snip", app.Config.DeploymentName, "vars_persist"),
+	})
 }
 
 func (app *App) RunCmd() {

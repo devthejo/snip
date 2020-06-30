@@ -324,11 +324,13 @@ func (cp *CfgPlay) ParseRegisterVars(m map[string]interface{}, override bool) {
 				if err != nil {
 					logrus.Fatalf("unexpected register_vars type %T value %v, %v", rVar, rVar, err)
 				}
+				logrus.Warn(rVarM)
 				var enable bool
 				switch val := rVarM["enable"].(type) {
 				case bool:
 					enable = val
 				case nil:
+					enable = true
 				default:
 					logrus.Fatalf("unexpected register_vars enable type %T value %v, %v", val, val, err)
 				}
@@ -340,15 +342,23 @@ func (cp *CfgPlay) ParseRegisterVars(m map[string]interface{}, override bool) {
 				default:
 					logrus.Fatalf("unexpected register_vars persist type %T value %v, %v", val, val, err)
 				}
+				k := strings.ToUpper(k)
 				tmpV[k] = &registry.VarDef{
 					Key:     k,
 					Enable:  enable,
 					Persist: persist,
 				}
 			case bool:
+				k := strings.ToUpper(k)
 				tmpV[k] = &registry.VarDef{
 					Key:    k,
 					Enable: rVar,
+				}
+			case nil:
+				k := strings.ToUpper(k)
+				tmpV[k] = &registry.VarDef{
+					Key:    k,
+					Enable: true,
 				}
 			default:
 				logrus.Fatalf("unexpected register_vars value type %T value %v, %v", rVar, rVar, err)
@@ -358,6 +368,8 @@ func (cp *CfgPlay) ParseRegisterVars(m map[string]interface{}, override bool) {
 	default:
 		unexpectedTypeCmd(m, "register_vars")
 	}
+
+	logrus.Warn(tmpV)
 
 	for _, v := range tmpV {
 		if !v.Enable && !override {
