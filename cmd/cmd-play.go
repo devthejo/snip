@@ -5,6 +5,7 @@ import (
 
 	"gitlab.com/youtopia.earth/ops/snip/config"
 	"gitlab.com/youtopia.earth/ops/snip/play"
+	"gitlab.com/youtopia.earth/ops/snip/tools"
 )
 
 func CmdPlay(app App) *cobra.Command {
@@ -31,6 +32,9 @@ func CmdPlay(app App) *cobra.Command {
 				// if err := play.Clean(app); err != nil {
 				// 	return err
 				// }
+
+				tools.PrintMemUsage()
+
 				return nil
 			}
 
