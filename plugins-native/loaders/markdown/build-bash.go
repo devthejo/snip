@@ -62,12 +62,12 @@ func BuildBash(cfg *loader.Config) error {
 	}
 
 	outputAppend("\n\n# snip vars export \n")
-	for vr, b := range cfg.RegisterVars {
-		if !b {
+	for _, vr := range cfg.RegisterVars {
+		if !vr.Enable {
 			continue
 		}
-		vr = strings.ToUpper(vr)
-		outputAppend(`echo "${` + vr + `}">${SNIP_VARS_TREEPATH}/` + vr + "\n")
+		key := strings.ToUpper(vr.Key)
+		outputAppend(`echo "${` + key + `}">${SNIP_VARS_TREEPATH}/` + key + "\n")
 	}
 
 	logrus.Debugf("writed bash from md to %v", file)

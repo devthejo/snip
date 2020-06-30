@@ -243,9 +243,9 @@ func installRequiredFiles(cfg *runner.Config) error {
 func registerVarsCreateFiles(cfg *runner.Config) error {
 	varsPath := getVarsPath(cfg)
 	var vars []string
-	for vr, b := range cfg.RegisterVars {
-		if b {
-			vars = append(vars, vr)
+	for _, vr := range cfg.RegisterVars {
+		if vr.Enable {
+			vars = append(vars, vr.Key)
 		}
 	}
 	if cfg.RegisterOutput != "" {
@@ -265,16 +265,17 @@ func registerVarsCreateFiles(cfg *runner.Config) error {
 }
 
 func registerVarsRetrieve(cfg *runner.Config) error {
-	varsPath := getVarsPath(cfg)
 	kp := cfg.TreeKeyParts
-	if len(kp) < 3 {
+	if len(kp) < 1 {
 		return nil
 	}
-	dp := kp[0 : len(kp)-3]
+	dp := kp[0 : len(kp)-1]
+
+	varsPath := getVarsPath(cfg)
 	var vars []string
-	for vr, b := range cfg.RegisterVars {
-		if b {
-			vars = append(vars, vr)
+	for _, vr := range cfg.RegisterVars {
+		if vr.Enable {
+			vars = append(vars, vr.Key)
 		}
 	}
 	if cfg.RegisterOutput != "" {

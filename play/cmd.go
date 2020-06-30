@@ -11,6 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"gitlab.com/youtopia.earth/ops/snip/errors"
 	expect "gitlab.com/youtopia.earth/ops/snip/goexpect"
+	"gitlab.com/youtopia.earth/ops/snip/registry"
 	"gitlab.com/youtopia.earth/ops/snip/variable"
 
 	"gitlab.com/youtopia.earth/ops/snip/config"
@@ -49,7 +50,7 @@ type Cmd struct {
 
 	Closer *func(interface{}) bool
 
-	RegisterVars   map[string]bool
+	RegisterVars   map[string]*registry.VarDef
 	RegisterOutput string
 	Quiet          bool
 
@@ -78,7 +79,7 @@ func CreateCmd(ccmd *CfgCmd, ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 	command := make([]string, len(ccmd.Command))
 	copy(command, ccmd.Command)
 
-	registerVars := make(map[string]bool)
+	registerVars := make(map[string]*registry.VarDef)
 	for k, v := range parentPlay.RegisterVars {
 		registerVars[k] = v
 	}
@@ -304,6 +305,17 @@ func (cmd *Cmd) BuildLauncher() error {
 	return nil
 }
 
+func (cmd *Cmd) RegisterVarsLoad() {
+	varsRegistry := cmd.App.GetVarsRegistry()
+	for i := 0; i < len(cmd.TreeKeyParts); i++ {
+		kp := cmd.TreeKeyParts[0 : i+1]
+		regVarsMap := varsRegistry.GetMapBySlice(kp)
+		for k, v := range regVarsMap {
+			cmd.Vars[k] = v
+		}
+	}
+}
+
 func (cmd *Cmd) RunRunner() error {
 
 	r := cmd.Runner
@@ -319,7 +331,7 @@ func (cmd *Cmd) RunRunner() error {
 		vars[k] = v
 	}
 
-	registerVars := make(map[string]bool)
+	registerVars := make(map[string]*registry.VarDef)
 	for k, v := range cmd.RegisterVars {
 		registerVars[k] = v
 	}

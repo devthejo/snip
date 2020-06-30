@@ -11,6 +11,7 @@ import (
 	"go.uber.org/multierr"
 
 	"gitlab.com/youtopia.earth/ops/snip/errors"
+	"gitlab.com/youtopia.earth/ops/snip/registry"
 	"gitlab.com/youtopia.earth/ops/snip/variable"
 )
 
@@ -35,7 +36,7 @@ type Play struct {
 
 	ExecTimeout *time.Duration
 
-	RegisterVars map[string]bool
+	RegisterVars map[string]*registry.VarDef
 
 	CheckCommand []string
 
@@ -56,7 +57,7 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 		loopSequential = *cp.LoopSequential
 	}
 
-	registerVars := make(map[string]bool)
+	registerVars := make(map[string]*registry.VarDef)
 	for k, v := range cp.RegisterVars {
 		registerVars[k] = v
 	}
@@ -191,6 +192,27 @@ func (p *Play) GetKey() string {
 	return key
 }
 
+func (p *Play) RegisterVarsSave() {
+	kp := p.TreeKeyParts
+	if len(p.RegisterVars) <= 0 || len(kp) < 3 {
+		return
+	}
+	varsRegistry := p.App.GetVarsRegistry()
+	dp := kp[0 : len(kp)-2]
+	for _, vr := range p.RegisterVars {
+		if !vr.Enable {
+			continue
+		}
+		value := varsRegistry.GetVarBySlice(kp, vr.Key)
+		if value != "" {
+			varsRegistry.SetVarBySlice(dp, vr.Key, value)
+			// if vr.Persist {
+			//
+			// }
+		}
+	}
+}
+
 func (p *Play) Run() error {
 
 	var icon string
@@ -206,8 +228,6 @@ func (p *Play) Run() error {
 
 	var errSlice []error
 
-	varsRegistry := p.App.GetVarsRegistry()
-
 	runLoopSeq := func(loop *LoopRow) error {
 		if loop.IsLoopRowItem {
 			logrus.Info(strings.Repeat("  ", p.Depth+2) + "⦿ " + loop.Name)
@@ -222,13 +242,7 @@ func (p *Play) Run() error {
 				}
 			}
 		case *Cmd:
-			for i := 0; i < len(pl.TreeKeyParts); i++ {
-				kp := pl.TreeKeyParts[0 : i+1]
-				regVarsMap := varsRegistry.GetMapBySlice(kp)
-				for k, v := range regVarsMap {
-					pl.Vars[k] = v
-				}
-			}
+			pl.RegisterVarsLoad()
 
 			if err := pl.Run(); err != nil {
 				errSlice = append(errSlice, err)
@@ -268,20 +282,7 @@ func (p *Play) Run() error {
 		return multierr.Combine(errSlice...)
 	}
 
-	kp := p.TreeKeyParts
-	if len(p.RegisterVars) > 0 && len(kp) > 2 {
-		varsRegistry := p.App.GetVarsRegistry()
-		dp := kp[0 : len(kp)-2]
-		for k, b := range p.RegisterVars {
-			if !b {
-				continue
-			}
-			value := varsRegistry.GetVarBySlice(kp, k)
-			if value != "" {
-				varsRegistry.SetVarBySlice(dp, k, value)
-			}
-		}
-	}
+	p.RegisterVarsSave()
 
 	return nil
 

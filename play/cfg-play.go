@@ -16,6 +16,7 @@ import (
 	"gitlab.com/youtopia.earth/ops/snip/plugin/loader"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/middleware"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/runner"
+	"gitlab.com/youtopia.earth/ops/snip/registry"
 	"gitlab.com/youtopia.earth/ops/snip/variable"
 )
 
@@ -36,7 +37,7 @@ type CfgPlay struct {
 	LoopSets       map[string]map[string]*variable.Var
 	LoopSequential *bool
 
-	RegisterVars   map[string]bool
+	RegisterVars   map[string]*registry.VarDef
 	RegisterOutput string
 
 	Quiet *bool
@@ -287,10 +288,10 @@ func (cp *CfgPlay) ParseVars(m map[string]interface{}, override bool) {
 
 func (cp *CfgPlay) ParseRegisterVars(m map[string]interface{}, override bool) {
 
-	tmpV := make(map[string]bool)
+	tmpV := make(map[string]*registry.VarDef)
 
 	if cp.RegisterVars == nil {
-		cp.RegisterVars = make(map[string]bool)
+		cp.RegisterVars = make(map[string]*registry.VarDef)
 		if cp.ParentCfgPlay != nil {
 			for k, v := range cp.ParentCfgPlay.RegisterVars {
 				tmpV[k] = v
@@ -298,27 +299,59 @@ func (cp *CfgPlay) ParseRegisterVars(m map[string]interface{}, override bool) {
 		}
 	}
 
-	switch v := m["register_vars"].(type) {
+	switch rVars := m["register_vars"].(type) {
 	case []interface{}:
-		s, err := decode.ToStrings(v)
+		s, err := decode.ToStrings(rVars)
 		if err != nil {
-			logrus.Fatalf("unexpected register_vars type %T value %v, %v", v, v, err)
+			logrus.Fatalf("unexpected register_vars type %T value %v, %v", rVars, rVars, err)
 		}
 		for _, k := range s {
 			k := strings.ToUpper(k)
-			tmpV[k] = true
+			tmpV[k] = &registry.VarDef{
+				Key:    k,
+				Enable: true,
+			}
 		}
 	case map[interface{}]interface{}, map[string]interface{}:
-		rvm, err := decode.ToMap(v)
+		rvm, err := decode.ToMap(rVars)
 		if err != nil {
-			logrus.Fatalf("unexpected register_vars type %T value %v, %v", v, v, err)
+			logrus.Fatalf("unexpected register_vars type %T value %v, %v", rVars, rVars, err)
 		}
-		for k, b := range rvm {
-			switch bv := b.(type) {
+		for k, rVarI := range rvm {
+			switch rVar := rVarI.(type) {
+			case map[interface{}]interface{}, map[string]interface{}:
+				rVarM, err := decode.ToMap(rVar)
+				if err != nil {
+					logrus.Fatalf("unexpected register_vars type %T value %v, %v", rVar, rVar, err)
+				}
+				var enable bool
+				switch val := rVarM["enable"].(type) {
+				case bool:
+					enable = val
+				case nil:
+				default:
+					logrus.Fatalf("unexpected register_vars enable type %T value %v, %v", val, val, err)
+				}
+				var persist bool
+				switch val := rVarM["persist"].(type) {
+				case bool:
+					persist = val
+				case nil:
+				default:
+					logrus.Fatalf("unexpected register_vars persist type %T value %v, %v", val, val, err)
+				}
+				tmpV[k] = &registry.VarDef{
+					Key:     k,
+					Enable:  enable,
+					Persist: persist,
+				}
 			case bool:
-				tmpV[k] = bv
+				tmpV[k] = &registry.VarDef{
+					Key:    k,
+					Enable: rVar,
+				}
 			default:
-				logrus.Fatalf("unexpected register_vars value type %T value %v, %v", bv, bv, err)
+				logrus.Fatalf("unexpected register_vars value type %T value %v, %v", rVar, rVar, err)
 			}
 		}
 	case nil:
@@ -326,12 +359,13 @@ func (cp *CfgPlay) ParseRegisterVars(m map[string]interface{}, override bool) {
 		unexpectedTypeCmd(m, "register_vars")
 	}
 
-	for k, v := range tmpV {
-		if !v && !override {
+	for _, v := range tmpV {
+		if !v.Enable && !override {
 			continue
 		}
+		k := v.Key
 		cp.RegisterVars[k] = v
-		if v && cp.Vars[k] == nil {
+		if v.Enable && cp.Vars[k] == nil {
 			cp.Vars[k] = &variable.Var{
 				Name:  k,
 				Depth: cp.Depth,

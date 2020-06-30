@@ -272,9 +272,9 @@ func registerVarsCreateFiles(cfg *runner.Config, client *sshclient.Client) error
 	var errs []error
 
 	var vars []string
-	for vr, b := range cfg.RegisterVars {
-		if b {
-			vars = append(vars, vr)
+	for _, vr := range cfg.RegisterVars {
+		if vr.Enable {
+			vars = append(vars, vr.Key)
 		}
 	}
 	if cfg.RegisterOutput != "" {
@@ -308,20 +308,22 @@ func registerVarsCreateFiles(cfg *runner.Config, client *sshclient.Client) error
 }
 
 func registerVarsRetrieve(cfg *runner.Config, client *sshclient.Client) error {
-
-	r := cfg.VarsRegistry
 	kp := cfg.TreeKeyParts
+	if len(kp) < 1 {
+		return nil
+	}
+	dp := kp[0 : len(kp)-1]
 
 	varsPath := getVarsPath(cfg)
-	dp := kp[0 : len(kp)-2]
+	r := cfg.VarsRegistry
 
 	var wg sync.WaitGroup
 	var errs []error
 
 	var vars []string
-	for vr, b := range cfg.RegisterVars {
-		if b {
-			vars = append(vars, vr)
+	for _, vr := range cfg.RegisterVars {
+		if vr.Enable {
+			vars = append(vars, vr.Key)
 		}
 	}
 	if cfg.RegisterOutput != "" {

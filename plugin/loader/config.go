@@ -2,6 +2,7 @@ package loader
 
 import (
 	snipplugin "gitlab.com/youtopia.earth/ops/snip/plugin"
+	"gitlab.com/youtopia.earth/ops/snip/registry"
 )
 
 type Config struct {
@@ -13,6 +14,6 @@ type Config struct {
 	DefaultsPlayProps map[string]interface{}
 	RequiredFiles     map[string]string
 
-	RegisterVars   map[string]bool
+	RegisterVars   map[string]*registry.VarDef
 	RegisterOutput string
 }

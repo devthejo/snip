@@ -9,6 +9,7 @@ import (
 	"gitlab.com/youtopia.earth/ops/snip/plugin/loader"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/middleware"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/runner"
+	"gitlab.com/youtopia.earth/ops/snip/registry"
 	"gitlab.com/youtopia.earth/ops/snip/variable"
 )
 
@@ -78,7 +79,7 @@ func (ccmd *CfgCmd) GetLoaderConfig(lr *loader.Loader) *loader.Config {
 
 	command := make([]string, len(ccmd.Command))
 	copy(command, ccmd.Command)
-	registerVars := make(map[string]bool)
+	registerVars := make(map[string]*registry.VarDef)
 	for k, v := range ccmd.CfgPlay.RegisterVars {
 		registerVars[k] = v
 	}
