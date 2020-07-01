@@ -44,6 +44,8 @@ type App struct {
 	Cache *cache.Cache
 
 	VarsRegistry *registry.NsVars
+
+	LoadedSnippets map[string]bool
 }
 
 func New() *App {
@@ -60,6 +62,8 @@ func NewApp() *App {
 	app.Now = time.Now()
 
 	app.Cache = cache.New(5*time.Minute, 10*time.Minute)
+
+	app.LoadedSnippets = make(map[string]bool)
 
 	var configFile string
 	app.ConfigFile = &configFile
@@ -127,6 +131,9 @@ func (app *App) GetCache() *cache.Cache {
 
 func (app *App) GetVarsRegistry() *registry.NsVars {
 	return app.VarsRegistry
+}
+func (app *App) GetLoadedSnippets() map[string]bool {
+	return app.LoadedSnippets
 }
 
 func (app *App) GetMainProc() *proc.Main {

@@ -117,7 +117,8 @@ func (cp *CfgPlay) ParsePlay(m map[string]interface{}, override bool) {
 	}
 	switch v := m["play"].(type) {
 	case []interface{}:
-		playSlice := make([]*CfgPlay, len(v))
+		cp.HasChildren = true
+		cp.CfgPlay = make([]*CfgPlay, 0)
 		for i, mCfgPlay := range v {
 			switch p2 := mCfgPlay.(type) {
 			case map[interface{}]interface{}:
@@ -134,15 +135,18 @@ func (cp *CfgPlay) ParsePlay(m map[string]interface{}, override bool) {
 
 			pI := CreateCfgPlay(cp.App, m, cp)
 			pI.Index = i
-			playSlice[i] = pI
+
+			playSlice := cp.CfgPlay.([]*CfgPlay)
+			playSlice = append(playSlice, pI)
+			cp.CfgPlay = playSlice
 		}
-		cp.CfgPlay = playSlice
-		cp.HasChildren = true
 
 	case string:
 		c, err := shellquote.Split(v)
 		errors.Check(err)
-		cp.CfgPlay = CreateCfgCmd(cp, c)
+		ccmd := CreateCfgCmd(cp, c)
+		cp.CfgPlay = ccmd
+		ccmd.HandleDependencies()
 	case nil:
 	default:
 		unexpectedTypeCfgPlay(m, "play")

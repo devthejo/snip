@@ -16,7 +16,8 @@ import (
 type CfgCmd struct {
 	CfgPlay *CfgPlay
 
-	Command []string
+	OriginalCommand []string
+	Command         []string
 
 	Loader      *loader.Loader
 	Middlewares []*middleware.Middleware
@@ -30,12 +31,16 @@ type CfgCmd struct {
 }
 
 func CreateCfgCmd(cp *CfgPlay, c []string) *CfgCmd {
+	originalCommand := make([]string, len(c))
+	copy(originalCommand, c)
+
 	ccmd := &CfgCmd{
-		CfgPlay:       cp,
-		Command:       c,
-		Depth:         cp.Depth + 1,
-		Dir:           cp.Dir,
-		RequiredFiles: make(map[string]string),
+		CfgPlay:         cp,
+		OriginalCommand: c,
+		Command:         c,
+		Depth:           cp.Depth + 1,
+		Dir:             cp.Dir,
+		RequiredFiles:   make(map[string]string),
 	}
 	ccmd.Parse()
 	return ccmd
@@ -47,6 +52,44 @@ func (ccmd *CfgCmd) Parse() {
 	ccmd.ParseRunner()
 
 	ccmd.LoadLoader()
+}
+
+func (ccmd *CfgCmd) HandleDependencies() {
+	ccmd.RequireDependencies()
+	ccmd.RequirePostInstall()
+	ccmd.RegisterInDependencies()
+}
+
+func (ccmd *CfgCmd) RequireDependencies() {
+	cp := ccmd.CfgPlay
+	ls := cp.App.GetLoadedSnippets()
+	for _, dep := range cp.Dependencies {
+		if b, ok := ls[dep]; ok && b {
+			continue
+		}
+		k := ccmd.OriginalCommand[0]
+		logrus.Debugf(`◘ dependency required by "%s" autoloading "%s"`, k, dep)
+
+		m := make(map[string]interface{})
+		m["play"] = dep
+
+		parent := cp.ParentCfgPlay
+
+		playSlice := parent.CfgPlay.([]*CfgPlay)
+		playSlice = append(playSlice, CreateCfgPlay(cp.App, m, parent))
+		parent.CfgPlay = playSlice
+	}
+}
+
+func (ccmd *CfgCmd) RequirePostInstall() {
+
+}
+
+func (ccmd *CfgCmd) RegisterInDependencies() {
+	cp := ccmd.CfgPlay
+	ls := cp.App.GetLoadedSnippets()
+	k := ccmd.OriginalCommand[0]
+	ls[k] = true
 }
 
 func (ccmd *CfgCmd) GetLoaderVarsMap(useVars []string, mVar map[string]*variable.Var) map[string]string {
