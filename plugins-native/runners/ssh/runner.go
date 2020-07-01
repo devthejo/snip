@@ -274,7 +274,7 @@ func registerVarsCreateFiles(cfg *runner.Config, client *sshclient.Client) error
 	var vars []string
 	for _, vr := range cfg.RegisterVars {
 		if vr.Enable {
-			vars = append(vars, vr.Key)
+			vars = append(vars, vr.GetFrom())
 		}
 	}
 	if cfg.RegisterOutput != "" {
@@ -323,7 +323,7 @@ func registerVarsRetrieve(cfg *runner.Config, client *sshclient.Client) error {
 	var vars []string
 	for _, vr := range cfg.RegisterVars {
 		if vr.Enable {
-			vars = append(vars, vr.Key)
+			vars = append(vars, vr.GetFrom())
 		}
 	}
 	if cfg.RegisterOutput != "" {

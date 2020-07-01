@@ -66,8 +66,7 @@ func BuildBash(cfg *loader.Config) error {
 		if !vr.Enable {
 			continue
 		}
-		key := strings.ToUpper(vr.Key)
-		outputAppend(`echo "${` + key + `}">${SNIP_VARS_TREEPATH}/` + key + "\n")
+		outputAppend(`echo "${` + vr.GetSource() + `}">${SNIP_VARS_TREEPATH}/` + vr.GetFrom() + "\n")
 	}
 
 	logrus.Debugf("writed bash from md to %v", file)

@@ -203,20 +203,21 @@ func (p *Play) RegisterVarsSaveUpAndPersist() {
 		if !vr.Enable {
 			continue
 		}
-		value := varsRegistry.GetVarBySlice(kp, vr.Key)
+		key := vr.GetFrom()
+		value := varsRegistry.GetVarBySlice(kp, key)
 		if value == "" && vr.Persist {
 			for i := len(kp); i >= 0; i-- {
 				dp2 := kp[0:i]
-				value = varsRegistry.PersistGetVarBySlice(dp2, vr.Key)
+				value = varsRegistry.PersistGetVarBySlice(dp2, key)
 				if value != "" {
 					break
 				}
 			}
 		}
 		if value != "" {
-			varsRegistry.SetVarBySlice(dp, vr.Key, value)
+			varsRegistry.SetVarBySlice(dp, vr.To, value)
 			if vr.Persist {
-				varsRegistry.PersistSetVarBySlice(dp, vr.Key, value)
+				varsRegistry.PersistSetVarBySlice(dp, key, value)
 			}
 		}
 	}

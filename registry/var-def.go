@@ -1,7 +1,27 @@
 package registry
 
 type VarDef struct {
-	Key     string
+	To      string
+	From    string
+	Source  string
 	Enable  bool
 	Persist bool
+}
+
+func (v *VarDef) GetSource() string {
+	if v.Source != "" {
+		return v.Source
+	}
+	return v.GetFrom()
+}
+
+func (v *VarDef) GetFrom() string {
+	if v.From != "" {
+		return v.From
+	}
+	return v.To
+}
+
+func (v *VarDef) GetTo() string {
+	return v.To
 }
