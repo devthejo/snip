@@ -19,6 +19,7 @@ import (
 
 	expect "gitlab.com/youtopia.earth/ops/snip/goexpect"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/runner"
+	"gitlab.com/youtopia.earth/ops/snip/registry"
 	"gitlab.com/youtopia.earth/ops/snip/sshclient"
 	"gitlab.com/youtopia.earth/ops/snip/sshutils"
 	"gitlab.com/youtopia.earth/ops/snip/tools"
@@ -277,9 +278,6 @@ func registerVarsCreateFiles(cfg *runner.Config, client *sshclient.Client) error
 			vars = append(vars, vr.GetFrom())
 		}
 	}
-	if cfg.RegisterOutput != "" {
-		vars = append(vars, cfg.RegisterOutput)
-	}
 
 	for _, vr := range vars {
 		wg.Add(1)
@@ -320,26 +318,28 @@ func registerVarsRetrieve(cfg *runner.Config, client *sshclient.Client) error {
 	var wg sync.WaitGroup
 	var errs []error
 
-	var vars []string
 	for _, vr := range cfg.RegisterVars {
-		if vr.Enable {
-			vars = append(vars, vr.GetFrom())
+		if !vr.Enable {
+			continue
 		}
-	}
-	if cfg.RegisterOutput != "" {
-		vars = append(vars, cfg.RegisterOutput)
-	}
 
-	for _, vr := range vars {
 		wg.Add(1)
-		go func(vs string) {
+		go func(vr *registry.VarDef) {
 			defer wg.Done()
+
+			var src string
+			if !vr.SourceOutput {
+				src = vr.GetFrom()
+			} else {
+				src = "raw.stdout"
+			}
+
 			session, err := client.NewSession()
 			if err != nil {
 				errs = append(errs, err)
 				return
 			}
-			file := filepath.Join(varsPath, vr)
+			file := filepath.Join(varsPath, src)
 			dat, err := session.Output(fmt.Sprintf("cat %s", file))
 			if err != nil {
 				errs = append(errs, err)
@@ -349,7 +349,7 @@ func registerVarsRetrieve(cfg *runner.Config, client *sshclient.Client) error {
 
 			value := string(dat)
 			value = strings.TrimSuffix(value, "\n")
-			r.SetVarBySlice(dp, vr, value)
+			r.SetVarBySlice(dp, vr.GetFrom(), value)
 		}(vr)
 	}
 	wg.Wait()

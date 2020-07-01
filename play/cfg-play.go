@@ -37,8 +37,7 @@ type CfgPlay struct {
 	LoopSets       map[string]map[string]*variable.Var
 	LoopSequential *bool
 
-	RegisterVars   map[string]*registry.VarDef
-	RegisterOutput string
+	RegisterVars map[string]*registry.VarDef
 
 	Quiet *bool
 
@@ -102,7 +101,6 @@ func (cp *CfgPlay) ParseMapRun(m map[string]interface{}, override bool) {
 	cp.ParseLoopSequential(m, override)
 	cp.ParseVars(m, override)
 	cp.ParseRegisterVars(m, override)
-	cp.ParseRegisterOutput(m, override)
 	cp.ParseQuiet(m, override)
 	cp.ParseCheckCommand(m, override)
 	cp.ParseDependencies(m, override)
@@ -286,6 +284,103 @@ func (cp *CfgPlay) ParseVars(m map[string]interface{}, override bool) {
 	}
 }
 
+func parseRegisterVarsItemMap(mI map[string]interface{}, defaultKey string) *registry.VarDef {
+	m, err := decode.ToMap(mI)
+	if err != nil {
+		logrus.Fatalf("unexpected register_vars type %T value %v, %v", mI, mI, err)
+	}
+
+	switch val := m["key"].(type) {
+	case string:
+		defaultKey = val
+	case nil:
+	default:
+		logrus.Fatalf("unexpected register_vars key type %T value %v, %v", val, val, err)
+	}
+
+	var enable bool
+	switch val := m["enable"].(type) {
+	case bool:
+		enable = val
+	case nil:
+		enable = true
+	default:
+		logrus.Fatalf("unexpected register_vars enable type %T value %v, %v", val, val, err)
+	}
+
+	var persist bool
+	switch val := m["persist"].(type) {
+	case bool:
+		persist = val
+	case nil:
+	default:
+		logrus.Fatalf("unexpected register_vars persist type %T value %v, %v", val, val, err)
+	}
+
+	var sourceOutput bool
+	switch val := m["source_output"].(type) {
+	case bool:
+		sourceOutput = val
+	case nil:
+	default:
+		logrus.Fatalf("unexpected register_vars source_output type %T value %v, %v", val, val, err)
+	}
+
+	var to string
+	switch val := m["to"].(type) {
+	case string:
+		to = val
+	case nil:
+		if defaultKey == "" {
+			logrus.Fatalf("missing register_vars to %v", m)
+		}
+		to = defaultKey
+	default:
+		logrus.Fatalf("unexpected register_vars to type %T value %v, %v", val, val, err)
+	}
+
+	var from string
+	switch val := m["from"].(type) {
+	case string:
+		from = val
+	case nil:
+		if defaultKey != "" {
+			from = defaultKey
+		} else {
+			from = to
+		}
+	default:
+		logrus.Fatalf("unexpected register_vars from type %T value %v, %v", val, val, err)
+	}
+
+	var source string
+	switch val := m["source"].(type) {
+	case string:
+		source = val
+	case nil:
+	default:
+		logrus.Fatalf("unexpected register_vars source type %T value %v, %v", val, val, err)
+	}
+
+	to = strings.ToUpper(to)
+	from = strings.ToUpper(from)
+	source = strings.ToUpper(source)
+
+	if sourceOutput && source != "" {
+		logrus.Fatalf("unexpected, register_vars source and source_output are mutually exclusive %v", m)
+	}
+
+	v := &registry.VarDef{
+		To:           to,
+		From:         from,
+		Source:       source,
+		SourceOutput: sourceOutput,
+		Enable:       enable,
+		Persist:      persist,
+	}
+	return v
+}
+
 func (cp *CfgPlay) ParseRegisterVars(m map[string]interface{}, override bool) {
 
 	tmpV := make(map[string]*registry.VarDef)
@@ -294,29 +389,48 @@ func (cp *CfgPlay) ParseRegisterVars(m map[string]interface{}, override bool) {
 		cp.RegisterVars = make(map[string]*registry.VarDef)
 		if cp.ParentCfgPlay != nil {
 			for _, v := range cp.ParentCfgPlay.RegisterVars {
-				tmpV[v.To] = &registry.VarDef{
-					To:      v.To,
-					From:    v.To,
-					Source:  v.GetSource(),
-					Enable:  v.Enable,
-					Persist: v.Persist,
+				key := v.GetFrom()
+				var source string
+				if !v.SourceOutput {
+					source = v.GetSource()
+				}
+				tmpV[key] = &registry.VarDef{
+					To:           key,
+					From:         key,
+					Source:       source,
+					SourceOutput: v.SourceOutput,
+					Enable:       v.Enable,
+					Persist:      v.Persist,
 				}
 			}
 		}
 	}
 
+	logrus.Warnf("register_vars %T %v", m["register_vars"], m["register_vars"])
+
 	switch rVars := m["register_vars"].(type) {
 	case []interface{}:
-		s, err := decode.ToStrings(rVars)
-		if err != nil {
-			logrus.Fatalf("unexpected register_vars type %T value %v, %v", rVars, rVars, err)
-		}
-		for _, k := range s {
-			k := strings.ToUpper(k)
-			tmpV[k] = &registry.VarDef{
-				To:     k,
-				From:   k,
-				Enable: true,
+		for _, varsItemI := range rVars {
+			switch item := varsItemI.(type) {
+			case string:
+				item = strings.ToUpper(item)
+				tmpV[item] = &registry.VarDef{
+					To:     item,
+					From:   item,
+					Enable: true,
+				}
+			case map[interface{}]interface{}:
+				m, err := decode.ToMap(item)
+				if err != nil {
+					logrus.Fatalf("unexpected register_vars item type %T value %v, %v", rVars, rVars, err)
+				}
+				v := parseRegisterVarsItemMap(m, "")
+				tmpV[v.To] = v
+			case map[string]interface{}:
+				v := parseRegisterVarsItemMap(item, "")
+				tmpV[v.To] = v
+			default:
+				logrus.Fatalf("unexpected register_vars type %T value %v", item, item)
 			}
 		}
 	case map[interface{}]interface{}, map[string]interface{}:
@@ -326,66 +440,16 @@ func (cp *CfgPlay) ParseRegisterVars(m map[string]interface{}, override bool) {
 		}
 		for k, rVarI := range rvm {
 			switch rVar := rVarI.(type) {
-			case map[interface{}]interface{}, map[string]interface{}:
-				rVarM, err := decode.ToMap(rVar)
+			case map[interface{}]interface{}:
+				m, err := decode.ToMap(rVar)
 				if err != nil {
-					logrus.Fatalf("unexpected register_vars type %T value %v, %v", rVar, rVar, err)
+					logrus.Fatalf("unexpected register_vars item type %T value %v, %v", rVars, rVars, err)
 				}
-				var enable bool
-				switch val := rVarM["enable"].(type) {
-				case bool:
-					enable = val
-				case nil:
-					enable = true
-				default:
-					logrus.Fatalf("unexpected register_vars enable type %T value %v, %v", val, val, err)
-				}
-				var persist bool
-				switch val := rVarM["persist"].(type) {
-				case bool:
-					persist = val
-				case nil:
-				default:
-					logrus.Fatalf("unexpected register_vars persist type %T value %v, %v", val, val, err)
-				}
-
-				var to string
-				var from string
-				var source string
-				switch val := rVarM["to"].(type) {
-				case string:
-					to = val
-				case nil:
-					to = k
-				default:
-					logrus.Fatalf("unexpected register_vars to type %T value %v, %v", val, val, err)
-				}
-				switch val := rVarM["from"].(type) {
-				case string:
-					from = val
-				case nil:
-					from = k
-				default:
-					logrus.Fatalf("unexpected register_vars from type %T value %v, %v", val, val, err)
-				}
-				switch val := rVarM["source"].(type) {
-				case string:
-					source = val
-				case nil:
-				default:
-					logrus.Fatalf("unexpected register_vars source type %T value %v, %v", val, val, err)
-				}
-
-				to = strings.ToUpper(to)
-				from = strings.ToUpper(from)
-				source = strings.ToUpper(source)
-				tmpV[to] = &registry.VarDef{
-					To:      to,
-					From:    from,
-					Source:  source,
-					Enable:  enable,
-					Persist: persist,
-				}
+				v := parseRegisterVarsItemMap(m, k)
+				tmpV[v.To] = v
+			case map[string]interface{}:
+				v := parseRegisterVarsItemMap(rVar, k)
+				tmpV[v.To] = v
 			case bool:
 				k := strings.ToUpper(k)
 				tmpV[k] = &registry.VarDef{
@@ -421,19 +485,6 @@ func (cp *CfgPlay) ParseRegisterVars(m map[string]interface{}, override bool) {
 				Depth: cp.Depth,
 			}
 		}
-	}
-}
-
-func (cp *CfgPlay) ParseRegisterOutput(m map[string]interface{}, override bool) {
-	if !override && cp.RegisterOutput != "" {
-		return
-	}
-	switch v := m["register_output"].(type) {
-	case string:
-		cp.RegisterOutput = v
-	case nil:
-	default:
-		unexpectedTypeCmd(m, "register_vars")
 	}
 }
 

@@ -247,16 +247,13 @@ func registerVarsCreateFiles(cfg *runner.Config) error {
 			vars = append(vars, vr.GetFrom())
 		}
 	}
-	if cfg.RegisterOutput != "" {
-		vars = append(vars, cfg.RegisterOutput)
-	}
 	for _, vr := range vars {
 		file := filepath.Join(varsPath, vr)
 		dir := filepath.Dir(file)
 		if err := os.MkdirAll(dir, os.ModePerm); err != nil {
 			return err
 		}
-		if _, err := os.OpenFile(file, os.O_RDONLY|os.O_CREATE, os.ModePerm); err != nil {
+		if _, err := os.OpenFile(file, os.O_RDONLY|os.O_CREATE, 0644); err != nil {
 			return err
 		}
 	}
@@ -270,19 +267,21 @@ func registerVarsRetrieve(cfg *runner.Config) error {
 	}
 	dp := kp[0 : len(kp)-1]
 
-	varsPath := getVarsPath(cfg)
-	var vars []string
-	for _, vr := range cfg.RegisterVars {
-		if vr.Enable {
-			vars = append(vars, vr.GetFrom())
-		}
-	}
-	if cfg.RegisterOutput != "" {
-		vars = append(vars, cfg.RegisterOutput)
-	}
 	r := cfg.VarsRegistry
-	for _, vr := range vars {
-		file := filepath.Join(varsPath, vr)
+
+	varsPath := getVarsPath(cfg)
+
+	for _, vr := range cfg.RegisterVars {
+		if !vr.Enable {
+			continue
+		}
+		var src string
+		if !vr.SourceOutput {
+			src = vr.GetFrom()
+		} else {
+			src = "raw.stdout"
+		}
+		file := filepath.Join(varsPath, src)
 		dat, err := ioutil.ReadFile(file)
 		if err != nil {
 			return err
@@ -290,7 +289,7 @@ func registerVarsRetrieve(cfg *runner.Config) error {
 		value := string(dat)
 		value = strings.TrimSuffix(value, "\n")
 		if value != "" {
-			r.SetVarBySlice(dp, vr, value)
+			r.SetVarBySlice(dp, vr.GetFrom(), value)
 		}
 	}
 	return nil

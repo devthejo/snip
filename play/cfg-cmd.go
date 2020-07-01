@@ -90,7 +90,6 @@ func (ccmd *CfgCmd) GetLoaderConfig(lr *loader.Loader) *loader.Config {
 		Command:           command,
 		RequiredFiles:     ccmd.RequiredFiles,
 		RegisterVars:      registerVars,
-		RegisterOutput:    ccmd.CfgPlay.RegisterOutput,
 	}
 
 	return loaderCfg

@@ -1,11 +1,12 @@
 package registry
 
 type VarDef struct {
-	To      string
-	From    string
-	Source  string
-	Enable  bool
-	Persist bool
+	To           string
+	From         string
+	Source       string
+	SourceOutput bool
+	Enable       bool
+	Persist      bool
 }
 
 func (v *VarDef) GetSource() string {
