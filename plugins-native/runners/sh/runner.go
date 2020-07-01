@@ -276,7 +276,7 @@ func registerVarsRetrieve(cfg *runner.Config) error {
 			continue
 		}
 		var src string
-		if !vr.SourceOutput {
+		if !vr.SourceStdout {
 			src = vr.GetFrom()
 		} else {
 			src = "raw.stdout"

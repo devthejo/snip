@@ -4,7 +4,7 @@ type VarDef struct {
 	To           string
 	From         string
 	Source       string
-	SourceOutput bool
+	SourceStdout bool
 	Enable       bool
 	Persist      bool
 }

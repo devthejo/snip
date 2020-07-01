@@ -328,7 +328,7 @@ func registerVarsRetrieve(cfg *runner.Config, client *sshclient.Client) error {
 			defer wg.Done()
 
 			var src string
-			if !vr.SourceOutput {
+			if !vr.SourceStdout {
 				src = vr.GetFrom()
 			} else {
 				src = "raw.stdout"

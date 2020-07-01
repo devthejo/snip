@@ -317,13 +317,13 @@ func parseRegisterVarsItemMap(mI map[string]interface{}, defaultKey string) *reg
 		logrus.Fatalf("unexpected register_vars persist type %T value %v, %v", val, val, err)
 	}
 
-	var sourceOutput bool
-	switch val := m["source_output"].(type) {
+	var sourceStdout bool
+	switch val := m["stdout"].(type) {
 	case bool:
-		sourceOutput = val
+		sourceStdout = val
 	case nil:
 	default:
-		logrus.Fatalf("unexpected register_vars source_output type %T value %v, %v", val, val, err)
+		logrus.Fatalf("unexpected register_vars stdout type %T value %v, %v", val, val, err)
 	}
 
 	var to string
@@ -366,7 +366,7 @@ func parseRegisterVarsItemMap(mI map[string]interface{}, defaultKey string) *reg
 	from = strings.ToUpper(from)
 	source = strings.ToUpper(source)
 
-	if sourceOutput && source != "" {
+	if sourceStdout && source != "" {
 		logrus.Fatalf("unexpected, register_vars source and source_output are mutually exclusive %v", m)
 	}
 
@@ -374,7 +374,7 @@ func parseRegisterVarsItemMap(mI map[string]interface{}, defaultKey string) *reg
 		To:           to,
 		From:         from,
 		Source:       source,
-		SourceOutput: sourceOutput,
+		SourceStdout: sourceStdout,
 		Enable:       enable,
 		Persist:      persist,
 	}
@@ -391,14 +391,14 @@ func (cp *CfgPlay) ParseRegisterVars(m map[string]interface{}, override bool) {
 			for _, v := range cp.ParentCfgPlay.RegisterVars {
 				key := v.GetFrom()
 				var source string
-				if !v.SourceOutput {
+				if !v.SourceStdout {
 					source = v.GetSource()
 				}
 				tmpV[key] = &registry.VarDef{
 					To:           key,
 					From:         key,
 					Source:       source,
-					SourceOutput: v.SourceOutput,
+					SourceStdout: v.SourceStdout,
 					Enable:       v.Enable,
 					Persist:      v.Persist,
 				}
