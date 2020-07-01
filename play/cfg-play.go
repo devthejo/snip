@@ -367,7 +367,7 @@ func parseRegisterVarsItemMap(mI map[string]interface{}, defaultKey string) *reg
 	source = strings.ToUpper(source)
 
 	if sourceStdout && source != "" {
-		logrus.Fatalf("unexpected, register_vars source and source_output are mutually exclusive %v", m)
+		logrus.Fatalf("unexpected, register_vars source and source_stdout are mutually exclusive %v", m)
 	}
 
 	v := &registry.VarDef{
@@ -405,8 +405,6 @@ func (cp *CfgPlay) ParseRegisterVars(m map[string]interface{}, override bool) {
 			}
 		}
 	}
-
-	logrus.Warnf("register_vars %T %v", m["register_vars"], m["register_vars"])
 
 	switch rVars := m["register_vars"].(type) {
 	case []interface{}:
