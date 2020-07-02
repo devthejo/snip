@@ -545,6 +545,9 @@ func (cp *CfgPlay) ParseCheckCommand(m map[string]interface{}, override bool) {
 		errors.Check(err)
 		cp.CheckCommand = s
 	case nil:
+		if _, ok := m["check_command"]; ok {
+			cp.CheckCommand = make([]string, 0)
+		}
 	default:
 		unexpectedTypeCmd(m, "check_command")
 	}
@@ -559,6 +562,9 @@ func (cp *CfgPlay) ParseDependencies(m map[string]interface{}, override bool) {
 		errors.Check(err)
 		cp.Dependencies = dependencies
 	case nil:
+		if _, ok := m["dependencies"]; ok {
+			cp.Dependencies = make([]string, 0)
+		}
 	default:
 		unexpectedTypeCmd(m, "dependencies")
 	}
@@ -574,6 +580,9 @@ func (cp *CfgPlay) ParsePostInstall(m map[string]interface{}, override bool) {
 		errors.Check(err)
 		cp.PostInstall = post_install
 	case nil:
+		if _, ok := m["post_install"]; ok {
+			cp.PostInstall = make([]string, 0)
+		}
 	default:
 		unexpectedTypeCmd(m, "post_install")
 	}
