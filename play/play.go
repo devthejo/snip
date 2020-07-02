@@ -30,8 +30,6 @@ type Play struct {
 
 	LoopRow []*LoopRow
 
-	// Vars map[string]*variable.Var
-
 	LoopSequential bool
 
 	ExecTimeout *time.Duration
@@ -39,9 +37,6 @@ type Play struct {
 	RegisterVars map[string]*registry.VarDef
 
 	CheckCommand []string
-
-	Dependencies []string
-	PostInstall  []string
 
 	Middlewares []string
 
@@ -75,8 +70,6 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 		ExecTimeout: cp.ExecTimeout,
 
 		RegisterVars: registerVars,
-		// Dependencies: cp.Dependencies,
-		// PostInstall:  cp.PostInstall,
 
 		Depth:       cp.Depth,
 		HasChildren: cp.HasChildren,
