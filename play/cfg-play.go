@@ -123,7 +123,6 @@ func (cp *CfgPlay) ParsePlay(m map[string]interface{}, override bool) {
 	case []interface{}:
 		cp.HasChildren = true
 		cp.CfgPlay = make([]*CfgPlay, 0)
-		parentBuildCtx := cp.BuildCtx
 		prevBuildCtx := cp.BuildCtx
 
 		for i, mCfgPlay := range v {
@@ -140,17 +139,7 @@ func (cp *CfgPlay) ParsePlay(m map[string]interface{}, override bool) {
 				unexpectedTypeCfgPlay(m, "play")
 			}
 
-			loadedSnippets := make(map[string]bool)
-			for k, v := range cp.BuildCtx.LoadedSnippets {
-				loadedSnippets[k] = v
-			}
-			loadedSnippetsDownstream := make(map[string]bool)
-			buildCtx := &BuildCtx{
-				LoadedSnippets:                  parentBuildCtx.LoadedSnippets,
-				LoadedSnippetsUpstream:          loadedSnippets,
-				LoadedSnippetsDownstream:        loadedSnippetsDownstream,
-				LoadedSnippetsDownstreamParents: append(prevBuildCtx.LoadedSnippetsDownstreamParents, loadedSnippetsDownstream),
-			}
+			buildCtx := CreateNextBuildCtx(prevBuildCtx)
 			prevBuildCtx = buildCtx
 
 			pI := CreateCfgPlay(cp.App, m, cp, buildCtx)

@@ -74,8 +74,11 @@ func (ccmd *CfgCmd) RequireDependencies() {
 
 		parent := cp.ParentCfgPlay
 
+		buildCtx := CreateNextBuildCtx(cp.BuildCtx)
+		buildCtx.LoadedSnippetsDownstreamParents = nil
+
 		playSlice := parent.CfgPlay.([]*CfgPlay)
-		playSlice = append(playSlice, CreateCfgPlay(cp.App, m, parent, cp.BuildCtx))
+		playSlice = append(playSlice, CreateCfgPlay(cp.App, m, parent, buildCtx))
 		parent.CfgPlay = playSlice
 	}
 }
