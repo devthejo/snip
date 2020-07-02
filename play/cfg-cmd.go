@@ -56,13 +56,12 @@ func (ccmd *CfgCmd) Parse() {
 
 func (ccmd *CfgCmd) HandleDependencies() {
 	ccmd.RequireDependencies()
-	ccmd.RequirePostInstall()
 	ccmd.RegisterInDependencies()
 }
 
 func (ccmd *CfgCmd) RequireDependencies() {
 	cp := ccmd.CfgPlay
-	ls := cp.App.GetLoadedSnippets()
+	ls := cp.BuildCtx.LoadedSnippetsUpstream
 	for _, dep := range cp.Dependencies {
 		if b, ok := ls[dep]; ok && b {
 			continue
@@ -76,20 +75,42 @@ func (ccmd *CfgCmd) RequireDependencies() {
 		parent := cp.ParentCfgPlay
 
 		playSlice := parent.CfgPlay.([]*CfgPlay)
-		playSlice = append(playSlice, CreateCfgPlay(cp.App, m, parent))
+		playSlice = append(playSlice, CreateCfgPlay(cp.App, m, parent, cp.BuildCtx))
 		parent.CfgPlay = playSlice
 	}
 }
 
 func (ccmd *CfgCmd) RequirePostInstall() {
+	cp := ccmd.CfgPlay
+	buildCtx := cp.BuildCtx
+	ls := buildCtx.LoadedSnippetsDownstream
 
+	for _, dep := range cp.PostInstall {
+
+		if b, ok := ls[dep]; ok && b {
+			return
+		}
+
+		k := ccmd.OriginalCommand[0]
+		logrus.Debugf(`◘ post-install required by "%s" autoloading "%s"`, k, dep)
+
+		m := make(map[string]interface{})
+		m["play"] = dep
+
+		parent := cp.ParentCfgPlay
+
+		playSlice := parent.CfgPlay.([]*CfgPlay)
+		playSlice = append(playSlice, CreateCfgPlay(cp.App, m, parent, cp.BuildCtx))
+		parent.CfgPlay = playSlice
+
+	}
 }
 
 func (ccmd *CfgCmd) RegisterInDependencies() {
 	cp := ccmd.CfgPlay
-	ls := cp.App.GetLoadedSnippets()
+	buildCtx := cp.BuildCtx
 	k := ccmd.OriginalCommand[0]
-	ls[k] = true
+	buildCtx.RegisterLoadedSnippet(k)
 }
 
 func (ccmd *CfgCmd) GetLoaderVarsMap(useVars []string, mVar map[string]*variable.Var) map[string]string {

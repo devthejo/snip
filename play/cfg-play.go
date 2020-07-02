@@ -23,6 +23,8 @@ import (
 type CfgPlay struct {
 	App App
 
+	BuildCtx *BuildCtx
+
 	ParentCfgPlay *CfgPlay
 
 	Index int
@@ -60,7 +62,7 @@ type CfgPlay struct {
 	Runner      *runner.Runner
 }
 
-func CreateCfgPlay(app App, m map[string]interface{}, parentCfgPlay *CfgPlay) *CfgPlay {
+func CreateCfgPlay(app App, m map[string]interface{}, parentCfgPlay *CfgPlay, buildCtx *BuildCtx) *CfgPlay {
 
 	cp := &CfgPlay{}
 
@@ -68,6 +70,8 @@ func CreateCfgPlay(app App, m map[string]interface{}, parentCfgPlay *CfgPlay) *C
 	cp.LoopSets = make(map[string]map[string]*variable.Var)
 
 	cp.App = app
+
+	cp.BuildCtx = buildCtx
 
 	cp.SetParentCfgPlay(parentCfgPlay)
 
@@ -119,6 +123,9 @@ func (cp *CfgPlay) ParsePlay(m map[string]interface{}, override bool) {
 	case []interface{}:
 		cp.HasChildren = true
 		cp.CfgPlay = make([]*CfgPlay, 0)
+		parentBuildCtx := cp.BuildCtx
+		prevBuildCtx := cp.BuildCtx
+
 		for i, mCfgPlay := range v {
 			switch p2 := mCfgPlay.(type) {
 			case map[interface{}]interface{}:
@@ -133,12 +140,31 @@ func (cp *CfgPlay) ParsePlay(m map[string]interface{}, override bool) {
 				unexpectedTypeCfgPlay(m, "play")
 			}
 
-			pI := CreateCfgPlay(cp.App, m, cp)
+			loadedSnippets := make(map[string]bool)
+			for k, v := range cp.BuildCtx.LoadedSnippets {
+				loadedSnippets[k] = v
+			}
+			loadedSnippetsDownstream := make(map[string]bool)
+			buildCtx := &BuildCtx{
+				LoadedSnippets:                  parentBuildCtx.LoadedSnippets,
+				LoadedSnippetsUpstream:          loadedSnippets,
+				LoadedSnippetsDownstream:        loadedSnippetsDownstream,
+				LoadedSnippetsDownstreamParents: append(prevBuildCtx.LoadedSnippetsDownstreamParents, loadedSnippetsDownstream),
+			}
+			prevBuildCtx = buildCtx
+
+			pI := CreateCfgPlay(cp.App, m, cp, buildCtx)
 			pI.Index = i
 
 			playSlice := cp.CfgPlay.([]*CfgPlay)
 			playSlice = append(playSlice, pI)
 			cp.CfgPlay = playSlice
+		}
+		for _, child := range cp.CfgPlay.([]*CfgPlay) {
+			switch c := child.CfgPlay.(type) {
+			case *CfgCmd:
+				c.RequirePostInstall()
+			}
 		}
 
 	case string:

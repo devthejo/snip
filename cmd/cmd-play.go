@@ -18,14 +18,15 @@ func CmdPlay(app App) *cobra.Command {
 			app.OnPreRun(cmd)
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			cfg := app.GetConfig()
 
 			mainFunc := func() error {
 				if err := play.Clean(app); err != nil {
 					return err
 				}
-				cfgPlay := play.CreateCfgPlay(app, cfg.Play, nil)
-				p := cfgPlay.BuildRoot()
+
+				config := play.BuildConfig(app)
+				p := play.BuildPlay(config)
+
 				if err := p.Start(); err != nil {
 					return err
 				}
