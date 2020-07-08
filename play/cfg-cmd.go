@@ -167,6 +167,10 @@ func (ccmd *CfgCmd) LoadLoader() {
 
 	lr := ccmd.Loader
 
+	if lr == nil {
+		return
+	}
+
 	loaderCfg := ccmd.GetLoaderConfig(lr)
 
 	lr.Plugin.Load(loaderCfg)
@@ -201,9 +205,9 @@ func (ccmd *CfgCmd) ParseLoader() {
 				break
 			}
 		}
-		if ccmd.Loader == nil {
-			logrus.Fatalf("no loader match with %v at depth %v", ccmd.Command, ccmd.Depth)
-		}
+		// if ccmd.Loader == nil {
+		// 	logrus.Fatalf("no loader match with %v at depth %v", ccmd.Command, ccmd.Depth)
+		// }
 		return
 	}
 
@@ -215,10 +219,10 @@ func (ccmd *CfgCmd) ParseLoader() {
 		}
 	}
 
-	if ccmd.Loader == nil {
-		logrus.Fatalf("no loader match with %v at depth %v", ccmd.Command, ccmd.Depth)
-		return
-	}
+	// if ccmd.Loader == nil {
+	// 	logrus.Fatalf("no loader match with %v at depth %v", ccmd.Command, ccmd.Depth)
+	// 	return
+	// }
 
 }
 

@@ -14,6 +14,8 @@ type LoopRow struct {
 	ParentPlay    *Play
 	Play          interface{}
 	IsLoopRowItem bool
+	PreChk        *Chk
+	PostChk       *Chk
 }
 
 func (l *LoopRow) GetKey() string {

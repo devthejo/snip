@@ -67,6 +67,25 @@ func (thr *Thread) SetTimeout(timeout *time.Duration) {
 	thr.ContextCancel = cancel
 }
 
+func (thr *Thread) LogErrors() {
+	if thr.Context.Err() == context.DeadlineExceeded {
+		thr.Logger.WithFields(logrus.Fields{
+			"timeout": thr.ExecTimeout,
+		}).Warnf("thread exec timeout fail")
+	} else if thr.ExecExitCode > 0 {
+		switch thr.ExecExitCode {
+		case 129, 141:
+			thr.Logger.WithFields(logrus.Fields{
+				"exitCode": thr.ExecExitCode,
+			}).Warnf("thread exec error: %v", thr.Error)
+		default:
+			thr.Logger.WithFields(logrus.Fields{
+				"exitCode": thr.ExecExitCode,
+			}).Errorf("thread exec error: %v", thr.Error)
+		}
+	}
+}
+
 func (thr *Thread) Exec(runMain func() error) {
 
 	thr.ExecRunning = true
@@ -88,27 +107,6 @@ func (thr *Thread) Exec(runMain func() error) {
 			thr.ExecExitCode = exitError.Code
 		} else {
 			thr.ExecExitCode = 1
-		}
-
-		if thr.Context.Err() == context.DeadlineExceeded {
-			thr.Logger.WithFields(logrus.Fields{
-				"timeout": thr.ExecTimeout,
-			}).Warnf("thread exec timeout fail")
-		} else if thr.ExecExitCode > 0 {
-			switch thr.ExecExitCode {
-			case 129:
-				thr.Logger.WithFields(logrus.Fields{
-					"exitCode": thr.ExecExitCode,
-				}).Warnf("thread exec error: %v", err)
-			case 141:
-				thr.Logger.WithFields(logrus.Fields{
-					"exitCode": thr.ExecExitCode,
-				}).Warnf("thread exec error: %v", err)
-			default:
-				thr.Logger.WithFields(logrus.Fields{
-					"exitCode": thr.ExecExitCode,
-				}).Errorf("thread exec error: %v", err)
-			}
 		}
 
 	}

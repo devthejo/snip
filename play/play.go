@@ -1,6 +1,7 @@
 package play
 
 import (
+	"context"
 	"strconv"
 	"strings"
 	"sync"
@@ -10,6 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.uber.org/multierr"
 
+	"gitlab.com/youtopia.earth/ops/snip/config"
 	"gitlab.com/youtopia.earth/ops/snip/errors"
 	"gitlab.com/youtopia.earth/ops/snip/registry"
 	"gitlab.com/youtopia.earth/ops/snip/variable"
@@ -27,6 +29,7 @@ type Play struct {
 	Title string
 
 	TreeKeyParts []string
+	TreeKey      string
 
 	LoopRow []*LoopRow
 
@@ -36,10 +39,9 @@ type Play struct {
 
 	RegisterVars map[string]*registry.VarDef
 
-	CheckCommand []string
-
 	Middlewares []string
 
+	Logger      *logrus.Entry
 	Depth       int
 	HasChildren bool
 
@@ -65,7 +67,6 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 		Title: cp.Title,
 
 		LoopSequential: loopSequential,
-		CheckCommand:   cp.CheckCommand,
 
 		ExecTimeout: cp.ExecTimeout,
 
@@ -79,6 +80,13 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 	p.ParentLoopRow = parentLoopRow
 
 	p.TreeKeyParts = GetTreeKeyParts(p)
+	p.TreeKey = strings.Join(p.TreeKeyParts, "|")
+	logger := logrus.WithFields(logrus.Fields{
+		"tree": p.TreeKey,
+	})
+	loggerCtx := context.WithValue(context.Background(), config.LogContextKey("indentation"), p.Depth+1)
+	logger = logger.WithContext(loggerCtx)
+	p.Logger = logger
 
 	var icon string
 	if cp.ParentCfgPlay == nil {
@@ -89,7 +97,7 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 		icon = `⤷`
 	}
 
-	logrus.Info(strings.Repeat("  ", cp.Depth+1) + icon + " " + cp.GetTitle())
+	logger.Info("  " + icon + " " + cp.GetTitle())
 
 	var loopRows []*CfgLoopRow
 	if len(cp.LoopOn) == 0 {
@@ -115,10 +123,14 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 			IsLoopRowItem: cfgLoopRow.IsLoopRowItem,
 			ParentPlay:    p,
 		}
+		if cp.CfgChkCmd != nil {
+			loop.PreChk = CreateChk(cp.CfgChkCmd, ctx, loop, true)
+			loop.PostChk = CreateChk(cp.CfgChkCmd, ctx, loop, false)
+		}
 		p.LoopRow[i] = loop
 
 		if loop.IsLoopRowItem {
-			logrus.Info(strings.Repeat("  ", cp.Depth+2) + "⦿ " + loop.Name)
+			logger.Info(strings.Repeat("  ", 2) + "⦿ " + loop.Name)
 		}
 
 		vars := cmap.New()
@@ -227,13 +239,21 @@ func (p *Play) Run() error {
 		icon = `⤷`
 	}
 
-	logrus.Info(strings.Repeat("  ", p.Depth+1) + icon + " " + p.GetTitle())
+	logger := p.Logger
+
+	logger.Info(icon + " " + p.GetTitle())
 
 	var errSlice []error
 
 	runLoopSeq := func(loop *LoopRow) error {
 		if loop.IsLoopRowItem {
-			logrus.Info(strings.Repeat("  ", p.Depth+2) + "⦿ " + loop.Name)
+			logger.Info(strings.Repeat("  ", 2) + "⦿ " + loop.Name)
+		}
+
+		if loop.PreChk != nil {
+			if ok, _ := loop.PreChk.Run(); ok {
+				return nil
+			}
 		}
 
 		switch pl := loop.Play.(type) {
@@ -255,6 +275,13 @@ func (p *Play) Run() error {
 		if len(errSlice) > 0 {
 			return multierr.Combine(errSlice...)
 		}
+
+		if loop.PostChk != nil {
+			if ok, err := loop.PostChk.Run(); !ok {
+				return err
+			}
+		}
+
 		return nil
 	}
 
@@ -292,7 +319,7 @@ func (p *Play) Run() error {
 }
 
 func (p *Play) Start() error {
-	logrus.Infof("🚀 running playbook")
+	p.Logger.Info("🚀 running playbook")
 	return p.Run()
 }
 

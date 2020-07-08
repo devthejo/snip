@@ -44,6 +44,7 @@ type CfgPlay struct {
 	Quiet *bool
 
 	CheckCommand []string
+	CfgChkCmd    *CfgChkCmd
 
 	Dependencies []string
 	PostInstall  []string
@@ -539,6 +540,9 @@ func (cp *CfgPlay) ParseCheckCommand(m map[string]interface{}, override bool) {
 		}
 	default:
 		unexpectedTypeCmd(m, "check_command")
+	}
+	if len(cp.CheckCommand) > 0 {
+		cp.CfgChkCmd = CreateCfgChkCmd(cp, cp.CheckCommand)
 	}
 }
 func (cp *CfgPlay) ParseDependencies(m map[string]interface{}, override bool) {

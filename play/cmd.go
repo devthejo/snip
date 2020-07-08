@@ -29,7 +29,6 @@ type Cmd struct {
 	Thread *proc.Thread
 
 	ParentLoopRow *LoopRow
-	CfgCmd        *CfgCmd
 
 	Command []string
 	Vars    map[string]string
@@ -92,7 +91,6 @@ func CreateCmd(ccmd *CfgCmd, ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 		},
 
 		ParentLoopRow: parentLoopRow,
-		CfgCmd:        ccmd,
 		Command:       command,
 
 		Middlewares: ccmd.Middlewares,
@@ -128,7 +126,8 @@ func CreateCmd(ccmd *CfgCmd, ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 	cmd.Vars = vars
 
 	logger := logrus.WithFields(logrus.Fields{
-		"tree": cmd.TreeKey,
+		"tree":   cmd.TreeKey,
+		"action": "running",
 	})
 	loggerCtx := context.WithValue(context.Background(), config.LogContextKey("indentation"), cmd.Depth+1)
 	logger = logger.WithContext(loggerCtx)
@@ -145,7 +144,9 @@ func CreateCmd(ccmd *CfgCmd, ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 var regNormalizeTreeKeyParts = regexp.MustCompile("[^a-zA-Z0-9-_.]+")
 
 func (cmd *Cmd) Run() error {
-	return cmd.Thread.Run(cmd.Main)
+	err := cmd.Thread.Run(cmd.Main)
+	cmd.Thread.LogErrors()
+	return err
 }
 
 func (cmd *Cmd) CreateMutableCmd() *middleware.MutableCmd {

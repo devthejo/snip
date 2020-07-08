@@ -10,6 +10,6 @@ func BuildConfig(app App) *CfgPlay {
 	return cfgPlay
 }
 
-func BuildPlay(config *CfgPlay) *Play {
-	return config.BuildRoot()
+func BuildPlay(cp *CfgPlay) *Play {
+	return cp.BuildRoot()
 }
