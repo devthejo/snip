@@ -14,7 +14,12 @@ before_script:
 build:
   stage: build
   script:
-    - docker build --pull --cache-from "$CI_REGISTRY_IMAGE:latest" --tag "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
+    - >
+      docker build
+      --pull
+      --cache-from "$CI_REGISTRY_IMAGE:latest"
+      --tag "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
+      .
   only:
     - master
 
