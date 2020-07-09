@@ -1,4 +1,4 @@
-image: registry.gitlab.com/youtopia.earth/ops/continuer
+image: docker:stable
 services:
   - docker:dind
 variables:
