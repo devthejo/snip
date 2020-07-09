@@ -250,7 +250,6 @@ func (p *Play) Run() error {
 	logger.Info(icon + " " + p.GetTitle())
 
 	var errSlice []error
-
 	runLoopSeq := func(loop *LoopRow) error {
 		if loop.IsLoopRowItem {
 			logger.Info(strings.Repeat("  ", 2) + "⦿ " + loop.Name)
@@ -261,31 +260,39 @@ func (p *Play) Run() error {
 				return nil
 			}
 		}
+		var localErrSlice []error
+		for tries := p.Retry + 1; tries > 0; tries-- {
 
-		switch pl := loop.Play.(type) {
-		case []*Play:
-			for _, child := range pl {
-				if err := child.Run(); err != nil {
-					errSlice = append(errSlice, err)
+			localErrSlice = make([]error, 0)
+			switch pl := loop.Play.(type) {
+			case []*Play:
+				for _, child := range pl {
+					if err := child.Run(); err != nil {
+						localErrSlice = append(localErrSlice, err)
+						break
+					}
+				}
+			case *Cmd:
+				pl.RegisterVarsLoad()
+
+				if err := pl.Run(); err != nil {
+					localErrSlice = append(localErrSlice, err)
+				}
+			}
+
+			if len(localErrSlice) == 0 && loop.PostChk != nil {
+				if ok, err := loop.PostChk.Run(); !ok {
+					localErrSlice = append(localErrSlice, err)
+				} else {
 					break
 				}
 			}
-		case *Cmd:
-			pl.RegisterVarsLoad()
 
-			if err := pl.Run(); err != nil {
-				errSlice = append(errSlice, err)
-			}
 		}
 
-		if loop.PostChk != nil {
-			if ok, err := loop.PostChk.Run(); !ok {
-				errSlice = append(errSlice, err)
-			}
-		}
-
-		if len(errSlice) > 0 {
-			return multierr.Combine(errSlice...)
+		if len(localErrSlice) > 0 {
+			errSlice = append(errSlice, localErrSlice...)
+			return multierr.Combine(localErrSlice...)
 		}
 		return nil
 	}

@@ -53,6 +53,8 @@ type Chk struct {
 
 	TreeKeyParts []string
 	TreeKey      string
+
+	PreflightRunnedOnce bool
 }
 
 func (chk *Chk) EnvMap() map[string]string {
@@ -143,6 +145,10 @@ func CreateChk(cchk *CfgChkCmd, ctx *RunCtx, parentLoopRow *LoopRow, isPreRun bo
 }
 
 func (chk *Chk) RunThread() error {
+	if chk.Thread.ExecExited {
+		chk.Thread.Reset()
+	}
+
 	return chk.Thread.Run(chk.Main)
 }
 func (chk *Chk) Run() (bool, error) {
@@ -379,8 +385,11 @@ func (chk *Chk) Main() error {
 
 	logger := chk.Logger
 
-	if err := chk.ApplyMiddlewares(); err != nil {
-		return err
+	if !chk.PreflightRunnedOnce {
+		if err := chk.ApplyMiddlewares(); err != nil {
+			return err
+		}
+		chk.PreflightRunnedOnce = true
 	}
 
 	// logger.Debugf("vars: %v", tools.JsonEncode(chk.Vars))

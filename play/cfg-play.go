@@ -106,6 +106,7 @@ func (cp *CfgPlay) ParseMapRun(m map[string]interface{}, override bool) {
 	cp.ParseLoopSets(m, override)
 	cp.ParseLoopOn(m, override)
 	cp.ParseLoopSequential(m, override)
+	cp.ParseRetry(m, override)
 	cp.ParseVars(m, override)
 	cp.ParseRegisterVars(m, override)
 	cp.ParseQuiet(m, override)

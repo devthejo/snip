@@ -32,11 +32,7 @@ func CreateThread(app App) *Thread {
 	thr := &Thread{}
 	thr.App = app
 	thr.MainProc = app.GetMainProc()
-
-	ctx, cancel := context.WithCancel(context.Background())
-	thr.Context = ctx
-	thr.ContextCancel = cancel
-
+	thr.initContext()
 	return thr
 }
 
@@ -62,6 +58,19 @@ func (c *Thread) Done() <-chan struct{} {
 
 func (thr *Thread) SetTimeout(timeout *time.Duration) {
 	thr.ExecTimeout = timeout
+	thr.setContextWithTimeout()
+}
+
+func (thr *Thread) initContext() {
+	ctx, cancel := context.WithCancel(context.Background())
+	thr.Context = ctx
+	thr.ContextCancel = cancel
+}
+
+func (thr *Thread) setContextWithTimeout() {
+	if thr.ExecTimeout == nil {
+		return
+	}
 	ctx, cancel := context.WithTimeout(thr.Context, *thr.ExecTimeout)
 	thr.Context = ctx
 	thr.ContextCancel = cancel
@@ -84,6 +93,15 @@ func (thr *Thread) LogErrors() {
 			}).Errorf("thread exec error: %v", thr.Error)
 		}
 	}
+}
+
+func (thr *Thread) Reset() {
+	thr.ExecRunning = false
+	thr.ExecExited = false
+	thr.Error = nil
+	thr.ExecExitCode = 0
+	thr.initContext()
+	thr.setContextWithTimeout()
 }
 
 func (thr *Thread) Exec(runMain func() error) {

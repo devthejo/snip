@@ -54,6 +54,8 @@ type Cmd struct {
 
 	TreeKeyParts []string
 	TreeKey      string
+
+	PreflightRunnedOnce bool
 }
 
 func (cmd *Cmd) EnvMap() map[string]string {
@@ -144,6 +146,10 @@ func CreateCmd(ccmd *CfgCmd, ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 var regNormalizeTreeKeyParts = regexp.MustCompile("[^a-zA-Z0-9-_.]+")
 
 func (cmd *Cmd) Run() error {
+	if cmd.Thread.ExecExited {
+		cmd.Thread.Reset()
+	}
+
 	err := cmd.Thread.Run(cmd.Main)
 	cmd.Thread.LogErrors()
 	return err
@@ -374,12 +380,14 @@ func (cmd *Cmd) Main() error {
 	logger := cmd.Logger
 	logger.Info("⮞ playing")
 
-	if err := cmd.BuildLauncher(); err != nil {
-		return err
-	}
-
-	if err := cmd.ApplyMiddlewares(); err != nil {
-		return err
+	if !cmd.PreflightRunnedOnce {
+		if err := cmd.BuildLauncher(); err != nil {
+			return err
+		}
+		if err := cmd.ApplyMiddlewares(); err != nil {
+			return err
+		}
+		cmd.PreflightRunnedOnce = true
 	}
 
 	// logger.Debugf("vars: %v", tools.JsonEncode(cmd.Vars))
