@@ -46,6 +46,8 @@ type CfgPlay struct {
 	CheckCommand []string
 	CfgChkCmd    *CfgChkCmd
 
+	Retry *int
+
 	Dependencies []string
 	PostInstall  []string
 
@@ -545,6 +547,32 @@ func (cp *CfgPlay) ParseCheckCommand(m map[string]interface{}, override bool) {
 		cp.CfgChkCmd = CreateCfgChkCmd(cp, cp.CheckCommand)
 	}
 }
+
+func (cp *CfgPlay) ParseRetry(m map[string]interface{}, override bool) {
+	if !override && cp.Retry != nil {
+		return
+	}
+	switch v := m["retry"].(type) {
+	case int64:
+		r := int(v)
+		cp.Retry = &r
+	case int:
+		cp.Retry = &v
+	case string:
+		r, err := strconv.Atoi(v)
+		if err != nil {
+			unexpectedTypeCfgPlay(m, "retry")
+		}
+		cp.Retry = &r
+	case nil:
+		if cp.ParentCfgPlay != nil {
+			cp.Retry = cp.ParentCfgPlay.Retry
+		}
+	default:
+		unexpectedTypeCfgPlay(m, "retry")
+	}
+}
+
 func (cp *CfgPlay) ParseDependencies(m map[string]interface{}, override bool) {
 	if !override && cp.Dependencies != nil {
 		return

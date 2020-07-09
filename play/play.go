@@ -35,6 +35,8 @@ type Play struct {
 
 	LoopSequential bool
 
+	Retry int
+
 	ExecTimeout *time.Duration
 
 	RegisterVars map[string]*registry.VarDef
@@ -74,6 +76,10 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 
 		Depth:       cp.Depth,
 		HasChildren: cp.HasChildren,
+	}
+
+	if cp.Retry != nil {
+		p.Retry = *cp.Retry
 	}
 
 	p.RunCtx = ctx
@@ -272,16 +278,15 @@ func (p *Play) Run() error {
 			}
 		}
 
-		if len(errSlice) > 0 {
-			return multierr.Combine(errSlice...)
-		}
-
 		if loop.PostChk != nil {
 			if ok, err := loop.PostChk.Run(); !ok {
-				return err
+				errSlice = append(errSlice, err)
 			}
 		}
 
+		if len(errSlice) > 0 {
+			return multierr.Combine(errSlice...)
+		}
 		return nil
 	}
 
