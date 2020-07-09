@@ -1,4 +1,4 @@
-image: docker:stable
+image: registry.gitlab.com/youtopia.earth/ops/continuer
 services:
   - docker:dind
 variables:
@@ -14,7 +14,7 @@ before_script:
 build:
   stage: build
   script:
-    - ci-build
+    - docker build --pull --cache-from "$CI_REGISTRY_IMAGE:latest" --tag "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
   only:
     - master
 

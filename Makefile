@@ -5,11 +5,7 @@ all: vendor fmt build targz
 install: install-bin autocomplete
 
 docker:
-	snip build
-dockerfile:
 	docker build -t registry.gitlab.com/youtopia.earth/ops/snip:$${SNIP_TAG:-master} .
-docker-compose:
-	docker-compose build
 
 vendor:
 	go mod vendor
