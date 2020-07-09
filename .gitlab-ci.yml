@@ -17,8 +17,8 @@ build:
     - >
       docker build
       --pull
-      --cache-from "$CI_REGISTRY_IMAGE:latest"
-      --tag "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
+      --cache-from $CI_REGISTRY_IMAGE:latest
+      --tag $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
       .
   only:
     - master
