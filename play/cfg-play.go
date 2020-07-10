@@ -215,7 +215,14 @@ func (cp *CfgPlay) ParseExecTimeout(m map[string]interface{}, override bool) {
 	if !override && cp.ExecTimeout != nil {
 		return
 	}
-	timeout, err := decode.Duration(m["timeout"])
+	t, ok := m["timeout"]
+	if !ok {
+		if cp.ParentCfgPlay != nil {
+			cp.ExecTimeout = cp.ParentCfgPlay.ExecTimeout
+		}
+		return
+	}
+	timeout, err := decode.Duration(t)
 	errors.Check(err)
 	if timeout != 0 {
 		cp.ExecTimeout = &timeout
