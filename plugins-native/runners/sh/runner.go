@@ -133,7 +133,12 @@ var (
 					if cmd.Process != nil {
 						// return cmd.Process.Kill()
 						if cmd.SysProcAttr.Setpgid {
-							return syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+							pgid, err := syscall.Getpgid(cmd.Process.Pid)
+							if err != nil {
+								return err
+							}
+							// return syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+							return syscall.Kill(-pgid, syscall.SIGKILL)
 						}
 					}
 					return nil
