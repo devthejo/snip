@@ -35,7 +35,7 @@ type Config struct {
 
 	Dir string
 
-	Closer *func(interface{}) bool
+	Closer *func(interface{}, *string) bool
 }
 
 func (cfg *Config) EnvMap() map[string]string {

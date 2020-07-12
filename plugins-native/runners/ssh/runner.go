@@ -108,11 +108,9 @@ var (
 					if pgid != "" {
 						if sess, err := client.NewSession(); err == nil {
 							// sess.Run(`[ -n "$(ps -p ` + pgid + ` -o pid=)" ] && kill -s KILL ` + pgid)
-							sess.Run("kill -s KILL -" + pgid)
+							sess.Run(`kill -s KILL ` + pgid)
 							pgid = ""
 						}
-						// sIn.Write([]byte("kill -s KILL -" + pgid + "\n"))
-						// pgid = ""
 					}
 					if err := session.Close(); err != nil {
 						return err
@@ -171,7 +169,7 @@ var (
 					}
 					logger.Debug(`closing process`)
 					if cfg.Closer != nil {
-						if !(*cfg.Closer)(session) {
+						if !(*cfg.Closer)(client.Client, &pgid) {
 							return
 						}
 					}

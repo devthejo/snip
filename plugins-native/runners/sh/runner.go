@@ -181,7 +181,7 @@ var (
 					}
 					logger.Debug(`closing process`)
 					if cfg.Closer != nil {
-						if !(*cfg.Closer)(cmd) {
+						if !(*cfg.Closer)(cmd, nil) {
 							return
 						}
 					}

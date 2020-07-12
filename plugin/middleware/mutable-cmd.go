@@ -21,7 +21,7 @@ type MutableCmd struct {
 
 	Dir string
 
-	Closer *func(interface{}) bool
+	Closer *func(interface{}, *string) bool
 }
 
 func (cmd *MutableCmd) PrependExpect(b ...expect.Batcher) {

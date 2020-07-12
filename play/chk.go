@@ -46,7 +46,7 @@ type Chk struct {
 
 	Dir string
 
-	Closer *func(interface{}) bool
+	Closer *func(interface{}, *string) bool
 
 	RegisterVars map[string]*registry.VarDef
 	Quiet        bool
