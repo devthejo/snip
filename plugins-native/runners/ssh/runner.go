@@ -53,7 +53,7 @@ var (
 
 			logger := cfg.Logger
 
-			commandSlice := []string{"/bin/sh", "-c", strings.Join(cfg.Command, " ")}
+			commandSlice := []string{"setsid", "/bin/sh", "-c", "echo $$ PGID && " + strings.Join(cfg.Command, " ")}
 
 			command := shellquote.Join(commandSlice...)
 
@@ -94,12 +94,24 @@ var (
 				return err
 			}
 
+			var pgid string
+
 			spawnOpts := &expect.SpawnOptions{
 				In:  sIn,
 				Out: sOut,
 				Close: func() error {
-					// session.Signal(ssh.SIGTERM)
-					return session.Close()
+					// session.Signal(ssh.SIGKILL)
+					if pgid != "" {
+						if sess, err := client.NewSession(); err == nil {
+							// sess.Run(`[ -n "$(ps -p ` + pgid + ` -o pid=)" ] && kill -s KILL ` + pgid)
+							sess.Run("kill -s KILL -" + pgid)
+							pgid = ""
+						}
+					}
+					if err := session.Close(); err != nil {
+						return err
+					}
+					return nil
 				},
 				Check: func() bool {
 					_, err := session.SendRequest("dummy", false, nil)
@@ -124,7 +136,7 @@ var (
 				defer logStreamer.Close()
 
 				sep := "#" + strconv.FormatInt(time.Now().UnixNano(), 10) + "#"
-				wHeadStripper := wHeadStripperMake(sep)
+				wHeadStripper := makeWriterHeadStripperAndGetPGID(sep, &pgid)
 				tee := &WriterModifier{
 					Modifier: wHeadStripper,
 					Writer:   logStreamer,
@@ -359,9 +371,12 @@ func registerVarsRetrieve(cfg *runner.Config, client *sshclient.Client) error {
 	return nil
 }
 
-func wHeadStripperMake(sep string) func(data []byte) []byte {
+func makeWriterHeadStripperAndGetPGID(sep string, pgid *string) func(data []byte) []byte {
 	sepL := len(sep)
 	var enableWrite bool
+	var retrievedPgid bool
+	pgidSep := " PGID\n"
+	pgidSepL := len(pgidSep)
 	return func(data []byte) []byte {
 		if !enableWrite {
 			str := string(data)
@@ -371,6 +386,16 @@ func wHeadStripperMake(sep string) func(data []byte) []byte {
 			}
 			enableWrite = true
 			data = []byte(str[index+sepL:])
+		}
+		if enableWrite && !retrievedPgid {
+			str := string(data)
+			index := strings.Index(str, pgidSep)
+			if index != -1 {
+				retrievedPgid = true
+				s := str[0:index]
+				*pgid = s
+				data = []byte(str[index+pgidSepL:])
+			}
 		}
 		return data
 	}
