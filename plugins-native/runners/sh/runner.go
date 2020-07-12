@@ -39,7 +39,7 @@ var (
 
 			commandSlice := []string{"/bin/sh", "-c", strings.Join(cfg.Command, " ")}
 
-			logger.Debugf("final command: %v", commandSlice)
+			// logger.Debugf("final command: %v", commandSlice)
 
 			cmd := exec.CommandContext(cfg.Context, commandSlice[0], commandSlice[1:]...)
 

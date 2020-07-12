@@ -106,13 +106,13 @@ var (
 				Close: func() error {
 					// session.Signal(ssh.SIGKILL)
 					if pgid != "" {
-						// if sess, err := client.NewSession(); err == nil {
-						// 	// sess.Run(`[ -n "$(ps -p ` + pgid + ` -o pid=)" ] && kill -s KILL ` + pgid)
-						// 	sess.Run("kill -s KILL -" + pgid)
-						// 	pgid = ""
-						// }
-						sIn.Write([]byte("kill -s KILL -" + pgid))
-						pgid = ""
+						if sess, err := client.NewSession(); err == nil {
+							// sess.Run(`[ -n "$(ps -p ` + pgid + ` -o pid=)" ] && kill -s KILL ` + pgid)
+							sess.Run("kill -s KILL -" + pgid)
+							pgid = ""
+						}
+						// sIn.Write([]byte("kill -s KILL -" + pgid + "\n"))
+						// pgid = ""
 					}
 					if err := session.Close(); err != nil {
 						return err
@@ -197,13 +197,7 @@ var (
 				expected = append(expected, &expect.BSnd{S: setenv})
 			}
 
-			for _, v := range cfg.ExpectBeforeCommand {
-				expected = append(expected, v)
-			}
-
-			expected = append(expected, &expect.BSnd{S: command + "; "})
-
-			expected = append(expected, &expect.BSnd{S: "exit\n"})
+			expected = append(expected, &expect.BSnd{S: command + "; exit;\n"})
 
 			for _, v := range cfg.Expect {
 				expected = append(expected, v)
