@@ -131,9 +131,9 @@ var (
 						pty.Close()
 					}
 					if cmd.Process != nil {
-						// cmd.Process.Kill()
+						// return cmd.Process.Kill()
 						if cmd.SysProcAttr.Setpgid {
-							syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+							return syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
 						}
 					}
 					return nil
