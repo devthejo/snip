@@ -137,10 +137,6 @@ func CreateChk(cchk *CfgChkCmd, ctx *RunCtx, parentLoopRow *LoopRow, isPreRun bo
 	chk.Logger = logger
 	thr.Logger = logger
 
-	if chk.ExecTimeout != nil {
-		thr.SetTimeout(chk.ExecTimeout)
-	}
-
 	return chk
 }
 
@@ -345,6 +341,10 @@ func (chk *Chk) RunRunner() error {
 	registerVars := make(map[string]*registry.VarDef)
 	for k, v := range chk.RegisterVars {
 		registerVars[k] = v
+	}
+
+	if chk.ExecTimeout != nil {
+		chk.Thread.SetTimeout(chk.ExecTimeout)
 	}
 
 	runCfg := &runner.Config{

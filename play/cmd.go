@@ -136,10 +136,6 @@ func CreateCmd(ccmd *CfgCmd, ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 	cmd.Logger = logger
 	thr.Logger = logger
 
-	if cmd.ExecTimeout != nil {
-		thr.SetTimeout(cmd.ExecTimeout)
-	}
-
 	return cmd
 }
 
@@ -336,6 +332,10 @@ func (cmd *Cmd) RunRunner() error {
 	registerVars := make(map[string]*registry.VarDef)
 	for k, v := range cmd.RegisterVars {
 		registerVars[k] = v
+	}
+
+	if cmd.ExecTimeout != nil {
+		cmd.Thread.SetTimeout(cmd.ExecTimeout)
 	}
 
 	runCfg := &runner.Config{
