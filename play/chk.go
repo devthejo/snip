@@ -42,7 +42,8 @@ type Chk struct {
 
 	RequiredFiles map[string]string
 
-	Expect []expect.Batcher
+	ExpectBeforeCommand []expect.Batcher
+	Expect              []expect.Batcher
 
 	Dir string
 
@@ -222,16 +223,17 @@ func (chk *Chk) CreateMutableCmd() *middleware.MutableCmd {
 	}
 
 	mutableCmd := &middleware.MutableCmd{
-		AppConfig:       chk.AppConfig,
-		Command:         chk.Command,
-		Vars:            vars,
-		OriginalCommand: originalCommand,
-		OriginalVars:    originalVars,
-		RequiredFiles:   requiredFiles,
-		Expect:          chk.Expect,
-		Runner:          chk.Runner,
-		Dir:             chk.Dir,
-		Closer:          chk.Closer,
+		AppConfig:           chk.AppConfig,
+		Command:             chk.Command,
+		Vars:                vars,
+		OriginalCommand:     originalCommand,
+		OriginalVars:        originalVars,
+		RequiredFiles:       requiredFiles,
+		ExpectBeforeCommand: chk.ExpectBeforeCommand,
+		Expect:              chk.Expect,
+		Runner:              chk.Runner,
+		Dir:                 chk.Dir,
+		Closer:              chk.Closer,
 	}
 	return mutableCmd
 }
@@ -305,6 +307,7 @@ func (chk *Chk) ApplyMiddlewares() error {
 	chk.Vars = mutableCmd.Vars
 	chk.RequiredFiles = mutableCmd.RequiredFiles
 	chk.Expect = mutableCmd.Expect
+	chk.ExpectBeforeCommand = mutableCmd.ExpectBeforeCommand
 	chk.Closer = mutableCmd.Closer
 	chk.Dir = mutableCmd.Dir
 	chk.Runner = mutableCmd.Runner
@@ -355,17 +358,18 @@ func (chk *Chk) RunRunner() error {
 		Logger: chk.Logger.WithFields(logrus.Fields{
 			"runner": chk.Runner.Name,
 		}),
-		Cache:         chk.App.GetCache(),
-		VarsRegistry:  chk.App.GetVarsRegistry(),
-		Command:       chk.Command,
-		Vars:          vars,
-		RegisterVars:  registerVars,
-		Quiet:         chk.Quiet,
-		TreeKeyParts:  chk.TreeKeyParts,
-		RequiredFiles: chk.RequiredFiles,
-		Expect:        chk.Expect,
-		Closer:        chk.Closer,
-		Dir:           chk.Dir,
+		Cache:               chk.App.GetCache(),
+		VarsRegistry:        chk.App.GetVarsRegistry(),
+		Command:             chk.Command,
+		Vars:                vars,
+		RegisterVars:        registerVars,
+		Quiet:               chk.Quiet,
+		TreeKeyParts:        chk.TreeKeyParts,
+		RequiredFiles:       chk.RequiredFiles,
+		ExpectBeforeCommand: chk.ExpectBeforeCommand,
+		Expect:              chk.Expect,
+		Closer:              chk.Closer,
+		Dir:                 chk.Dir,
 	}
 
 	appCfg := chk.AppConfig

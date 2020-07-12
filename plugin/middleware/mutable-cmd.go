@@ -15,9 +15,10 @@ type MutableCmd struct {
 	OriginalCommand []string
 	OriginalVars    map[string]string
 
-	RequiredFiles map[string]string
-	Expect        []expect.Batcher
-	Runner        *runner.Runner
+	RequiredFiles       map[string]string
+	ExpectBeforeCommand []expect.Batcher
+	Expect              []expect.Batcher
+	Runner              *runner.Runner
 
 	Dir string
 

@@ -255,6 +255,7 @@ func registerVarsCreateFiles(cfg *runner.Config) error {
 			vars = append(vars, vr.GetFrom())
 		}
 	}
+	vars = append(vars, "raw.stdout")
 	for _, vr := range vars {
 		file := filepath.Join(varsPath, vr)
 		dir := filepath.Dir(file)

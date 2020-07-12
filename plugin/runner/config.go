@@ -30,8 +30,9 @@ type Config struct {
 
 	TreeKeyParts []string
 
-	RequiredFiles map[string]string
-	Expect        []expect.Batcher
+	RequiredFiles       map[string]string
+	ExpectBeforeCommand []expect.Batcher
+	Expect              []expect.Batcher
 
 	Dir string
 

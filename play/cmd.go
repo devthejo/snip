@@ -43,7 +43,8 @@ type Cmd struct {
 
 	RequiredFiles map[string]string
 
-	Expect []expect.Batcher
+	ExpectBeforeCommand []expect.Batcher
+	Expect              []expect.Batcher
 
 	Dir string
 
@@ -170,16 +171,17 @@ func (cmd *Cmd) CreateMutableCmd() *middleware.MutableCmd {
 	}
 
 	mutableCmd := &middleware.MutableCmd{
-		AppConfig:       cmd.AppConfig,
-		Command:         cmd.Command,
-		Vars:            vars,
-		OriginalCommand: originalCommand,
-		OriginalVars:    originalVars,
-		RequiredFiles:   requiredFiles,
-		Expect:          cmd.Expect,
-		Runner:          cmd.Runner,
-		Dir:             cmd.Dir,
-		Closer:          cmd.Closer,
+		AppConfig:           cmd.AppConfig,
+		Command:             cmd.Command,
+		Vars:                vars,
+		OriginalCommand:     originalCommand,
+		OriginalVars:        originalVars,
+		RequiredFiles:       requiredFiles,
+		ExpectBeforeCommand: cmd.ExpectBeforeCommand,
+		Expect:              cmd.Expect,
+		Runner:              cmd.Runner,
+		Dir:                 cmd.Dir,
+		Closer:              cmd.Closer,
 	}
 	return mutableCmd
 }
@@ -253,6 +255,7 @@ func (cmd *Cmd) ApplyMiddlewares() error {
 	cmd.Vars = mutableCmd.Vars
 	cmd.RequiredFiles = mutableCmd.RequiredFiles
 	cmd.Expect = mutableCmd.Expect
+	cmd.ExpectBeforeCommand = mutableCmd.ExpectBeforeCommand
 	cmd.Closer = mutableCmd.Closer
 	cmd.Dir = mutableCmd.Dir
 	cmd.Runner = mutableCmd.Runner
@@ -346,17 +349,18 @@ func (cmd *Cmd) RunRunner() error {
 		Logger: cmd.Logger.WithFields(logrus.Fields{
 			"runner": cmd.Runner.Name,
 		}),
-		Cache:         cmd.App.GetCache(),
-		VarsRegistry:  cmd.App.GetVarsRegistry(),
-		Command:       cmd.Command,
-		Vars:          vars,
-		RegisterVars:  registerVars,
-		Quiet:         cmd.Quiet,
-		TreeKeyParts:  cmd.TreeKeyParts,
-		RequiredFiles: cmd.RequiredFiles,
-		Expect:        cmd.Expect,
-		Closer:        cmd.Closer,
-		Dir:           cmd.Dir,
+		Cache:               cmd.App.GetCache(),
+		VarsRegistry:        cmd.App.GetVarsRegistry(),
+		Command:             cmd.Command,
+		Vars:                vars,
+		RegisterVars:        registerVars,
+		Quiet:               cmd.Quiet,
+		TreeKeyParts:        cmd.TreeKeyParts,
+		RequiredFiles:       cmd.RequiredFiles,
+		ExpectBeforeCommand: cmd.ExpectBeforeCommand,
+		Expect:              cmd.Expect,
+		Closer:              cmd.Closer,
+		Dir:                 cmd.Dir,
 	}
 
 	appCfg := cmd.AppConfig
