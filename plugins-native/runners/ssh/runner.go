@@ -51,9 +51,18 @@ var (
 				return err
 			}
 
+			var enablePTY bool
+			if enablePTYStr, ok := vars["pty"]; ok {
+				enablePTY = enablePTYStr == "true"
+			}
+
 			logger := cfg.Logger
 
-			commandSlice := []string{"setsid", "/bin/sh", "-c", "echo $$ PGID && " + strings.Join(cfg.Command, " ")}
+			var commandSlice []string
+			if !enablePTY {
+				commandSlice = append(commandSlice, "setsid")
+			}
+			commandSlice = append(commandSlice, "/bin/sh", "-c", "echo $$ PGID && "+strings.Join(cfg.Command, " "))
 
 			command := shellquote.Join(commandSlice...)
 
@@ -62,11 +71,6 @@ var (
 			session, err := client.NewSession()
 			if err != nil {
 				return err
-			}
-
-			var enablePTY bool
-			if enablePTYStr, ok := vars["pty"]; ok {
-				enablePTY = enablePTYStr == "true"
 			}
 
 			if enablePTY {
