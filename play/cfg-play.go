@@ -136,6 +136,11 @@ func (cp *CfgPlay) ParsePlay(m map[string]interface{}, override bool) {
 				for k, v := range p2 {
 					m[k.(string)] = v
 				}
+			case map[string]interface{}:
+				m = make(map[string]interface{}, len(p2))
+				for k, v := range p2 {
+					m[k] = v
+				}
 			case string:
 				m = make(map[string]interface{})
 				m["play"] = p2
