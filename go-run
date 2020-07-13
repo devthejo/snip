@@ -2,7 +2,7 @@
 
 set -e
 
-if [ -e snip.json ]; then
+if [ -e snip.json ] && [ -e snip.jsonnet ]; then
   rm snip.json
 fi
 
