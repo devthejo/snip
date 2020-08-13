@@ -63,6 +63,9 @@ func ParseMarkdownFile(cfg *loader.Config) ([]*CodeBlock, map[string]interface{}
 	errors.Check(err)
 
 	defaultsPlayProps := meta.Get(context)
+	if defaultsPlayProps == nil {
+		defaultsPlayProps = make(map[string]interface{})
+	}
 	if defaultsPlayProps["key"] == nil {
 		defaultsPlayProps["key"] = mdPath
 	}
