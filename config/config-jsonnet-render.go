@@ -14,7 +14,7 @@ func ConfigJsonnetRender(dirpaths []string, name string) (bool, error) {
 
 	var allreadyExists bool
 	var efile string
-	exts := []string{"json", "toml", "yaml", "yml", "hcl"}
+	exts := []string{"toml", "yaml", "yml", "hcl"}
 
 	for _, dpath := range dirpaths {
 		var err error
