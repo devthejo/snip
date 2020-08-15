@@ -129,10 +129,7 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 			IsLoopRowItem: cfgLoopRow.IsLoopRowItem,
 			ParentPlay:    p,
 		}
-		if cp.CfgChkCmd != nil {
-			loop.PreChk = CreateChk(cp.CfgChkCmd, ctx, loop, true)
-			loop.PostChk = CreateChk(cp.CfgChkCmd, ctx, loop, false)
-		}
+
 		p.LoopRow[i] = loop
 
 		if loop.IsLoopRowItem {
@@ -169,6 +166,11 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 		runCtx := &RunCtx{
 			Vars:        vars,
 			VarsDefault: varsDefault,
+		}
+
+		if cp.CfgChkCmd != nil {
+			loop.PreChk = CreateChk(cp.CfgChkCmd, runCtx, loop, true)
+			loop.PostChk = CreateChk(cp.CfgChkCmd, runCtx, loop, false)
 		}
 
 		switch pl := cp.CfgPlay.(type) {

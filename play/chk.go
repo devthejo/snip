@@ -347,6 +347,7 @@ func (chk *Chk) RunRunner() error {
 		chk.Thread.SetTimeout(chk.ExecTimeout)
 	}
 
+
 	runCfg := &runner.Config{
 		AppConfig:     chk.AppConfig,
 		RunnerVars:    runnerVars,
