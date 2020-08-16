@@ -542,9 +542,13 @@ func (cp *CfgPlay) ParseCheckCommand(m map[string]interface{}, override bool) {
 	}
 	switch v := m["check_command"].(type) {
 	case string:
-		s, err := shellquote.Split(v)
-		errors.Check(err)
-		cp.CheckCommand = s
+		if strings.Contains(v, "\n") {
+			cp.CheckCommand = []string{v}
+		} else {
+			s, err := shellquote.Split(v)
+			errors.Check(err)
+			cp.CheckCommand = s
+		}
 	case []interface{}:
 		s, err := decode.ToStrings(v)
 		errors.Check(err)

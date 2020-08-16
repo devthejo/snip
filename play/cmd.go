@@ -265,7 +265,7 @@ func (cmd *Cmd) BuildLauncher() error {
 	appCfg := cmd.AppConfig
 	rootPath := GetRootPath(cmd.App)
 	treeDir := appCfg.TreeDirLauncher(cmd.TreeKeyParts)
-	launcherFilename := "run.sh"
+	launcherFilename := "play.sh"
 	launcherDir := filepath.Join("build", "launcher", treeDir)
 	launcherFile := filepath.Join(launcherDir, launcherFilename)
 	launcherDirAbs := filepath.Join(rootPath, launcherDir)
@@ -293,7 +293,7 @@ func (cmd *Cmd) BuildLauncher() error {
 	outputAppend(` | tee ${SNIP_VARS_TREEPATH}/raw.stdout`)
 	outputAppend("\n")
 
-	cmd.Logger.Debugf("writed launcher to %s", launcherFile)
+	cmd.Logger.Debugf("writed play launcher to %s", launcherFile)
 
 	bin := filepath.Join("${SNIP_LAUNCHER_PATH}", launcherFilename)
 	cmd.Command[0] = bin
