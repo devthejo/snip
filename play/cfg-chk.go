@@ -13,7 +13,7 @@ import (
 	"gitlab.com/youtopia.earth/ops/snip/variable"
 )
 
-type CfgChkCmd struct {
+type CfgChk struct {
 	CfgPlay *CfgPlay
 
 	OriginalCommand []string
@@ -30,11 +30,11 @@ type CfgChkCmd struct {
 	Depth int
 }
 
-func CreateCfgChkCmd(cp *CfgPlay, c []string) *CfgChkCmd {
+func CreateCfgChk(cp *CfgPlay, c []string) *CfgChk {
 	originalCommand := make([]string, len(c))
 	copy(originalCommand, c)
 
-	chk := &CfgChkCmd{
+	chk := &CfgChk{
 		CfgPlay:         cp,
 		OriginalCommand: c,
 		Command:         c,
@@ -47,7 +47,7 @@ func CreateCfgChkCmd(cp *CfgPlay, c []string) *CfgChkCmd {
 	return chk
 }
 
-func (chk *CfgChkCmd) Parse() {
+func (chk *CfgChk) Parse() {
 	chk.ParseLoader()
 	chk.ParseMiddlewares()
 	chk.ParseRunner()
@@ -55,7 +55,7 @@ func (chk *CfgChkCmd) Parse() {
 	chk.LoadLoader()
 }
 
-func (chk *CfgChkCmd) GetLoaderVarsMap(useVars []string, mVar map[string]*variable.Var) map[string]string {
+func (chk *CfgChk) GetLoaderVarsMap(useVars []string, mVar map[string]*variable.Var) map[string]string {
 	pVars := make(map[string]string)
 	for _, useV := range useVars {
 		key := strings.ToUpper(useV)
@@ -72,7 +72,7 @@ func (chk *CfgChkCmd) GetLoaderVarsMap(useVars []string, mVar map[string]*variab
 	return pVars
 }
 
-func (chk *CfgChkCmd) GetLoaderConfig(lr *loader.Loader) *loader.Config {
+func (chk *CfgChk) GetLoaderConfig(lr *loader.Loader) *loader.Config {
 	app := chk.CfgPlay.App
 	cfg := app.GetConfig()
 
@@ -102,7 +102,7 @@ func (chk *CfgChkCmd) GetLoaderConfig(lr *loader.Loader) *loader.Config {
 
 }
 
-func (chk *CfgChkCmd) LoadLoader() {
+func (chk *CfgChk) LoadLoader() {
 
 	lr := chk.Loader
 
@@ -126,7 +126,7 @@ func (chk *CfgChkCmd) LoadLoader() {
 	chk.ParseRunner()
 }
 
-func (chk *CfgChkCmd) ParseLoader() {
+func (chk *CfgChk) ParseLoader() {
 	cp := chk.CfgPlay
 	app := cp.App
 
@@ -162,7 +162,7 @@ func (chk *CfgChkCmd) ParseLoader() {
 
 }
 
-func (chk *CfgChkCmd) ParseMiddlewares() {
+func (chk *CfgChk) ParseMiddlewares() {
 	cp := chk.CfgPlay
 	if cp.Middlewares == nil {
 		return
@@ -172,7 +172,7 @@ func (chk *CfgChkCmd) ParseMiddlewares() {
 	}
 }
 
-func (chk *CfgChkCmd) ParseRunner() {
+func (chk *CfgChk) ParseRunner() {
 	cp := chk.CfgPlay
 	var rr string
 	if cp.Runner != nil {

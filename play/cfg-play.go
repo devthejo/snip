@@ -43,8 +43,8 @@ type CfgPlay struct {
 
 	Quiet *bool
 
-	CheckCommand []string
-	CfgChkCmd    *CfgChkCmd
+	Check  []string
+	CfgChk *CfgChk
 
 	Retry *int
 
@@ -116,7 +116,7 @@ func (cp *CfgPlay) ParseMapRun(m map[string]interface{}, override bool) {
 	cp.ParseMiddlewares(m, override)
 	cp.ParseRunner(m, override)
 
-	cp.ParseCheckCommand(m, override)
+	cp.ParseCheck(m, override)
 	cp.ParsePlay(m, override)
 }
 
@@ -537,32 +537,32 @@ func (cp *CfgPlay) ParseQuiet(m map[string]interface{}, override bool) {
 	}
 }
 
-func (cp *CfgPlay) ParseCheckCommand(m map[string]interface{}, override bool) {
-	if !override && cp.CheckCommand != nil {
+func (cp *CfgPlay) ParseCheck(m map[string]interface{}, override bool) {
+	if !override && cp.Check != nil {
 		return
 	}
-	switch v := m["check_command"].(type) {
+	switch v := m["check"].(type) {
 	case string:
 		if strings.Contains(v, "\n") {
-			cp.CheckCommand = []string{v}
+			cp.Check = []string{v}
 		} else {
 			s, err := shellquote.Split(v)
 			errors.Check(err)
-			cp.CheckCommand = s
+			cp.Check = s
 		}
 	case []interface{}:
 		s, err := decode.ToStrings(v)
 		errors.Check(err)
-		cp.CheckCommand = s
+		cp.Check = s
 	case nil:
-		if _, ok := m["check_command"]; ok {
-			cp.CheckCommand = make([]string, 0)
+		if _, ok := m["check"]; ok {
+			cp.Check = make([]string, 0)
 		}
 	default:
-		unexpectedTypeCmd(m, "check_command")
+		unexpectedTypeCmd(m, "check")
 	}
-	if len(cp.CheckCommand) > 0 {
-		cp.CfgChkCmd = CreateCfgChkCmd(cp, cp.CheckCommand)
+	if len(cp.Check) > 0 {
+		cp.CfgChk = CreateCfgChk(cp, cp.Check)
 	}
 }
 
