@@ -41,8 +41,6 @@ type Play struct {
 
 	RegisterVars map[string]*registry.VarDef
 
-	Middlewares []string
-
 	Logger      *logrus.Entry
 	Depth       int
 	HasChildren bool
