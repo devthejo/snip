@@ -33,7 +33,6 @@ type CfgCmd struct {
 func CreateCfgCmd(cp *CfgPlay, c []string) *CfgCmd {
 	originalCommand := make([]string, len(c))
 	copy(originalCommand, c)
-
 	ccmd := &CfgCmd{
 		CfgPlay:         cp,
 		OriginalCommand: c,
@@ -179,7 +178,12 @@ func (ccmd *CfgCmd) LoadLoader() {
 	copy(command, loaderCfg.Command)
 	ccmd.Command = command
 	ccmd.RequiredFiles = loaderCfg.RequiredFiles
+
 	ccmd.CfgPlay.ParseMapAsDefault(loaderCfg.DefaultsPlayProps)
+
+	// re-inject props from cfg-play after ParseMapAsDefault
+	ccmd.ParseMiddlewares()
+	ccmd.ParseRunner()
 }
 
 func (ccmd *CfgCmd) ParseLoader() {
