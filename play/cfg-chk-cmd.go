@@ -3,6 +3,8 @@ package play
 import (
 	"strings"
 
+	// "github.com/sirupsen/logrus"
+
 	snipplugin "gitlab.com/youtopia.earth/ops/snip/plugin"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/loader"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/middleware"
@@ -40,6 +42,7 @@ func CreateCfgChkCmd(cp *CfgPlay, c []string) *CfgChkCmd {
 		Dir:             cp.Dir,
 		RequiredFiles:   make(map[string]string),
 	}
+
 	chk.Parse()
 	return chk
 }
@@ -115,7 +118,12 @@ func (chk *CfgChkCmd) LoadLoader() {
 	copy(command, loaderCfg.Command)
 	chk.Command = command
 	chk.RequiredFiles = loaderCfg.RequiredFiles
+
 	chk.CfgPlay.ParseMapAsDefault(loaderCfg.DefaultsPlayProps)
+
+	// re-inject props from cfg-play after ParseMapAsDefault
+	chk.ParseMiddlewares()
+	chk.ParseRunner()
 }
 
 func (chk *CfgChkCmd) ParseLoader() {

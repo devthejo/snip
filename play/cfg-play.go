@@ -110,12 +110,13 @@ func (cp *CfgPlay) ParseMapRun(m map[string]interface{}, override bool) {
 	cp.ParseVars(m, override)
 	cp.ParseRegisterVars(m, override)
 	cp.ParseQuiet(m, override)
-	cp.ParseCheckCommand(m, override)
 	cp.ParseDependencies(m, override)
 	cp.ParsePostInstall(m, override)
 	cp.ParseLoader(m, override)
 	cp.ParseMiddlewares(m, override)
 	cp.ParseRunner(m, override)
+
+	cp.ParseCheckCommand(m, override)
 	cp.ParsePlay(m, override)
 }
 

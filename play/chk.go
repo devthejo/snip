@@ -1,8 +1,8 @@
 package play
 
 import (
-	"os"
 	"context"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -13,12 +13,12 @@ import (
 	"gitlab.com/youtopia.earth/ops/snip/variable"
 
 	"gitlab.com/youtopia.earth/ops/snip/config"
+	"gitlab.com/youtopia.earth/ops/snip/errors"
 	snipplugin "gitlab.com/youtopia.earth/ops/snip/plugin"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/middleware"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/runner"
 	"gitlab.com/youtopia.earth/ops/snip/proc"
 	"gitlab.com/youtopia.earth/ops/snip/tools"
-	"gitlab.com/youtopia.earth/ops/snip/errors"
 )
 
 type Chk struct {
