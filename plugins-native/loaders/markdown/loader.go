@@ -12,7 +12,7 @@ var (
 			return strings.HasSuffix(cfg.Command[0], ".md")
 		},
 		Load: func(cfg *loader.Config) error {
-			return BuildBash(cfg)
+			return BuildScripts(cfg)
 		},
 	}
 )
