@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"bytes"
 
 	"github.com/google/goterm/term"
 	shellquote "github.com/kballard/go-shellquote"
@@ -400,6 +401,7 @@ func makeWriterHeadStripperAndGetPGID(sep string, pgid *string) func(data []byte
 				data = []byte(str[index+pgidSepL:])
 			}
 		}
+		data = bytes.TrimSpace(data)
 		return data
 	}
 }
