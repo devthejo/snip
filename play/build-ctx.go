@@ -1,11 +1,16 @@
 package play
 
+import (
+	"gitlab.com/youtopia.earth/ops/snip/plugin/runner"
+)
+
 type BuildCtx struct {
 	Parent                          *BuildCtx
 	LoadedSnippets                  map[string]bool
 	LoadedSnippetsUpstream          map[string]bool
 	LoadedSnippetsDownstream        map[string]bool
 	LoadedSnippetsDownstreamParents []map[string]bool
+	DefaultRunner                   *runner.Runner
 }
 
 func CreateBuildCtx() *BuildCtx {

@@ -76,6 +76,10 @@ func CreateCfgPlay(app App, m map[string]interface{}, parentCfgPlay *CfgPlay, bu
 
 	cp.BuildCtx = buildCtx
 
+	if buildCtx.DefaultRunner != nil {
+		cp.Runner = buildCtx.DefaultRunner
+	}
+
 	cp.SetParentCfgPlay(parentCfgPlay)
 
 	cp.ParseMap(m)
@@ -713,7 +717,7 @@ func (cp *CfgPlay) ParseRunner(m map[string]interface{}, override bool) {
 		}
 		cp.Runner = rr
 	case nil:
-		if cp.ParentCfgPlay != nil {
+		if cp.Runner == nil && cp.ParentCfgPlay != nil {
 			cp.Runner = cp.ParentCfgPlay.Runner
 		}
 	default:
