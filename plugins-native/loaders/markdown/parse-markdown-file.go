@@ -85,7 +85,7 @@ func ParseMarkdownFile(cfg *loader.Config) ([]*CodeBlock, map[string]interface{}
 		switch tok := t.(type) {
 		case *markdown.Fence:
 			lang := tok.Params
-			if tok.Content == "" && lang != "" && lang[len(lang)-1:] != "#" {
+			if tok.Content == "" || lang == "" || lang[len(lang)-1:] != "x" {
 				continue
 			}
 			codeBlock := &CodeBlock{
