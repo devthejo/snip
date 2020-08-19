@@ -81,10 +81,11 @@ func BuildScripts(cfg *loader.Config) error {
 		mainScriptContent += filepath.Join("${SNIP_SNIPPETS_PATH}", snippetPath) + "\n"
 	}
 
-	mainFile := filepath.Join(buildDir, mdpath+".sh")
+	launcher := mdpath + ".sh"
+	mainFile := filepath.Join(buildDir, launcher)
 	buildFile(mainFile, mainScriptContent)
 
-	bin := filepath.Join("${SNIP_SNIPPETS_PATH}", mdpath+".bash")
+	bin := filepath.Join("${SNIP_SNIPPETS_PATH}", launcher)
 	cfg.Command[0] = bin
 
 	return nil
