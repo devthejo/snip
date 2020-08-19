@@ -68,19 +68,19 @@ func BuildScripts(cfg *loader.Config) error {
 		}
 		content = strings.Trim(content, "\n")
 		content = header + content
-		snippetPath := mdpath+"_"+strconv.Itoa(i)
+		content += "\n\n# snip vars export \n"
+		for _, vr := range cfg.RegisterVars {
+			if !vr.Enable {
+				continue
+			}
+			content += `echo "${` + vr.GetSource() + `}">${SNIP_VARS_TREEPATH}/` + vr.GetFrom() + "\n"
+		}
+		snippetPath := mdpath + "_" + strconv.Itoa(i)
 		file := filepath.Join(buildDir, snippetPath)
 		buildFile(file, content)
-		mainScriptContent += filepath.Join("${SNIP_SNIPPETS_PATH}", snippetPath)+"\n"
+		mainScriptContent += filepath.Join("${SNIP_SNIPPETS_PATH}", snippetPath) + "\n"
 	}
 
-	mainScriptContent += "\n\n# snip vars export \n"
-	for _, vr := range cfg.RegisterVars {
-		if !vr.Enable {
-			continue
-		}
-		mainScriptContent += `echo "${` + vr.GetSource() + `}">${SNIP_VARS_TREEPATH}/` + vr.GetFrom() + "\n"
-	}
 	mainFile := filepath.Join(buildDir, mdpath+".sh")
 	buildFile(mainFile, mainScriptContent)
 
