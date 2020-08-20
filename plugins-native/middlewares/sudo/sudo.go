@@ -24,7 +24,7 @@ var (
 
 			command = append(command, "--prompt=[sudo]")
 
-			if pass, ok := vars["pass"]; ok {
+			if pass, ok := vars["pass"]; ok && pass != "" {
 				mutableCmd.PrependExpect(
 					&expect.BExp{R: "[sudo]"},
 					&expect.BSnd{S: pass + "\n"},
