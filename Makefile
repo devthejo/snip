@@ -3,6 +3,7 @@ PKG := "gitlab.com/youtopia.earth/ops/$(PROJECT_NAME)"
 
 all: vendor fmt build targz
 install: install-bin autocomplete
+buildstall: install build
 
 docker:
 	docker build -t registry.gitlab.com/youtopia.earth/ops/snip:$${SNIP_TAG:-master} .
