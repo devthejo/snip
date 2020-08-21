@@ -15,6 +15,7 @@ import (
 	"github.com/kvz/logstreamer"
 
 	expect "gitlab.com/youtopia.earth/ops/snip/goexpect"
+	"gitlab.com/youtopia.earth/ops/snip/loggers"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/runner"
 	"gitlab.com/youtopia.earth/ops/snip/tools"
 )
@@ -117,6 +118,12 @@ var (
 
 			cmd.Stdout = pw
 			cmd.Stderr = pw
+
+			if !cfg.Quiet {
+				logStreamerErr := logstreamer.NewLogstreamer(log.New(&loggers.Warn{Entry: logger}, "", 0), "", false)
+				defer logStreamerErr.Close()
+				cmd.Stderr = io.MultiWriter(cmd.Stderr, logStreamerErr)
+			}
 
 			if err := cmd.Start(); err != nil {
 				return err
