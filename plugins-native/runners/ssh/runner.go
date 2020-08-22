@@ -15,6 +15,7 @@ import (
 	"github.com/google/goterm/term"
 	shellquote "github.com/kballard/go-shellquote"
 	"github.com/kvz/logstreamer"
+	cache "github.com/patrickmn/go-cache"
 	"github.com/sirupsen/logrus"
 	"go.uber.org/multierr"
 
@@ -35,17 +36,64 @@ var (
 
 			vars := cfg.RunnerVars
 
-			sshCfg := sshclient.CreateConfig(vars)
-			client, err := sshclient.CreateClient(sshCfg)
-			if err != nil {
-				return err
+			connect := func(vars map[string]string) (*sshclient.Client, *sshclient.Config, error) {
+				sshCfg := sshclient.CreateConfig(vars)
+				client, err := sshclient.CreateClient(sshCfg)
+				if err == nil {
+					err = client.Connect()
+				}
+				return client, sshCfg, err
 			}
-			if err := client.Connect(); err != nil {
-				return err
+
+			r := cfg.Cache
+
+			var client *sshclient.Client
+			var sshCfg *sshclient.Config
+			if port, ok := vars["port"]; ok && strings.Contains(port, ",") {
+				cacheKey := "host:port:" + vars["host"]
+				var portFirst string
+				if portI, found := r.Get(cacheKey); found {
+					portFirst = portI.(string)
+				}
+
+				portsList := strings.Split(port, ",")
+				var ports []string
+				if portFirst != "" {
+					ports = append(ports, portFirst)
+				}
+				for _, p := range portsList {
+					if p != portFirst {
+						ports = append(ports, p)
+					}
+				}
+				var err error
+				for _, p := range ports {
+					varsP := make(map[string]string)
+					for k, v := range vars {
+						varsP[k] = v
+					}
+					varsP["port"] = p
+					client, sshCfg, err = connect(varsP)
+					if err == nil {
+						r.Set(cacheKey, p, cache.DefaultExpiration)
+						break
+					}
+				}
+				if err != nil {
+					return err
+				}
+
+			} else {
+				var err error
+				client, sshCfg, err = connect(vars)
+				if err != nil {
+					return err
+				}
 			}
+
 			defer client.Close()
 
-			if err := installRequiredFiles(cfg); err != nil {
+			if err := installRequiredFiles(cfg, sshCfg); err != nil {
 				return err
 			}
 
@@ -260,10 +308,8 @@ func getVarsPath(cfg *runner.Config) string {
 	return filepath.Join(rootPath, "vars", varDir)
 }
 
-func installRequiredFiles(cfg *runner.Config) error {
+func installRequiredFiles(cfg *runner.Config, sshCfg *sshclient.Config) error {
 	rootPath := getRootPath(cfg)
-	vars := cfg.RunnerVars
-	sshCfg := sshclient.CreateConfig(vars)
 	for src, dest := range cfg.RequiredFiles {
 		_, err := tools.RequiredOnce(cfg.Cache, []string{"host", sshCfg.Host, dest}, src, func() (interface{}, error) {
 			destAbs := filepath.Join(rootPath, dest)
