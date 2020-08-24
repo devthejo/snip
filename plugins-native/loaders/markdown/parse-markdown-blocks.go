@@ -3,8 +3,9 @@ package mainNative
 import (
 	"strings"
 
-	"github.com/sirupsen/logrus"
+	cmap "github.com/orcaman/concurrent-map"
 	"gitlab.com/golang-commonmark/markdown"
+
 	"gitlab.com/youtopia.earth/ops/snip/plugin/loader"
 )
 
@@ -18,30 +19,7 @@ type ParseMdLoopParams struct {
 	handleModArgs []string
 }
 
-func handleInstruction(t string, args []string, parseMdLoopParams *ParseMdLoopParams) {
-	switch t {
-	case "ignore-next":
-		parseMdLoopParams.ignoreOnce = true
-	case "mod":
-		if len(args) > 0 {
-			parseMdLoopParams.handleModOnce = true
-			parseMdLoopParams.handleModArgs = args
-		}
-	default:
-		logrus.Fatalf("unkown snip instruction %v", t)
-	}
-}
-
-var mods map[string]interface{}
-
-func handleMod(mod string, args []string, codeBlock *CodeBlock) {
-	logrus.Debugf("mod: %v, args: %v", mod, args)
-	if _, ok := mods[mod]; !ok {
-		logrus.Fatalf("unkown markdown mod: %v", mod)
-	}
-}
-
-func ParseMarkdownBlock(cfg *loader.Config) []*CodeBlock {
+func ParseMarkdownBlocks(cfg *loader.Config, plugins cmap.ConcurrentMap) []*CodeBlock {
 
 	source := GetMarkdownContent(cfg)
 
@@ -96,7 +74,7 @@ func ParseMarkdownBlock(cfg *loader.Config) []*CodeBlock {
 				modArgs := parseMdLoopParams.handleModArgs
 				parseMdLoopParams.handleModOnce = false
 				parseMdLoopParams.handleModArgs = nil
-				handleMod(modArgs[0], modArgs[1:], codeBlock)
+				handleMod(modArgs[0], modArgs[1:], codeBlock, plugins)
 				continue
 			}
 

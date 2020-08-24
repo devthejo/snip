@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	cmap "github.com/orcaman/concurrent-map"
 	"github.com/sirupsen/logrus"
 
 	"gitlab.com/youtopia.earth/ops/snip/errors"
@@ -19,10 +20,10 @@ type CodeBlock struct {
 	Content string
 }
 
-func BuildScripts(cfg *loader.Config) error {
+func BuildScripts(cfg *loader.Config, plugins cmap.ConcurrentMap) error {
 	mdpath := cfg.Command[0]
 
-	codeBlocks := ParseMarkdownBlock(cfg)
+	codeBlocks := ParseMarkdownBlocks(cfg, plugins)
 
 	now := time.Now()
 	nowText := now.Format("2006-01-02 15:04:05")
