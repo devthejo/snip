@@ -9,7 +9,6 @@ import (
 
 	"github.com/sirupsen/logrus"
 	expect "gitlab.com/youtopia.earth/ops/snip/goexpect"
-	"gitlab.com/youtopia.earth/ops/snip/registry"
 	"gitlab.com/youtopia.earth/ops/snip/variable"
 
 	"gitlab.com/youtopia.earth/ops/snip/config"
@@ -50,8 +49,7 @@ type Chk struct {
 
 	Closer *func(interface{}, *string) bool
 
-	RegisterVars map[string]*registry.VarDef
-	Quiet        bool
+	Quiet bool
 
 	TreeKeyParts []string
 	TreeKey      string
@@ -80,11 +78,6 @@ func CreateChk(cchk *CfgChk, ctx *RunCtx, parentLoopRow *LoopRow, isPreRun bool)
 	command := make([]string, len(cchk.Command))
 	copy(command, cchk.Command)
 
-	registerVars := make(map[string]*registry.VarDef)
-	for k, v := range parentPlay.RegisterVars {
-		registerVars[k] = v
-	}
-
 	chk := &Chk{
 		App: app,
 		AppConfig: &snipplugin.AppConfig{
@@ -108,8 +101,7 @@ func CreateChk(cchk *CfgChk, ctx *RunCtx, parentLoopRow *LoopRow, isPreRun bool)
 		Thread:      thr,
 		ExecTimeout: parentPlay.ExecTimeout,
 
-		RegisterVars: registerVars,
-		Quiet:        cp.Quiet != nil && (*cp.Quiet),
+		Quiet: cp.Quiet != nil && (*cp.Quiet),
 	}
 
 	depth := cchk.Depth
@@ -383,11 +375,6 @@ func (chk *Chk) RunRunner() error {
 		vars[k] = v
 	}
 
-	registerVars := make(map[string]*registry.VarDef)
-	for k, v := range chk.RegisterVars {
-		registerVars[k] = v
-	}
-
 	if chk.ExecTimeout != nil {
 		chk.Thread.SetTimeout(chk.ExecTimeout)
 	}
@@ -404,7 +391,6 @@ func (chk *Chk) RunRunner() error {
 		VarsRegistry:  chk.App.GetVarsRegistry(),
 		Command:       chk.Command,
 		Vars:          vars,
-		RegisterVars:  registerVars,
 		Quiet:         chk.Quiet,
 		TreeKeyParts:  chk.TreeKeyParts,
 		RequiredFiles: chk.RequiredFiles,

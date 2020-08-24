@@ -9,7 +9,6 @@ import (
 	"gitlab.com/youtopia.earth/ops/snip/plugin/loader"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/middleware"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/runner"
-	"gitlab.com/youtopia.earth/ops/snip/registry"
 	"gitlab.com/youtopia.earth/ops/snip/variable"
 )
 
@@ -85,17 +84,12 @@ func (chk *CfgChk) GetLoaderConfig(lr *loader.Loader) *loader.Config {
 
 	command := make([]string, len(chk.Command))
 	copy(command, chk.Command)
-	registerVars := make(map[string]*registry.VarDef)
-	for k, v := range chk.CfgPlay.RegisterVars {
-		registerVars[k] = v
-	}
 	loaderCfg := &loader.Config{
 		AppConfig:         appConfig,
 		LoaderVars:        loaderVars,
 		DefaultsPlayProps: make(map[string]interface{}),
 		Command:           command,
 		RequiredFiles:     chk.RequiredFiles,
-		RegisterVars:      registerVars,
 	}
 
 	return loaderCfg
