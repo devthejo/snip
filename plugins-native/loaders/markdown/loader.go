@@ -12,6 +12,10 @@ var (
 			return strings.HasSuffix(cfg.Command[0], ".md")
 		},
 		Load: func(cfg *loader.Config) error {
+			cfg.DefaultsPlayProps = ParseMarkdownMetas(cfg)
+			return nil
+		},
+		PostLoad: func(cfg *loader.Config) error {
 			return BuildScripts(cfg)
 		},
 	}

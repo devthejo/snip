@@ -22,8 +22,7 @@ type CodeBlock struct {
 func BuildScripts(cfg *loader.Config) error {
 	mdpath := cfg.Command[0]
 
-	codeBlocks, defaultsPlayProps := ParseMarkdownFile(cfg)
-	cfg.DefaultsPlayProps = defaultsPlayProps
+	codeBlocks := ParseMarkdownBlock(cfg)
 
 	now := time.Now()
 	nowText := now.Format("2006-01-02 15:04:05")

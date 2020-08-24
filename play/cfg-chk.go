@@ -105,15 +105,17 @@ func (chk *CfgChk) LoadLoader() {
 	}
 
 	loaderCfg := chk.GetLoaderConfig(lr)
-
 	lr.Plugin.Load(loaderCfg)
+
+	chk.CfgPlay.ParseMapAsDefault(loaderCfg.DefaultsPlayProps)
+
+	loaderCfg = chk.GetLoaderConfig(lr)
+	lr.Plugin.PostLoad(loaderCfg)
 
 	command := make([]string, len(loaderCfg.Command))
 	copy(command, loaderCfg.Command)
 	chk.Command = command
 	chk.RequiredFiles = loaderCfg.RequiredFiles
-
-	chk.CfgPlay.ParseMapAsDefault(loaderCfg.DefaultsPlayProps)
 
 	// re-inject props from cfg-play after ParseMapAsDefault
 	chk.ParseMiddlewares()

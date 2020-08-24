@@ -176,15 +176,17 @@ func (ccmd *CfgCmd) LoadLoader() {
 	}
 
 	loaderCfg := ccmd.GetLoaderConfig(lr)
-
 	lr.Plugin.Load(loaderCfg)
+
+	ccmd.CfgPlay.ParseMapAsDefault(loaderCfg.DefaultsPlayProps)
+
+	loaderCfg = ccmd.GetLoaderConfig(lr)
+	lr.Plugin.PostLoad(loaderCfg)
 
 	command := make([]string, len(loaderCfg.Command))
 	copy(command, loaderCfg.Command)
 	ccmd.Command = command
 	ccmd.RequiredFiles = loaderCfg.RequiredFiles
-
-	ccmd.CfgPlay.ParseMapAsDefault(loaderCfg.DefaultsPlayProps)
 
 	// re-inject props from cfg-play after ParseMapAsDefault
 	ccmd.ParseMiddlewares()
