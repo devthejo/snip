@@ -3,12 +3,11 @@ package mainNative
 import (
 	"plugin"
 
-	cmap "github.com/orcaman/concurrent-map"
 	"gitlab.com/youtopia.earth/ops/snip/errors"
 )
 
-func getPlugin(plugins cmap.ConcurrentMap, k string) interface{} {
-	plugInterface, ok := plugins.Get(k)
+func getPlugin(k string) interface{} {
+	plugInterface, ok := Plugins.Get(k)
 	var plug interface{}
 	if ok {
 		plug = plugInterface
@@ -17,7 +16,7 @@ func getPlugin(plugins cmap.ConcurrentMap, k string) interface{} {
 		var err error
 		plug, err = plugin.Open(mod)
 		errors.Check(err)
-		plugins.Set(k, plug)
+		Plugins.Set(k, plug)
 	}
 	return plug
 }

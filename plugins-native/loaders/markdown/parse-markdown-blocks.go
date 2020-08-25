@@ -3,35 +3,31 @@ package mainNative
 import (
 	"strings"
 
-	cmap "github.com/orcaman/concurrent-map"
 	"gitlab.com/golang-commonmark/markdown"
 
 	"gitlab.com/youtopia.earth/ops/snip/plugin/loader"
+	"gitlab.com/youtopia.earth/ops/snip/plugins-native/loaders/markdown/blocks"
 )
 
 const annotationPrefix = "<!-- snip:"
 const annotationSuffix = "-->"
 
 type ParseMdLoopParams struct {
-	ignoreOnce bool
+	ignoreCodeOnce bool
 
 	handleModOnce bool
 	handleModArgs []string
 }
 
-func ParseMarkdownBlocks(cfg *loader.Config, plugins cmap.ConcurrentMap) []*CodeBlock {
+func ParseMarkdownBlocks(cfg *loader.Config) []*blocks.Code {
 
 	source := GetMarkdownContent(cfg)
 
 	md := markdown.New(markdown.XHTMLOutput(true), markdown.Nofollow(true))
 	tokens := md.Parse(source)
-	var codeBlocks []*CodeBlock
+	var codeBlocks []*blocks.Code
 	parseMdLoopParams := &ParseMdLoopParams{}
-	for _, t := range tokens {
-		if parseMdLoopParams.ignoreOnce {
-			parseMdLoopParams.ignoreOnce = false
-			continue
-		}
+	for blockIndex, t := range tokens {
 		switch tok := t.(type) {
 		case *markdown.Inline:
 			if strings.HasPrefix(tok.Content, annotationPrefix) &&
@@ -45,6 +41,11 @@ func ParseMarkdownBlocks(cfg *loader.Config, plugins cmap.ConcurrentMap) []*Code
 				}
 			}
 		case *markdown.Fence:
+			if parseMdLoopParams.ignoreCodeOnce {
+				parseMdLoopParams.ignoreCodeOnce = false
+				continue
+			}
+
 			if tok.Content == "" || tok.Params == "" {
 				continue
 			}
@@ -65,17 +66,20 @@ func ParseMarkdownBlocks(cfg *loader.Config, plugins cmap.ConcurrentMap) []*Code
 				}
 			}
 
-			codeBlock := &CodeBlock{
+			codeBlock := &blocks.Code{
 				Lang:    lang,
 				Content: tok.Content,
+				Index:   blockIndex,
 			}
 
 			if parseMdLoopParams.handleModOnce {
 				modArgs := parseMdLoopParams.handleModArgs
 				parseMdLoopParams.handleModOnce = false
 				parseMdLoopParams.handleModArgs = nil
-				handleMod(modArgs[0], modArgs[1:], codeBlock, plugins)
-				continue
+				loopContinue := handleMod(modArgs[0], modArgs[1:], codeBlock, cfg)
+				if loopContinue {
+					continue
+				}
 			}
 
 			codeBlocks = append(codeBlocks, codeBlock)

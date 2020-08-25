@@ -5,7 +5,7 @@ import "github.com/sirupsen/logrus"
 func handleInstruction(t string, args []string, parseMdLoopParams *ParseMdLoopParams) {
 	switch t {
 	case "ignore-next":
-		parseMdLoopParams.ignoreOnce = true
+		parseMdLoopParams.ignoreCodeOnce = true
 	case "mod":
 		if len(args) > 0 {
 			parseMdLoopParams.handleModOnce = true

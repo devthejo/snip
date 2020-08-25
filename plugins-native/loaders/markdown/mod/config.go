@@ -1,9 +1,13 @@
 package mod
 
 import (
-	snipplugin "gitlab.com/youtopia.earth/ops/snip/plugin"
+	"gitlab.com/youtopia.earth/ops/snip/plugin/loader"
+	"gitlab.com/youtopia.earth/ops/snip/plugins-native/loaders/markdown/blocks"
 )
 
 type Config struct {
-	AppConfig *snipplugin.AppConfig
+	Args         []string
+	CodeBlock    *blocks.Code
+	LoaderConfig *loader.Config
+	LoopContinue bool
 }

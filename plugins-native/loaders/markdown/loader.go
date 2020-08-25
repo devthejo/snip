@@ -21,7 +21,7 @@ var (
 			return nil
 		},
 		PostLoad: func(cfg *loader.Config) error {
-			return BuildScripts(cfg, Plugins)
+			return BuildScripts(cfg)
 		},
 	}
 )
