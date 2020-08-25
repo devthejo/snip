@@ -2,6 +2,7 @@ package play
 
 import (
 	"gitlab.com/youtopia.earth/ops/snip/plugin/runner"
+	"gitlab.com/youtopia.earth/ops/snip/variable"
 )
 
 type BuildCtx struct {
@@ -11,6 +12,7 @@ type BuildCtx struct {
 	LoadedSnippetsDownstream        map[string]bool
 	LoadedSnippetsDownstreamParents []map[string]bool
 	DefaultRunner                   *runner.Runner
+	DefaultVars                     map[string]*variable.Var
 }
 
 func CreateBuildCtx() *BuildCtx {

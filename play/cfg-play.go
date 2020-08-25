@@ -80,6 +80,12 @@ func CreateCfgPlay(app App, m map[string]interface{}, parentCfgPlay *CfgPlay, bu
 		cp.Runner = buildCtx.DefaultRunner
 	}
 
+	if buildCtx.DefaultVars != nil {
+		for k, v := range buildCtx.DefaultVars {
+			cp.Vars[k] = v
+		}
+	}
+
 	cp.SetParentCfgPlay(parentCfgPlay)
 
 	cp.ParseMap(m)

@@ -80,6 +80,7 @@ func (ccmd *CfgCmd) RequireDependencies() {
 
 		// default runner from dependency caller
 		buildCtx.DefaultRunner = ccmd.Runner
+		buildCtx.DefaultVars = cp.Vars
 		depPlay := CreateCfgPlay(cp.App, m, parent, buildCtx)
 
 		playSlice = append(playSlice, depPlay)
