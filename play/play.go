@@ -276,12 +276,9 @@ func (p *Play) Run() error {
 			case *Cmd:
 				pl.RegisterVarsLoad()
 
-				// if err := pl.Run(); err != nil {
-				err := pl.Run()
-				if err != nil {
+				if err := pl.Run(); err != nil {
 					localErrSlice = append(localErrSlice, err)
 				}
-				logrus.Error(err)
 			}
 
 			if len(localErrSlice) == 0 && loop.HasChk {
