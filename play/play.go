@@ -167,6 +167,7 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 		}
 
 		if cp.CfgChk != nil {
+			loop.HasChk = true
 			loop.PreChk = CreateChk(cp.CfgChk, runCtx, loop, true)
 			loop.PostChk = CreateChk(cp.CfgChk, runCtx, loop, false)
 		}
@@ -255,7 +256,7 @@ func (p *Play) Run() error {
 			logger.Info(strings.Repeat("  ", 2) + "⦿ " + loop.Name)
 		}
 
-		if loop.PreChk != nil {
+		if loop.HasChk {
 			if ok, _ := loop.PreChk.Run(); ok {
 				return nil
 			}
@@ -275,12 +276,15 @@ func (p *Play) Run() error {
 			case *Cmd:
 				pl.RegisterVarsLoad()
 
-				if err := pl.Run(); err != nil {
+				// if err := pl.Run(); err != nil {
+				err := pl.Run()
+				if err != nil {
 					localErrSlice = append(localErrSlice, err)
 				}
+				logrus.Error(err)
 			}
 
-			if len(localErrSlice) == 0 && loop.PostChk != nil {
+			if len(localErrSlice) == 0 && loop.HasChk {
 				if ok, err := loop.PostChk.Run(); !ok {
 					localErrSlice = append(localErrSlice, err)
 				} else {
