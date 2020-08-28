@@ -110,7 +110,9 @@ func (chk *CfgChk) LoadLoader() {
 	chk.CfgPlay.ParseMapAsDefault(loaderCfg.DefaultsPlayProps)
 
 	loaderCfg = chk.GetLoaderConfig(lr)
-	lr.Plugin.PostLoad(loaderCfg)
+	if lr.Plugin.PostLoad != nil {
+		lr.Plugin.PostLoad(loaderCfg)
+	}
 
 	command := make([]string, len(loaderCfg.Command))
 	copy(command, loaderCfg.Command)

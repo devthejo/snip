@@ -15,4 +15,7 @@ type Config struct {
 	RequiredFiles     map[string]string
 
 	RegisterVars map[string]*registry.VarDef
+
+	AddPlays   []map[string]interface{}
+	SkipItself bool
 }

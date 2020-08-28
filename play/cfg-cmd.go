@@ -28,6 +28,9 @@ type CfgCmd struct {
 	RequiredFiles map[string]string
 
 	Depth int
+
+	AddPlays   []map[string]interface{}
+	SkipItself bool
 }
 
 func CreateCfgCmd(cp *CfgPlay, c []string) *CfgCmd {
@@ -108,7 +111,7 @@ func (ccmd *CfgCmd) RequirePostInstall() {
 		parent := cp.ParentCfgPlay
 
 		playSlice := parent.CfgPlay.([]*CfgPlay)
-		playSlice = append(playSlice, CreateCfgPlay(cp.App, m, parent, cp.BuildCtx))
+		playSlice = append(playSlice, CreateCfgPlay(cp.App, m, parent, buildCtx))
 		parent.CfgPlay = playSlice
 
 	}
@@ -119,6 +122,24 @@ func (ccmd *CfgCmd) RegisterInDependencies() {
 	buildCtx := cp.BuildCtx
 	k := ccmd.OriginalCommand[0]
 	buildCtx.RegisterLoadedSnippet(k)
+}
+
+func (ccmd *CfgCmd) AddPlaysFromLoader() {
+	if len(ccmd.AddPlays) == 0 {
+		return
+	}
+
+	cp := ccmd.CfgPlay
+	buildCtx := cp.BuildCtx
+
+	parent := cp.ParentCfgPlay
+	playSlice := parent.CfgPlay.([]*CfgPlay)
+
+	for _, m := range ccmd.AddPlays {
+		playSlice = append(playSlice, CreateCfgPlay(cp.App, m, parent, buildCtx))
+	}
+
+	parent.CfgPlay = playSlice
 }
 
 func (ccmd *CfgCmd) GetLoaderVarsMap(useVars []string, mVar map[string]*variable.Var) map[string]string {
@@ -138,14 +159,9 @@ func (ccmd *CfgCmd) GetLoaderVarsMap(useVars []string, mVar map[string]*variable
 	return pVars
 }
 
-func (ccmd *CfgCmd) GetLoaderConfig(lr *loader.Loader) *loader.Config {
+func (ccmd *CfgCmd) GetLoaderConfig(lr *loader.Loader, defaultCfg *loader.Config) *loader.Config {
 	app := ccmd.CfgPlay.App
 	cfg := app.GetConfig()
-
-	appConfig := &snipplugin.AppConfig{
-		DeploymentName: cfg.DeploymentName,
-		SnippetsDir:    cfg.SnippetsDir,
-	}
 
 	loaderVars := ccmd.GetLoaderVarsMap(lr.Plugin.UseVars, lr.Vars)
 
@@ -155,14 +171,26 @@ func (ccmd *CfgCmd) GetLoaderConfig(lr *loader.Loader) *loader.Config {
 	for k, v := range ccmd.CfgPlay.RegisterVars {
 		registerVars[k] = v
 	}
-	loaderCfg := &loader.Config{
-		AppConfig:         appConfig,
-		LoaderVars:        loaderVars,
-		DefaultsPlayProps: make(map[string]interface{}),
-		Command:           command,
-		RequiredFiles:     ccmd.RequiredFiles,
-		RegisterVars:      registerVars,
+
+	var loaderCfg *loader.Config
+	if defaultCfg == nil {
+
+		loaderCfg = &loader.Config{}
+		loaderCfg.DefaultsPlayProps = make(map[string]interface{})
+		loaderCfg.AppConfig = &snipplugin.AppConfig{
+			DeploymentName: cfg.DeploymentName,
+			SnippetsDir:    cfg.SnippetsDir,
+		}
+
+	} else {
+		loaderCfgCopy := *defaultCfg
+		loaderCfg = &loaderCfgCopy
 	}
+
+	loaderCfg.LoaderVars = loaderVars
+	loaderCfg.Command = command
+	loaderCfg.RequiredFiles = ccmd.RequiredFiles
+	loaderCfg.RegisterVars = registerVars
 
 	return loaderCfg
 
@@ -176,18 +204,22 @@ func (ccmd *CfgCmd) LoadLoader() {
 		return
 	}
 
-	loaderCfg := ccmd.GetLoaderConfig(lr)
+	loaderCfg := ccmd.GetLoaderConfig(lr, nil)
 	lr.Plugin.Load(loaderCfg)
 
 	ccmd.CfgPlay.ParseMapAsDefault(loaderCfg.DefaultsPlayProps)
 
-	loaderCfg = ccmd.GetLoaderConfig(lr)
-	lr.Plugin.PostLoad(loaderCfg)
+	loaderCfg = ccmd.GetLoaderConfig(lr, loaderCfg)
+	if lr.Plugin.PostLoad != nil {
+		lr.Plugin.PostLoad(loaderCfg)
+	}
 
 	command := make([]string, len(loaderCfg.Command))
 	copy(command, loaderCfg.Command)
 	ccmd.Command = command
 	ccmd.RequiredFiles = loaderCfg.RequiredFiles
+	ccmd.AddPlays = loaderCfg.AddPlays
+	ccmd.SkipItself = loaderCfg.SkipItself
 
 	// re-inject props from cfg-play after ParseMapAsDefault
 	ccmd.ParseMiddlewares()
@@ -211,7 +243,7 @@ func (ccmd *CfgCmd) ParseLoader() {
 				Name:   v,
 				Plugin: loaderPlugin,
 			}
-			loaderCfg := ccmd.GetLoaderConfig(lr)
+			loaderCfg := ccmd.GetLoaderConfig(lr, nil)
 			if loaderPlugin.Check(loaderCfg) {
 				ccmd.Loader = lr
 				break
@@ -224,7 +256,7 @@ func (ccmd *CfgCmd) ParseLoader() {
 	}
 
 	for _, v := range *cp.Loaders {
-		loaderCfg := ccmd.GetLoaderConfig(v)
+		loaderCfg := ccmd.GetLoaderConfig(v, nil)
 		if v.Plugin.Check(loaderCfg) {
 			ccmd.Loader = v
 			break

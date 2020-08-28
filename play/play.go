@@ -180,6 +180,9 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 			}
 			loop.Play = sp
 		case *CfgCmd:
+			if pl.SkipItself {
+				continue
+			}
 			loop.Play = CreateCmd(pl, runCtx, loop)
 		}
 	}
