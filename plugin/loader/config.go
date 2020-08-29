@@ -17,4 +17,7 @@ type Config struct {
 	RegisterVars map[string]*registry.VarDef
 
 	CfgPlaySubstitutionMap map[string]interface{}
+
+	ParentBuildFile string
+	BuildFile string
 }

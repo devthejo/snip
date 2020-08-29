@@ -90,6 +90,7 @@ func (chk *CfgChk) GetLoaderConfig(lr *loader.Loader) *loader.Config {
 		DefaultsPlayProps: make(map[string]interface{}),
 		Command:           command,
 		RequiredFiles:     chk.RequiredFiles,
+		ParentBuildFile:     chk.CfgPlay.ParentBuildFile,
 	}
 
 	return loaderCfg

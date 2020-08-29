@@ -60,6 +60,9 @@ type CfgPlay struct {
 
 	ForceLoader bool
 
+	ParentBuildFile string
+	BuildFile       string
+
 	Loaders     *[]*loader.Loader
 	Middlewares *[]*middleware.Middleware
 	Runner      *runner.Runner
@@ -83,6 +86,14 @@ func CreateCfgPlay(app App, m map[string]interface{}, parentCfgPlay *CfgPlay, bu
 	if buildCtx.DefaultVars != nil {
 		for k, v := range buildCtx.DefaultVars {
 			cp.Vars[k] = v
+		}
+	}
+
+	if parentCfgPlay != nil {
+		if parentCfgPlay.BuildFile != "" {
+			cp.ParentBuildFile = parentCfgPlay.BuildFile
+		} else {
+			cp.ParentBuildFile = parentCfgPlay.ParentBuildFile
 		}
 	}
 

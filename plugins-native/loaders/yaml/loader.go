@@ -25,18 +25,21 @@ var (
 			err := yaml.Unmarshal(s, &m)
 			errors.Check(err)
 
+			file := cfg.Command[0]
 			if m["key"] == nil {
-				m["key"] = cfg.Command[0]
+				m["key"] = file
 			}
 			if m["title"] == nil {
-				title := cfg.Command[0]
+				title := file
 				title = strings.TrimSuffix(title, filepath.Ext(title))
 				title = strings.ReplaceAll(title, "-", " ")
 				title = strings.ReplaceAll(title, "/", " ")
 				title = "snippet: " + title
 				m["title"] = title
-
 			}
+
+			cfg.BuildFile = file
+
 			cfg.CfgPlaySubstitutionMap = m
 
 			return nil

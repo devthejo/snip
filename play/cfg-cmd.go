@@ -132,10 +132,9 @@ func (ccmd *CfgCmd) LoadCfgPlaySubstitution() {
 	cp := ccmd.CfgPlay
 	buildCtx := cp.BuildCtx
 
-	parent := cp.ParentCfgPlay
 	m := ccmd.CfgPlaySubstitutionMap
 
-	ccmd.CfgPlaySubstitution = CreateCfgPlay(cp.App, m, parent, buildCtx)
+	ccmd.CfgPlaySubstitution = CreateCfgPlay(cp.App, m, cp, buildCtx)
 }
 
 func (ccmd *CfgCmd) GetLoaderVarsMap(useVars []string, mVar map[string]*variable.Var) map[string]string {
@@ -177,6 +176,7 @@ func (ccmd *CfgCmd) GetLoaderConfig(lr *loader.Loader, defaultCfg *loader.Config
 			DeploymentName: cfg.DeploymentName,
 			SnippetsDir:    cfg.SnippetsDir,
 		}
+		loaderCfg.ParentBuildFile = ccmd.CfgPlay.ParentBuildFile
 
 	} else {
 		loaderCfgCopy := *defaultCfg
@@ -215,6 +215,7 @@ func (ccmd *CfgCmd) LoadLoader() {
 	ccmd.Command = command
 	ccmd.RequiredFiles = loaderCfg.RequiredFiles
 	ccmd.CfgPlaySubstitutionMap = loaderCfg.CfgPlaySubstitutionMap
+	ccmd.CfgPlay.BuildFile = loaderCfg.BuildFile
 
 	// re-inject props from cfg-play after ParseMapAsDefault
 	ccmd.ParseMiddlewares()
