@@ -1,17 +1,15 @@
-package mainNative
+package loader
 
 import (
 	"io/ioutil"
+	"path/filepath"
 
 	"github.com/sirupsen/logrus"
 	"gitlab.com/youtopia.earth/ops/snip/errors"
-	"gitlab.com/youtopia.earth/ops/snip/plugin/loader"
 	"gitlab.com/youtopia.earth/ops/snip/tools"
 )
 
-func GetFileContent(cfg *loader.Config) []byte {
-
-	filePath := cfg.Command[0]
+func GetFileContent(cfg *Config, filePath string) []byte {
 	appCfg := cfg.AppConfig
 
 	var file string
@@ -23,8 +21,17 @@ func GetFileContent(cfg *loader.Config) []byte {
 
 	exists, err := tools.FileExists(file)
 	errors.Check(err)
+
 	if !exists {
-		logrus.Fatalf("file not found %v", file)
+		extension := filepath.Ext(file)
+		name := file[0 : len(file)-len(extension)]
+		file = name + "/index" + extension
+		exists, err = tools.FileExists(file)
+		errors.Check(err)
+	}
+
+	if !exists {
+		logrus.Fatalf("snippet not found %v", filePath)
 	}
 
 	logrus.Debugf("loading file %v", file)

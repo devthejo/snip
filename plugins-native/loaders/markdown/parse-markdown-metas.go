@@ -19,7 +19,7 @@ func ParseMarkdownMetas(cfg *loader.Config) map[string]interface{} {
 
 	mdPath := cfg.Command[0]
 
-	source := GetMarkdownContent(cfg)
+	source := loader.GetFileContent(cfg, cfg.Command[0])
 
 	// markdownString := string(source)
 	// if markdownString[0:4] == "---\n" {

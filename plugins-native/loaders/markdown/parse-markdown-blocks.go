@@ -21,7 +21,7 @@ type ParseMdLoopParams struct {
 
 func ParseMarkdownBlocks(cfg *loader.Config) []*blocks.Code {
 
-	source := GetMarkdownContent(cfg)
+	source := loader.GetFileContent(cfg, cfg.Command[0])
 
 	md := markdown.New(markdown.XHTMLOutput(true), markdown.Nofollow(true))
 	tokens := md.Parse(source)

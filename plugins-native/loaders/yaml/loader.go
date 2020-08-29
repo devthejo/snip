@@ -20,7 +20,7 @@ var (
 				strings.HasSuffix(file, ".json")
 		},
 		Load: func(cfg *loader.Config) error {
-			s := GetFileContent(cfg)
+			s := loader.GetFileContent(cfg, cfg.Command[0])
 			m := make(map[string]interface{}, 0)
 			err := yaml.Unmarshal(s, &m)
 			errors.Check(err)
