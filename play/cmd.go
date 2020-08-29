@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"time"
 
@@ -138,8 +137,6 @@ func CreateCmd(ccmd *CfgCmd, ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 
 	return cmd
 }
-
-var regNormalizeTreeKeyParts = regexp.MustCompile("[^a-zA-Z0-9-_.]+")
 
 func (cmd *Cmd) Run() error {
 	if cmd.Thread.ExecExited {

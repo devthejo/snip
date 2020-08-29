@@ -1,5 +1,12 @@
 package play
 
+import (
+	"regexp"
+	"strings"
+)
+
+var regNormalizeTreeKeyParts = regexp.MustCompile("[^a-zA-Z0-9-_.]+")
+
 func GetTreeKeyParts(parent interface{}) []string {
 	var parts []string
 	for {
@@ -10,14 +17,16 @@ func GetTreeKeyParts(parent interface{}) []string {
 				parent = nil
 				break
 			}
-			part = "row." + p.GetKey()
+			// part = "row." + p.GetKey()
+			part = p.GetKey()
 			parent = p.ParentPlay
 		case *Play:
 			if p == nil {
 				parent = nil
 				break
 			}
-			part = "play." + p.GetKey()
+			// part = "play." + p.GetKey()
+			part = p.GetKey()
 			parent = p.ParentLoopRow
 		case nil:
 			parent = nil
@@ -26,6 +35,7 @@ func GetTreeKeyParts(parent interface{}) []string {
 			break
 		}
 
+		part = strings.ReplaceAll(part, "./", "-")
 		part = regNormalizeTreeKeyParts.ReplaceAllString(part, "_")
 		parts = append([]string{part}, parts...)
 	}
