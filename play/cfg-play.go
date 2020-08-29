@@ -172,7 +172,7 @@ func (cp *CfgPlay) ParsePlay(m map[string]interface{}, override bool) {
 		for _, child := range cp.CfgPlay.([]*CfgPlay) {
 			switch c := child.CfgPlay.(type) {
 			case *CfgCmd:
-				c.AddPlaysFromLoader()
+				c.LoadCfgPlaySubstitution()
 				c.RequirePostInstall()
 			}
 		}

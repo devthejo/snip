@@ -180,10 +180,13 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 			}
 			loop.Play = sp
 		case *CfgCmd:
-			if pl.SkipItself {
-				continue
+			if pl.CfgPlaySubstitution != nil {
+				sp := make([]*Play, 1)
+				sp[0] = CreatePlay(pl.CfgPlaySubstitution, runCtx, loop)
+				loop.Play = sp
+			} else {
+				loop.Play = CreateCmd(pl, runCtx, loop)
 			}
-			loop.Play = CreateCmd(pl, runCtx, loop)
 		}
 	}
 

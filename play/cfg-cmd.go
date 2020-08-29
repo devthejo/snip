@@ -29,8 +29,8 @@ type CfgCmd struct {
 
 	Depth int
 
-	AddPlays   []map[string]interface{}
-	SkipItself bool
+	CfgPlaySubstitutionMap map[string]interface{}
+	CfgPlaySubstitution    *CfgPlay
 }
 
 func CreateCfgCmd(cp *CfgPlay, c []string) *CfgCmd {
@@ -124,8 +124,8 @@ func (ccmd *CfgCmd) RegisterInDependencies() {
 	buildCtx.RegisterLoadedSnippet(k)
 }
 
-func (ccmd *CfgCmd) AddPlaysFromLoader() {
-	if len(ccmd.AddPlays) == 0 {
+func (ccmd *CfgCmd) LoadCfgPlaySubstitution() {
+	if ccmd.CfgPlaySubstitutionMap == nil {
 		return
 	}
 
@@ -133,13 +133,9 @@ func (ccmd *CfgCmd) AddPlaysFromLoader() {
 	buildCtx := cp.BuildCtx
 
 	parent := cp.ParentCfgPlay
-	playSlice := parent.CfgPlay.([]*CfgPlay)
+	m := ccmd.CfgPlaySubstitutionMap
 
-	for _, m := range ccmd.AddPlays {
-		playSlice = append(playSlice, CreateCfgPlay(cp.App, m, parent, buildCtx))
-	}
-
-	parent.CfgPlay = playSlice
+	ccmd.CfgPlaySubstitution = CreateCfgPlay(cp.App, m, parent, buildCtx)
 }
 
 func (ccmd *CfgCmd) GetLoaderVarsMap(useVars []string, mVar map[string]*variable.Var) map[string]string {
@@ -218,8 +214,7 @@ func (ccmd *CfgCmd) LoadLoader() {
 	copy(command, loaderCfg.Command)
 	ccmd.Command = command
 	ccmd.RequiredFiles = loaderCfg.RequiredFiles
-	ccmd.AddPlays = loaderCfg.AddPlays
-	ccmd.SkipItself = loaderCfg.SkipItself
+	ccmd.CfgPlaySubstitutionMap = loaderCfg.CfgPlaySubstitutionMap
 
 	// re-inject props from cfg-play after ParseMapAsDefault
 	ccmd.ParseMiddlewares()

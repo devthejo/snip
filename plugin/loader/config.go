@@ -16,6 +16,5 @@ type Config struct {
 
 	RegisterVars map[string]*registry.VarDef
 
-	AddPlays   []map[string]interface{}
-	SkipItself bool
+	CfgPlaySubstitutionMap map[string]interface{}
 }

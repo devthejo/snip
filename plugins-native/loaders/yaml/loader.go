@@ -37,8 +37,7 @@ var (
 				m["title"] = title
 
 			}
-			cfg.AddPlays = append(cfg.AddPlays, m)
-			cfg.SkipItself = true
+			cfg.CfgPlaySubstitutionMap = m
 
 			return nil
 		},
