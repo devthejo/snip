@@ -1,7 +1,6 @@
 package mainNative
 
 import (
-	"path/filepath"
 	"strings"
 	// "path/filepath"
 
@@ -30,12 +29,7 @@ var (
 				m["key"] = file
 			}
 			if m["title"] == nil {
-				title := file
-				title = strings.TrimSuffix(title, filepath.Ext(title))
-				title = strings.ReplaceAll(title, "-", " ")
-				title = strings.ReplaceAll(title, "/", " ")
-				title = "snippet: " + title
-				m["title"] = title
+				m["title"] = loader.SnippetDefaultTitle(file, cfg)
 			}
 
 			cfg.BuildFile = file
