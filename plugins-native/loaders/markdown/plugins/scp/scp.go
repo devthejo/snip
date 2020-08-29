@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/user"
+	"path"
 	"path/filepath"
 	"strconv"
 
@@ -39,7 +40,8 @@ var (
 
 			targetFile := args[0]
 			codeBlock.Lang = "sh"
-			codeBlock.Content = "mv " + fileAbsRemote + " " + targetFile
+			codeBlock.Content = "mkdir -p " + path.Dir(targetFile) + "\n"
+			codeBlock.Content += "mv " + fileAbsRemote + " " + targetFile
 
 			return nil
 		},
