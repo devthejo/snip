@@ -23,6 +23,7 @@ type Config struct {
 	Pass string
 
 	MaxRetry int
+	CacheKey string
 }
 
 func CreateConfig(vars map[string]string) *Config {
@@ -75,6 +76,8 @@ func CreateConfig(vars map[string]string) *Config {
 		errors.Check(err)
 	}
 
+	CacheKey := "host:client:" + SSHHost + ":" + SSHUser
+
 	cfg := &Config{
 		Host:     SSHHost,
 		Port:     SSHPort,
@@ -83,6 +86,7 @@ func CreateConfig(vars map[string]string) *Config {
 		Pass:     SSHPass,
 		Sock:     SSHSock,
 		MaxRetry: SSHMaxRetry,
+		CacheKey: CacheKey,
 	}
 
 	return cfg

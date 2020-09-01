@@ -36,16 +36,37 @@ var (
 
 			vars := cfg.RunnerVars
 
-			connect := func(vars map[string]string) (*sshclient.Client, *sshclient.Config, error) {
-				sshCfg := sshclient.CreateConfig(vars)
+			r := cfg.Cache
+
+			newConnection := func(sshCfg *sshclient.Config) (*sshclient.Client, error) {
 				client, err := sshclient.CreateClient(sshCfg)
 				if err == nil {
 					err = client.Connect()
 				}
-				return client, sshCfg, err
+				if err == nil {
+					r.Set(sshCfg.CacheKey, client, cache.DefaultExpiration)
+					go func() {
+						err := client.Conn.Wait()
+						logrus.Errorf("conn.Wait() err: %v", err)
+						if err != nil {
+							r.Delete(sshCfg.CacheKey)
+						}
+					}()
+				}
+				return client, err
 			}
 
-			r := cfg.Cache
+			connect := func(vars map[string]string) (*sshclient.Client, *sshclient.Config, error) {
+				sshCfg := sshclient.CreateConfig(vars)
+				var client *sshclient.Client
+				var err error
+				if clientI, found := r.Get(sshCfg.CacheKey); found {
+					client = clientI.(*sshclient.Client)
+				} else {
+					client, err = newConnection(sshCfg)
+				}
+				return client, sshCfg, err
+			}
 
 			var client *sshclient.Client
 			var sshCfg *sshclient.Config
@@ -91,8 +112,6 @@ var (
 				}
 			}
 
-			defer client.Close()
-
 			if err := installRequiredFiles(cfg, sshCfg); err != nil {
 				return err
 			}
@@ -120,7 +139,14 @@ var (
 
 			session, err := client.NewSession()
 			if err != nil {
-				return err
+				client, err = newConnection(sshCfg)
+				if err != nil {
+					return err
+				}
+				session, err = client.NewSession()
+				if err != nil {
+					return err
+				}
 			}
 
 			if enablePTY {
