@@ -39,13 +39,25 @@ func NewConfigLoader() *ConfigLoader {
 	return cl
 }
 
+func (cl *ConfigLoader) ConfigShouldLoad() bool {
+	if len(os.Args) < 1 {
+		return false
+	}
+	switch os.Args[1] {
+	case "completion":
+		return false
+	default:
+		return true
+	}
+}
+
 func (cl *ConfigLoader) OnInitialize() {
 	if cl.initialized {
 		return
 	}
 	cl.initialized = true
 
-	if len(os.Args) > 1 && os.Args[1] == "completion" {
+	if !cl.ConfigShouldLoad() {
 		return
 	}
 
@@ -55,6 +67,10 @@ func (cl *ConfigLoader) OnInitialize() {
 }
 
 func (cl *ConfigLoader) OnPreRun(cmd *cobra.Command) {
+	if !cl.ConfigShouldLoad() {
+		return
+	}
+
 	v := cl.Viper
 
 	flags := cmd.Flags()
