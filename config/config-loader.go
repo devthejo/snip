@@ -44,6 +44,11 @@ func (cl *ConfigLoader) OnInitialize() {
 		return
 	}
 	cl.initialized = true
+
+	if len(os.Args) > 1 && os.Args[1] == "completion" {
+		return
+	}
+
 	cl.InitConfig()
 
 	cl.Load()
