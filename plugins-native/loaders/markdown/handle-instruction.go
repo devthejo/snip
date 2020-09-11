@@ -8,8 +8,8 @@ func handleInstruction(t string, args []string, parseMdLoopParams *ParseMdLoopPa
 		parseMdLoopParams.ignoreCodeOnce = true
 	case "mod":
 		if len(args) > 0 {
-			parseMdLoopParams.handleModOnce = true
-			parseMdLoopParams.handleModArgs = args
+			parseMdLoopParams.handleModsOnce = true
+			parseMdLoopParams.handleModsArgs = append(parseMdLoopParams.handleModsArgs, args)
 		}
 	default:
 		logrus.Fatalf("unkown snip instruction %v", t)

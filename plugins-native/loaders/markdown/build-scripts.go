@@ -73,6 +73,9 @@ func BuildScripts(cfg *loader.Config) error {
 		file := filepath.Join(buildDir, snippetPath)
 		buildFile(file, content)
 		mainScriptContent += filepath.Join("${SNIP_SNIPPETS_PATH}", snippetPath) + "\n"
+
+		fileAbs := filepath.Join(rootPath, file)
+		cfg.RequiredFilesProcessors[fileAbs] = append(cfg.RequiredFilesProcessors[fileAbs], codeBlock.Processors...)
 	}
 
 	launcher := mdpath + ".sh"

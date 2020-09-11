@@ -40,7 +40,8 @@ type Cmd struct {
 	Middlewares []*middleware.Middleware
 	Runner      *runner.Runner
 
-	RequiredFiles map[string]string
+	RequiredFiles           map[string]string
+	RequiredFilesProcessors map[string][]func(*runner.Config, *string) (func(), error)
 
 	Expect []expect.Batcher
 
@@ -99,7 +100,8 @@ func CreateCmd(ccmd *CfgCmd, ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 
 		Dir: ccmd.Dir,
 
-		RequiredFiles: ccmd.RequiredFiles,
+		RequiredFiles:           ccmd.RequiredFiles,
+		RequiredFilesProcessors: ccmd.RequiredFilesProcessors,
 
 		Thread:      thr,
 		ExecTimeout: parentPlay.ExecTimeout,
@@ -161,22 +163,28 @@ func (cmd *Cmd) CreateMutableCmd() *middleware.MutableCmd {
 		requiredFiles[k] = v
 	}
 
+	requiredFilesProcessors := make(map[string][]func(*runner.Config, *string) (func(), error))
+	for k, v := range cmd.RequiredFilesProcessors {
+		requiredFilesProcessors[k] = v
+	}
+
 	vars := make(map[string]string)
 	for k, v := range cmd.Vars {
 		vars[k] = v
 	}
 
 	mutableCmd := &middleware.MutableCmd{
-		AppConfig:       cmd.AppConfig,
-		Command:         cmd.Command,
-		Vars:            vars,
-		OriginalCommand: originalCommand,
-		OriginalVars:    originalVars,
-		RequiredFiles:   requiredFiles,
-		Expect:          cmd.Expect,
-		Runner:          cmd.Runner,
-		Dir:             cmd.Dir,
-		Closer:          cmd.Closer,
+		AppConfig:               cmd.AppConfig,
+		Command:                 cmd.Command,
+		Vars:                    vars,
+		OriginalCommand:         originalCommand,
+		OriginalVars:            originalVars,
+		RequiredFiles:           requiredFiles,
+		RequiredFilesProcessors: requiredFilesProcessors,
+		Expect:                  cmd.Expect,
+		Runner:                  cmd.Runner,
+		Dir:                     cmd.Dir,
+		Closer:                  cmd.Closer,
 	}
 	return mutableCmd
 }
@@ -249,6 +257,7 @@ func (cmd *Cmd) ApplyMiddlewares() error {
 	cmd.Command = mutableCmd.Command
 	cmd.Vars = mutableCmd.Vars
 	cmd.RequiredFiles = mutableCmd.RequiredFiles
+	cmd.RequiredFilesProcessors = mutableCmd.RequiredFilesProcessors
 	cmd.Expect = mutableCmd.Expect
 	cmd.Closer = mutableCmd.Closer
 	cmd.Dir = mutableCmd.Dir
@@ -341,6 +350,7 @@ func (cmd *Cmd) RunRunner() error {
 		Quiet:         cmd.Quiet,
 		TreeKeyParts:  cmd.TreeKeyParts,
 		RequiredFiles: cmd.RequiredFiles,
+		RequiredFilesProcessors: cmd.RequiredFilesProcessors,
 		Expect:        cmd.Expect,
 		Closer:        cmd.Closer,
 		Dir:           cmd.Dir,

@@ -36,6 +36,9 @@ var (
 
 			cfg.RequiredFiles[fileAbs] = file
 
+			cfg.RequiredFilesProcessors[fileAbs] = append(cfg.RequiredFilesProcessors[fileAbs], codeBlock.Processors...)
+			codeBlock.Processors = nil
+
 			fileAbsRemote := filepath.Join("${SNIP_SNIPPETS_PATH}", snippetPath)
 
 			targetFile := args[0]

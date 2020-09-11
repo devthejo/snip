@@ -245,6 +245,17 @@ func installRequiredFiles(cfg *runner.Config) error {
 			if src == destAbs {
 				return nil, nil
 			}
+			if processors, ok := cfg.RequiredFilesProcessors[src]; ok {
+				for _, processor := range processors {
+					clean, err := processor(cfg, &src)
+					if clean != nil {
+						defer clean()
+					}
+					if err != nil {
+						return nil, err
+					}
+				}
+			}
 			return tools.Copy(src, destAbs)
 		})
 		if err != nil {

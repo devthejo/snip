@@ -25,7 +25,8 @@ type CfgCmd struct {
 
 	Dir string
 
-	RequiredFiles map[string]string
+	RequiredFiles           map[string]string
+	RequiredFilesProcessors map[string][]func(*runner.Config, *string) (func(), error)
 
 	Depth int
 
@@ -37,12 +38,13 @@ func CreateCfgCmd(cp *CfgPlay, c []string) *CfgCmd {
 	originalCommand := make([]string, len(c))
 	copy(originalCommand, c)
 	ccmd := &CfgCmd{
-		CfgPlay:         cp,
-		OriginalCommand: c,
-		Command:         c,
-		Depth:           cp.Depth + 1,
-		Dir:             cp.Dir,
-		RequiredFiles:   make(map[string]string),
+		CfgPlay:                 cp,
+		OriginalCommand:         c,
+		Command:                 c,
+		Depth:                   cp.Depth + 1,
+		Dir:                     cp.Dir,
+		RequiredFiles:           make(map[string]string),
+		RequiredFilesProcessors: make(map[string][]func(*runner.Config, *string) (func(), error)),
 	}
 	ccmd.Parse()
 	return ccmd
@@ -186,6 +188,7 @@ func (ccmd *CfgCmd) GetLoaderConfig(lr *loader.Loader, defaultCfg *loader.Config
 	loaderCfg.LoaderVars = loaderVars
 	loaderCfg.Command = command
 	loaderCfg.RequiredFiles = ccmd.RequiredFiles
+	loaderCfg.RequiredFilesProcessors = ccmd.RequiredFilesProcessors
 	loaderCfg.RegisterVars = registerVars
 
 	return loaderCfg
@@ -214,6 +217,7 @@ func (ccmd *CfgCmd) LoadLoader() {
 	copy(command, loaderCfg.Command)
 	ccmd.Command = command
 	ccmd.RequiredFiles = loaderCfg.RequiredFiles
+	ccmd.RequiredFilesProcessors = loaderCfg.RequiredFilesProcessors
 	ccmd.CfgPlaySubstitutionMap = loaderCfg.CfgPlaySubstitutionMap
 	ccmd.CfgPlay.BuildFile = loaderCfg.BuildFile
 

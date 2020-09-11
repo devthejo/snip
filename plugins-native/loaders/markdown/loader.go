@@ -9,6 +9,7 @@ import (
 	"gitlab.com/youtopia.earth/ops/snip/plugin/loader"
 
 	pluginSCP "gitlab.com/youtopia.earth/ops/snip/plugins-native/loaders/markdown/plugins/scp"
+	pluginTMPL "gitlab.com/youtopia.earth/ops/snip/plugins-native/loaders/markdown/plugins/tmpl"
 )
 
 var (
@@ -47,4 +48,5 @@ func init() {
 
 func loadNativePlugins() {
 	Plugins.Set("scp", &pluginSCP.Mod)
+	Plugins.Set("tmpl", &pluginTMPL.Mod)
 }

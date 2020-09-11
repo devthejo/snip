@@ -13,8 +13,9 @@ require (
 	github.com/google/go-jsonnet v0.15.0
 	github.com/google/goexpect v0.0.0-20191001010744-5b6988669ffa // indirect
 	github.com/google/goterm v0.0.0-20190703233501-fc88cf888a3f
+	github.com/hairyhenderson/gomplate/v3 v3.8.0
 	github.com/imdario/mergo v0.3.9
-	github.com/joho/godotenv v1.3.0 // indirect
+	github.com/joho/godotenv v1.3.0
 	github.com/json-iterator/go v1.1.9
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
 	github.com/kvz/logstreamer v0.0.0-20150507115422-a635b98146f0
@@ -34,8 +35,7 @@ require (
 	github.com/yuin/goldmark-meta v0.0.0-20191126180153-f0638e958b60
 	gitlab.com/golang-commonmark/markdown v0.0.0-20191127184510-91b5b3c99c19
 	go.uber.org/multierr v1.1.0
-	golang.org/x/crypto v0.0.0-20190530122614-20be4c3c3ed5
-	golang.org/x/sys v0.0.0-20190531175056-4c3a928424d2 // indirect
-	google.golang.org/grpc v1.21.0
-	gopkg.in/yaml.v2 v2.2.4
+	golang.org/x/crypto v0.0.0-20200728195943-123391ffb6de
+	google.golang.org/grpc v1.29.1
+	gopkg.in/yaml.v2 v2.2.8
 )

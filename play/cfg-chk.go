@@ -24,7 +24,8 @@ type CfgChk struct {
 
 	Dir string
 
-	RequiredFiles map[string]string
+	RequiredFiles           map[string]string
+	RequiredFilesProcessors map[string][]func(*runner.Config, *string) (func(), error)
 
 	Depth int
 }
@@ -34,12 +35,13 @@ func CreateCfgChk(cp *CfgPlay, c []string) *CfgChk {
 	copy(originalCommand, c)
 
 	chk := &CfgChk{
-		CfgPlay:         cp,
-		OriginalCommand: c,
-		Command:         c,
-		Depth:           cp.Depth + 1,
-		Dir:             cp.Dir,
-		RequiredFiles:   make(map[string]string),
+		CfgPlay:                 cp,
+		OriginalCommand:         c,
+		Command:                 c,
+		Depth:                   cp.Depth + 1,
+		Dir:                     cp.Dir,
+		RequiredFiles:           make(map[string]string),
+		RequiredFilesProcessors: make(map[string][]func(*runner.Config, *string) (func(), error)),
 	}
 
 	chk.Parse()
@@ -85,12 +87,13 @@ func (chk *CfgChk) GetLoaderConfig(lr *loader.Loader) *loader.Config {
 	command := make([]string, len(chk.Command))
 	copy(command, chk.Command)
 	loaderCfg := &loader.Config{
-		AppConfig:         appConfig,
-		LoaderVars:        loaderVars,
-		DefaultsPlayProps: make(map[string]interface{}),
-		Command:           command,
-		RequiredFiles:     chk.RequiredFiles,
-		ParentBuildFile:     chk.CfgPlay.ParentBuildFile,
+		AppConfig:               appConfig,
+		LoaderVars:              loaderVars,
+		DefaultsPlayProps:       make(map[string]interface{}),
+		Command:                 command,
+		RequiredFiles:           chk.RequiredFiles,
+		RequiredFilesProcessors: chk.RequiredFilesProcessors,
+		ParentBuildFile:         chk.CfgPlay.ParentBuildFile,
 	}
 
 	return loaderCfg
@@ -119,6 +122,7 @@ func (chk *CfgChk) LoadLoader() {
 	copy(command, loaderCfg.Command)
 	chk.Command = command
 	chk.RequiredFiles = loaderCfg.RequiredFiles
+	chk.RequiredFilesProcessors = loaderCfg.RequiredFilesProcessors
 
 	// re-inject props from cfg-play after ParseMapAsDefault
 	chk.ParseMiddlewares()
