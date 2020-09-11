@@ -17,10 +17,10 @@ type CfgLoopRow struct {
 func CreateCfgLoopRow(index int, key string, loopSet map[string]*variable.Var) *CfgLoopRow {
 	var name string
 	if key == "" {
-		name = "loop-index   : " + strconv.Itoa(index)
+		name = "loop-index : " + strconv.Itoa(index)
 
 	} else {
-		name = "loop-set     : " + key
+		name = "loop-set   : " + key
 	}
 	cfgLoopRow := &CfgLoopRow{
 		Name:          name,
