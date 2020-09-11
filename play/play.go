@@ -338,7 +338,7 @@ func (p *Play) Run() error {
 }
 
 func (p *Play) Start() error {
-	p.Logger.Info("🚀 running playbook")
+	logrus.Info("🚀 running playbook")
 	return p.Run()
 }
 
