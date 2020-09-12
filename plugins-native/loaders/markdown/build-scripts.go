@@ -39,7 +39,7 @@ func BuildScripts(cfg *loader.Config) error {
 		_, err = fileP.WriteString(content)
 		errors.Check(err)
 
-		cfg.RequiredFiles[fileAbs] = file
+		cfg.RequiredFiles[file] = fileAbs
 
 		logrus.Debugf("writed script from md to %v", file)
 	}
@@ -75,7 +75,7 @@ func BuildScripts(cfg *loader.Config) error {
 		mainScriptContent += filepath.Join("${SNIP_SNIPPETS_PATH}", snippetPath) + "\n"
 
 		fileAbs := filepath.Join(rootPath, file)
-		cfg.RequiredFilesProcessors[fileAbs] = append(cfg.RequiredFilesProcessors[fileAbs], codeBlock.Processors...)
+		cfg.RequiredFilesSrcProcessors[fileAbs] = append(cfg.RequiredFilesSrcProcessors[fileAbs], codeBlock.Processors...)
 	}
 
 	launcher := mdpath + ".sh"

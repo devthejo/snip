@@ -6,6 +6,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"gitlab.com/youtopia.earth/ops/snip/errors"
 	snipplugin "gitlab.com/youtopia.earth/ops/snip/plugin"
+	"gitlab.com/youtopia.earth/ops/snip/plugin/processor"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/loader"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/middleware"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/runner"
@@ -26,7 +27,7 @@ type CfgCmd struct {
 	Dir string
 
 	RequiredFiles           map[string]string
-	RequiredFilesProcessors map[string][]func(*runner.Config, *string) (func(), error)
+	RequiredFilesSrcProcessors map[string][]func(*processor.Config, *string) error
 
 	Depth int
 
@@ -44,7 +45,7 @@ func CreateCfgCmd(cp *CfgPlay, c []string) *CfgCmd {
 		Depth:                   cp.Depth + 1,
 		Dir:                     cp.Dir,
 		RequiredFiles:           make(map[string]string),
-		RequiredFilesProcessors: make(map[string][]func(*runner.Config, *string) (func(), error)),
+		RequiredFilesSrcProcessors: make(map[string][]func(*processor.Config, *string) error),
 	}
 	ccmd.Parse()
 	return ccmd
@@ -188,7 +189,7 @@ func (ccmd *CfgCmd) GetLoaderConfig(lr *loader.Loader, defaultCfg *loader.Config
 	loaderCfg.LoaderVars = loaderVars
 	loaderCfg.Command = command
 	loaderCfg.RequiredFiles = ccmd.RequiredFiles
-	loaderCfg.RequiredFilesProcessors = ccmd.RequiredFilesProcessors
+	loaderCfg.RequiredFilesSrcProcessors = ccmd.RequiredFilesSrcProcessors
 	loaderCfg.RegisterVars = registerVars
 
 	return loaderCfg
@@ -217,7 +218,7 @@ func (ccmd *CfgCmd) LoadLoader() {
 	copy(command, loaderCfg.Command)
 	ccmd.Command = command
 	ccmd.RequiredFiles = loaderCfg.RequiredFiles
-	ccmd.RequiredFilesProcessors = loaderCfg.RequiredFilesProcessors
+	ccmd.RequiredFilesSrcProcessors = loaderCfg.RequiredFilesSrcProcessors
 	ccmd.CfgPlaySubstitutionMap = loaderCfg.CfgPlaySubstitutionMap
 	ccmd.CfgPlay.BuildFile = loaderCfg.BuildFile
 

@@ -15,6 +15,7 @@ import (
 	"gitlab.com/youtopia.earth/ops/snip/config"
 	snipplugin "gitlab.com/youtopia.earth/ops/snip/plugin"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/middleware"
+	"gitlab.com/youtopia.earth/ops/snip/plugin/processor"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/runner"
 	"gitlab.com/youtopia.earth/ops/snip/proc"
 	"gitlab.com/youtopia.earth/ops/snip/tools"
@@ -42,7 +43,7 @@ type Chk struct {
 	Runner      *runner.Runner
 
 	RequiredFiles           map[string]string
-	RequiredFilesProcessors map[string][]func(*runner.Config, *string) (func(), error)
+	RequiredFilesSrcProcessors map[string][]func(*processor.Config, *string) error
 
 	Expect []expect.Batcher
 
@@ -98,7 +99,7 @@ func CreateChk(cchk *CfgChk, ctx *RunCtx, parentLoopRow *LoopRow, isPreRun bool)
 		Dir: cchk.Dir,
 
 		RequiredFiles:           cchk.RequiredFiles,
-		RequiredFilesProcessors: cchk.RequiredFilesProcessors,
+		RequiredFilesSrcProcessors: cchk.RequiredFilesSrcProcessors,
 
 		Thread:      thr,
 		ExecTimeout: parentPlay.ExecTimeout,
@@ -212,8 +213,8 @@ func (chk *Chk) CreateMutableCmd() *middleware.MutableCmd {
 		requiredFiles[k] = v
 	}
 
-	requiredFilesProcessors := make(map[string][]func(*runner.Config, *string) (func(), error))
-	for k, v := range chk.RequiredFilesProcessors {
+	requiredFilesProcessors := make(map[string][]func(*processor.Config, *string) error)
+	for k, v := range chk.RequiredFilesSrcProcessors {
 		requiredFilesProcessors[k] = v
 	}
 
@@ -229,7 +230,7 @@ func (chk *Chk) CreateMutableCmd() *middleware.MutableCmd {
 		OriginalCommand:         originalCommand,
 		OriginalVars:            originalVars,
 		RequiredFiles:           requiredFiles,
-		RequiredFilesProcessors: requiredFilesProcessors,
+		RequiredFilesSrcProcessors: requiredFilesProcessors,
 		Expect:                  chk.Expect,
 		Runner:                  chk.Runner,
 		Dir:                     chk.Dir,
@@ -302,7 +303,7 @@ func (chk *Chk) BuildLauncher() error {
 	bin := filepath.Join("${SNIP_LAUNCHER_PATH}", launcherFilename)
 	chk.Command = []string{bin}
 
-	chk.RequiredFiles[launcherFileAbs] = launcherFile
+	chk.RequiredFiles[launcherFile] = launcherFileAbs
 
 	return nil
 }
@@ -340,7 +341,7 @@ func (chk *Chk) ApplyMiddlewares() error {
 	chk.Command = mutableCmd.Command
 	chk.Vars = mutableCmd.Vars
 	chk.RequiredFiles = mutableCmd.RequiredFiles
-	chk.RequiredFilesProcessors = mutableCmd.RequiredFilesProcessors
+	chk.RequiredFilesSrcProcessors = mutableCmd.RequiredFilesSrcProcessors
 	chk.Expect = mutableCmd.Expect
 	chk.Closer = mutableCmd.Closer
 	chk.Dir = mutableCmd.Dir
@@ -387,17 +388,16 @@ func (chk *Chk) RunRunner() error {
 		Logger: chk.Logger.WithFields(logrus.Fields{
 			"runner": chk.Runner.Name,
 		}),
-		Cache:                   chk.App.GetCache(),
-		VarsRegistry:            chk.App.GetVarsRegistry(),
-		Command:                 chk.Command,
-		Vars:                    vars,
-		Quiet:                   chk.Quiet,
-		TreeKeyParts:            chk.TreeKeyParts,
-		RequiredFiles:           chk.RequiredFiles,
-		RequiredFilesProcessors: chk.RequiredFilesProcessors,
-		Expect:                  chk.Expect,
-		Closer:                  chk.Closer,
-		Dir:                     chk.Dir,
+		Cache:         chk.App.GetCache(),
+		VarsRegistry:  chk.App.GetVarsRegistry(),
+		Command:       chk.Command,
+		Vars:          vars,
+		Quiet:         chk.Quiet,
+		TreeKeyParts:  chk.TreeKeyParts,
+		RequiredFiles: chk.RequiredFiles,
+		Expect:        chk.Expect,
+		Closer:        chk.Closer,
+		Dir:           chk.Dir,
 	}
 
 	appCfg := chk.AppConfig

@@ -3,11 +3,10 @@ package play
 import (
 	"strings"
 
-	// "github.com/sirupsen/logrus"
-
 	snipplugin "gitlab.com/youtopia.earth/ops/snip/plugin"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/loader"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/middleware"
+	"gitlab.com/youtopia.earth/ops/snip/plugin/processor"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/runner"
 	"gitlab.com/youtopia.earth/ops/snip/variable"
 )
@@ -25,7 +24,7 @@ type CfgChk struct {
 	Dir string
 
 	RequiredFiles           map[string]string
-	RequiredFilesProcessors map[string][]func(*runner.Config, *string) (func(), error)
+	RequiredFilesSrcProcessors map[string][]func(*processor.Config, *string) error
 
 	Depth int
 }
@@ -41,7 +40,7 @@ func CreateCfgChk(cp *CfgPlay, c []string) *CfgChk {
 		Depth:                   cp.Depth + 1,
 		Dir:                     cp.Dir,
 		RequiredFiles:           make(map[string]string),
-		RequiredFilesProcessors: make(map[string][]func(*runner.Config, *string) (func(), error)),
+		RequiredFilesSrcProcessors: make(map[string][]func(*processor.Config, *string) error),
 	}
 
 	chk.Parse()
@@ -92,7 +91,7 @@ func (chk *CfgChk) GetLoaderConfig(lr *loader.Loader) *loader.Config {
 		DefaultsPlayProps:       make(map[string]interface{}),
 		Command:                 command,
 		RequiredFiles:           chk.RequiredFiles,
-		RequiredFilesProcessors: chk.RequiredFilesProcessors,
+		RequiredFilesSrcProcessors: chk.RequiredFilesSrcProcessors,
 		ParentBuildFile:         chk.CfgPlay.ParentBuildFile,
 	}
 
@@ -122,7 +121,7 @@ func (chk *CfgChk) LoadLoader() {
 	copy(command, loaderCfg.Command)
 	chk.Command = command
 	chk.RequiredFiles = loaderCfg.RequiredFiles
-	chk.RequiredFilesProcessors = loaderCfg.RequiredFilesProcessors
+	chk.RequiredFilesSrcProcessors = loaderCfg.RequiredFilesSrcProcessors
 
 	// re-inject props from cfg-play after ParseMapAsDefault
 	chk.ParseMiddlewares()

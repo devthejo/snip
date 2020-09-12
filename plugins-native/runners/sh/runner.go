@@ -235,7 +235,7 @@ func getVarsPath(cfg *runner.Config) string {
 
 func installRequiredFiles(cfg *runner.Config) error {
 	rootPath := getRootPath(cfg)
-	for src, dest := range cfg.RequiredFiles {
+	for dest, src := range cfg.RequiredFiles {
 		destAbs := filepath.Join(rootPath, dest)
 		dir := filepath.Dir(destAbs)
 		if err := os.MkdirAll(dir, os.ModePerm); err != nil {
@@ -244,17 +244,6 @@ func installRequiredFiles(cfg *runner.Config) error {
 		_, err := tools.RequiredOnce(cfg.Cache, []string{"local", destAbs}, src, func() (interface{}, error) {
 			if src == destAbs {
 				return nil, nil
-			}
-			if processors, ok := cfg.RequiredFilesProcessors[src]; ok {
-				for _, processor := range processors {
-					clean, err := processor(cfg, &src)
-					if clean != nil {
-						defer clean()
-					}
-					if err != nil {
-						return nil, err
-					}
-				}
 			}
 			return tools.Copy(src, destAbs)
 		})

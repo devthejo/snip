@@ -1,9 +1,17 @@
 package tools
 
-import "strings"
+import (
+	"strings"
+	"regexp"
+)
 
-var replacer = strings.NewReplacer("-", "_", ".", "_", "/", "__")
+var regNormalizeEnvVarName = regexp.MustCompile("[^A-Z0-9_]+")
+var regSingleUnderscore = regexp.MustCompile(`_+`)
 
 func KeyEnv(key string) string {
-	return strings.ToUpper(replacer.Replace(key))
+	key = strings.ToUpper(key)
+	key = regNormalizeEnvVarName.ReplaceAllString(key,"_")
+	key = regSingleUnderscore.ReplaceAllString(key, "_")
+	key = strings.Trim(key, "_")
+	return key
 }

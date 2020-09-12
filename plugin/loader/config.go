@@ -3,7 +3,7 @@ package loader
 import (
 	snipplugin "gitlab.com/youtopia.earth/ops/snip/plugin"
 	"gitlab.com/youtopia.earth/ops/snip/registry"
-	"gitlab.com/youtopia.earth/ops/snip/plugin/runner"
+	"gitlab.com/youtopia.earth/ops/snip/plugin/processor"
 )
 
 type Config struct {
@@ -14,7 +14,7 @@ type Config struct {
 	Command                 []string
 	DefaultsPlayProps       map[string]interface{}
 	RequiredFiles           map[string]string
-	RequiredFilesProcessors map[string][]func(*runner.Config, *string) (func(), error)
+	RequiredFilesSrcProcessors map[string][]func(*processor.Config, *string) error
 
 	RegisterVars map[string]*registry.VarDef
 

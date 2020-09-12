@@ -262,6 +262,19 @@ func (p *Play) Run() error {
 			logger.Info(strings.Repeat("  ", 2) + "⦿ " + loop.Name)
 		}
 
+		switch pl := loop.Play.(type) {
+		case *Cmd:
+			if err := pl.PreflightRun(); err != nil {
+				return err
+			}
+			if loop.HasChk {
+				for k, v := range pl.Vars {
+					loop.PreChk.Vars[k] = v
+					loop.PostChk.Vars[k] = v
+				}
+			}
+		}
+
 		if loop.HasChk {
 			if ok, _ := loop.PreChk.Run(); ok {
 				return nil

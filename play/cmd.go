@@ -16,6 +16,7 @@ import (
 	"gitlab.com/youtopia.earth/ops/snip/config"
 	snipplugin "gitlab.com/youtopia.earth/ops/snip/plugin"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/middleware"
+	"gitlab.com/youtopia.earth/ops/snip/plugin/processor"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/runner"
 	"gitlab.com/youtopia.earth/ops/snip/proc"
 	"gitlab.com/youtopia.earth/ops/snip/tools"
@@ -41,7 +42,7 @@ type Cmd struct {
 	Runner      *runner.Runner
 
 	RequiredFiles           map[string]string
-	RequiredFilesProcessors map[string][]func(*runner.Config, *string) (func(), error)
+	RequiredFilesSrcProcessors map[string][]func(*processor.Config, *string) error
 
 	Expect []expect.Batcher
 
@@ -101,7 +102,7 @@ func CreateCmd(ccmd *CfgCmd, ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 		Dir: ccmd.Dir,
 
 		RequiredFiles:           ccmd.RequiredFiles,
-		RequiredFilesProcessors: ccmd.RequiredFilesProcessors,
+		RequiredFilesSrcProcessors: ccmd.RequiredFilesSrcProcessors,
 
 		Thread:      thr,
 		ExecTimeout: parentPlay.ExecTimeout,
@@ -163,8 +164,8 @@ func (cmd *Cmd) CreateMutableCmd() *middleware.MutableCmd {
 		requiredFiles[k] = v
 	}
 
-	requiredFilesProcessors := make(map[string][]func(*runner.Config, *string) (func(), error))
-	for k, v := range cmd.RequiredFilesProcessors {
+	requiredFilesProcessors := make(map[string][]func(*processor.Config, *string) error)
+	for k, v := range cmd.RequiredFilesSrcProcessors {
 		requiredFilesProcessors[k] = v
 	}
 
@@ -180,7 +181,7 @@ func (cmd *Cmd) CreateMutableCmd() *middleware.MutableCmd {
 		OriginalCommand:         originalCommand,
 		OriginalVars:            originalVars,
 		RequiredFiles:           requiredFiles,
-		RequiredFilesProcessors: requiredFilesProcessors,
+		RequiredFilesSrcProcessors: requiredFilesProcessors,
 		Expect:                  cmd.Expect,
 		Runner:                  cmd.Runner,
 		Dir:                     cmd.Dir,
@@ -257,7 +258,7 @@ func (cmd *Cmd) ApplyMiddlewares() error {
 	cmd.Command = mutableCmd.Command
 	cmd.Vars = mutableCmd.Vars
 	cmd.RequiredFiles = mutableCmd.RequiredFiles
-	cmd.RequiredFilesProcessors = mutableCmd.RequiredFilesProcessors
+	cmd.RequiredFilesSrcProcessors = mutableCmd.RequiredFilesSrcProcessors
 	cmd.Expect = mutableCmd.Expect
 	cmd.Closer = mutableCmd.Closer
 	cmd.Dir = mutableCmd.Dir
@@ -294,7 +295,7 @@ func (cmd *Cmd) BuildLauncher() error {
 	bin := filepath.Join("${SNIP_LAUNCHER_PATH}", launcherFilename)
 	cmd.Command[0] = bin
 
-	cmd.RequiredFiles[launcherFileAbs] = launcherFile
+	cmd.RequiredFiles[launcherFile] = launcherFileAbs
 
 	return nil
 }
@@ -350,7 +351,6 @@ func (cmd *Cmd) RunRunner() error {
 		Quiet:         cmd.Quiet,
 		TreeKeyParts:  cmd.TreeKeyParts,
 		RequiredFiles: cmd.RequiredFiles,
-		RequiredFilesProcessors: cmd.RequiredFilesProcessors,
 		Expect:        cmd.Expect,
 		Closer:        cmd.Closer,
 		Dir:           cmd.Dir,
@@ -372,20 +372,47 @@ func (cmd *Cmd) RunRunner() error {
 	return r.Plugin.Run(runCfg)
 }
 
+func (cmd *Cmd) PreflightRun() error {
+	if cmd.PreflightRunnedOnce {
+		return nil
+	}
+	cmd.PreflightRunnedOnce = true
+	logger := cmd.Logger
+	logger.Debug("⮞ preflight")
+	if err := cmd.BuildLauncher(); err != nil {
+		return err
+	}
+	if err := cmd.ApplyMiddlewares(); err != nil {
+		return err
+	}
+	processorCfg := &processor.Config{
+		Vars: cmd.Vars,
+	}
+	for dest, src := range cmd.RequiredFiles {
+		if processors, ok := cmd.RequiredFilesSrcProcessors[src]; ok {
+			for _, processor := range processors {
+				err := processor(processorCfg, &src)
+				if err != nil {
+					logrus.Error(err)
+					return err
+				}
+			}
+			cmd.RequiredFiles[dest] = src
+		}
+	}
+
+	// for dest, src := range cmd.RequiredFiles {
+	// 	logrus.Error(src)
+	// 	logrus.Error(dest)
+	// }
+
+	return nil
+}
+
 func (cmd *Cmd) Main() error {
 
 	logger := cmd.Logger
 	logger.Info("⮞ playing")
-
-	if !cmd.PreflightRunnedOnce {
-		if err := cmd.BuildLauncher(); err != nil {
-			return err
-		}
-		if err := cmd.ApplyMiddlewares(); err != nil {
-			return err
-		}
-		cmd.PreflightRunnedOnce = true
-	}
 
 	// logger.Debugf("vars: %v", tools.JsonEncode(cmd.Vars))
 	logger.Debugf("env: %v", tools.JsonEncode(cmd.EnvMap()))

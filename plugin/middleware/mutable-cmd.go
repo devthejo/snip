@@ -4,6 +4,7 @@ import (
 	expect "gitlab.com/youtopia.earth/ops/snip/goexpect"
 	snipplugin "gitlab.com/youtopia.earth/ops/snip/plugin"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/runner"
+	"gitlab.com/youtopia.earth/ops/snip/plugin/processor"
 )
 
 type MutableCmd struct {
@@ -16,7 +17,7 @@ type MutableCmd struct {
 	OriginalVars    map[string]string
 
 	RequiredFiles           map[string]string
-	RequiredFilesProcessors map[string][]func(*runner.Config, *string) (func(), error)
+	RequiredFilesSrcProcessors map[string][]func(*processor.Config, *string) error
 	Expect                  []expect.Batcher
 	Runner                  *runner.Runner
 

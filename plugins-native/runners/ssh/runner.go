@@ -336,22 +336,9 @@ func getVarsPath(cfg *runner.Config) string {
 
 func installRequiredFiles(cfg *runner.Config, sshCfg *sshclient.Config) error {
 	rootPath := getRootPath(cfg)
-	for src, dest := range cfg.RequiredFiles {
+	for dest, src := range cfg.RequiredFiles {
 		_, err := tools.RequiredOnce(cfg.Cache, []string{"host", sshCfg.Host, dest}, src, func() (interface{}, error) {
 			destAbs := filepath.Join(rootPath, dest)
-			
-			if processors, ok := cfg.RequiredFilesProcessors[src]; ok {
-				for _, processor := range processors {
-					clean, err := processor(cfg, &src)
-					if clean != nil {
-						defer clean()
-					}
-					if err != nil {
-						return nil, err
-					}
-				}
-			}
-
 			err := sshutils.Upload(sshCfg, src, destAbs, cfg.Logger)
 			return nil, err
 		})
