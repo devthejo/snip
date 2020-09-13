@@ -76,7 +76,7 @@ func CreateConfig(vars map[string]string) *Config {
 		errors.Check(err)
 	}
 
-	CacheKey := "host:client:" + SSHHost + ":" + SSHUser
+	CacheKey := "host:client:" + SSHHost + ":" + strconv.Itoa(SSHPort) + ":" + SSHUser
 
 	cfg := &Config{
 		Host:     SSHHost,
