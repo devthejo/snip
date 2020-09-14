@@ -6,9 +6,9 @@ import (
 	"github.com/sirupsen/logrus"
 	"gitlab.com/youtopia.earth/ops/snip/errors"
 	snipplugin "gitlab.com/youtopia.earth/ops/snip/plugin"
-	"gitlab.com/youtopia.earth/ops/snip/plugin/processor"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/loader"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/middleware"
+	"gitlab.com/youtopia.earth/ops/snip/plugin/processor"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/runner"
 	"gitlab.com/youtopia.earth/ops/snip/registry"
 	"gitlab.com/youtopia.earth/ops/snip/variable"
@@ -26,7 +26,7 @@ type CfgCmd struct {
 
 	Dir string
 
-	RequiredFiles           map[string]string
+	RequiredFiles              map[string]string
 	RequiredFilesSrcProcessors map[string][]func(*processor.Config, *string) error
 
 	Depth int
@@ -39,12 +39,12 @@ func CreateCfgCmd(cp *CfgPlay, c []string) *CfgCmd {
 	originalCommand := make([]string, len(c))
 	copy(originalCommand, c)
 	ccmd := &CfgCmd{
-		CfgPlay:                 cp,
-		OriginalCommand:         c,
-		Command:                 c,
-		Depth:                   cp.Depth + 1,
-		Dir:                     cp.Dir,
-		RequiredFiles:           make(map[string]string),
+		CfgPlay:                    cp,
+		OriginalCommand:            c,
+		Command:                    c,
+		Depth:                      cp.Depth + 1,
+		Dir:                        cp.Dir,
+		RequiredFiles:              make(map[string]string),
 		RequiredFilesSrcProcessors: make(map[string][]func(*processor.Config, *string) error),
 	}
 	ccmd.Parse()
@@ -82,13 +82,12 @@ func (ccmd *CfgCmd) RequireDependencies() {
 		buildCtx := CreateNextBuildCtx(cp.BuildCtx)
 		buildCtx.LoadedSnippetsDownstreamParents = nil
 
-		playSlice := parent.CfgPlay.([]*CfgPlay)
-
 		// default runner from dependency caller
 		buildCtx.DefaultRunner = ccmd.Runner
 		buildCtx.DefaultVars = cp.Vars
 		depPlay := CreateCfgPlay(cp.App, m, parent, buildCtx)
 
+		playSlice := parent.CfgPlay.([]*CfgPlay)
 		playSlice = append(playSlice, depPlay)
 		parent.CfgPlay = playSlice
 	}
