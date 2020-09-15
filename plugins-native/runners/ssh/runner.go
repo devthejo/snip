@@ -20,7 +20,7 @@ import (
 	"go.uber.org/multierr"
 
 	expect "gitlab.com/youtopia.earth/ops/snip/goexpect"
-	"gitlab.com/youtopia.earth/ops/snip/loggers"
+	// "gitlab.com/youtopia.earth/ops/snip/loggers"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/runner"
 	"gitlab.com/youtopia.earth/ops/snip/registry"
 	"gitlab.com/youtopia.earth/ops/snip/sshclient"
@@ -226,9 +226,9 @@ var (
 
 				spawnOpts.Tee = tee
 
-				logStreamerErr := logstreamer.NewLogstreamer(log.New(&loggers.Warn{Entry: loggerSSH}, "", 0), "", false)
-				defer logStreamerErr.Close()
-				session.Stderr = io.MultiWriter(session.Stderr, logStreamerErr)
+				// logStreamerErr := logstreamer.NewLogstreamer(log.New(&loggers.Warn{Entry: loggerSSH}, "", 0), "", false)
+				// defer logStreamerErr.Close()
+				// session.Stderr = io.MultiWriter(session.Stderr, logStreamerErr)
 			}
 
 			e, ch, err := expect.Spawn(spawnOpts)
