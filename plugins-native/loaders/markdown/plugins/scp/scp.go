@@ -1,21 +1,23 @@
 package mainNative
 
 import (
+	"crypto/sha256"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"os/user"
 	"path"
 	"path/filepath"
 	"strconv"
-	"crypto/sha256"
-	"fmt"
+	"strings"
 
 	// "github.com/sirupsen/logrus"
 
+	"github.com/sirupsen/logrus"
 	"gitlab.com/youtopia.earth/ops/snip/errors"
-	"gitlab.com/youtopia.earth/ops/snip/tools"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/processor"
 	loaderMardownMod "gitlab.com/youtopia.earth/ops/snip/plugins-native/loaders/markdown/mod"
+	"gitlab.com/youtopia.earth/ops/snip/tools"
 )
 
 var (
@@ -50,9 +52,9 @@ var (
 			targetFile := args[0]
 			codeBlock.Lang = "sh"
 			codeBlock.Content = "mkdir -p " + path.Dir(targetFile) + "\n"
-			codeBlock.Content += "mv " + fileAbsRemote + " " + targetFile
+			codeBlock.Content += "mv " + fileAbsRemote + " " + targetFile + "\n"
 
-			sumProcessor := func(processorCfg *processor.Config, src *string) ( error) {
+			sumProcessor := func(processorCfg *processor.Config, src *string) error {
 				b, err := ioutil.ReadFile(*src)
 				if err != nil {
 					return err
@@ -64,6 +66,36 @@ var (
 			}
 
 			cfg.RequiredFilesSrcProcessors[fileAbs] = append(cfg.RequiredFilesSrcProcessors[fileAbs], sumProcessor)
+
+			var chmod string
+			var chown string
+			for _, arg := range args[1:] {
+				if strings.TrimSpace(arg) == "" {
+					continue
+				}
+				x := strings.SplitN(arg, "=", 2)
+				k := x[0]
+				var v string
+				if len(x) > 1 {
+					v = x[1]
+				}
+				switch k {
+				case "chmod":
+					chmod = v
+				case "chown":
+					chown = v
+				default:
+					logrus.Errorf("unkown arg %v for scp markdown mod", k)
+				}
+			}
+
+			if chmod != "" {
+				codeBlock.Content += "chmod " + chmod + " " + targetFile + "\n"
+			}
+
+			if chown != "" {
+				codeBlock.Content += "chown " + chown + " " + targetFile + "\n"
+			}
 
 			return nil
 		},
