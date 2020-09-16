@@ -38,86 +38,91 @@ var (
 
 			r := cfg.Cache
 
-			newConnection := func(sshCfg *sshclient.Config) (*sshclient.Client, error) {
+			newConnection := func(vars map[string]string) (*sshclient.Client, *sshclient.Config, error) {
+				sshCfg := sshclient.CreateConfig(vars)
 				client, err := sshclient.CreateClient(sshCfg)
 				if err == nil {
 					err = client.Connect()
 				}
-				if err == nil {
-					r.Set(sshCfg.CacheKey, client, cache.DefaultExpiration)
-					go func() {
-						err := client.Conn.Wait()
-						logrus.Errorf("conn.Wait() err: %v", err)
-						if err != nil {
-							r.Delete(sshCfg.CacheKey)
-						}
-					}()
-				}
-				return client, err
+				return client, sshCfg, err
 			}
 
-			connect := func(vars map[string]string) (*sshclient.Client, *sshclient.Config, error) {
-				sshCfg := sshclient.CreateConfig(vars)
+			portsConnection := func() (*sshclient.Client, *sshclient.Config, error) {
+
 				var client *sshclient.Client
+				var sshCfg *sshclient.Config
 				var err error
-				if clientI, found := r.Get(sshCfg.CacheKey); found {
-					client = clientI.(*sshclient.Client)
+				if port, ok := vars["port"]; ok && strings.Contains(port, ",") {
+					cacheKey := "host:port:" + vars["host"]
+					var portFirst string
+					if portI, found := r.Get(cacheKey); found {
+						portFirst = portI.(string)
+					}
+
+					portsList := strings.Split(port, ",")
+					var ports []string
+					if portFirst != "" {
+						ports = append(ports, portFirst)
+					}
+					for _, p := range portsList {
+						if p != portFirst {
+							ports = append(ports, p)
+						}
+					}
+					for _, p := range ports {
+						varsP := make(map[string]string)
+						for k, v := range vars {
+							varsP[k] = v
+						}
+						varsP["port"] = p
+						client, sshCfg, err = newConnection(varsP)
+						if err == nil {
+							r.Set(cacheKey, p, cache.DefaultExpiration)
+							break
+						}
+					}
 				} else {
-					client, err = newConnection(sshCfg)
+					client, sshCfg, err = newConnection(vars)
 				}
 				return client, sshCfg, err
 			}
 
-			var client *sshclient.Client
-			var sshCfg *sshclient.Config
-			if port, ok := vars["port"]; ok && strings.Contains(port, ",") {
-				cacheKey := "host:port:" + vars["host"]
-				var portFirst string
-				if portI, found := r.Get(cacheKey); found {
-					portFirst = portI.(string)
-				}
-
-				portsList := strings.Split(port, ",")
-				var ports []string
-				if portFirst != "" {
-					ports = append(ports, portFirst)
-				}
-				for _, p := range portsList {
-					if p != portFirst {
-						ports = append(ports, p)
-					}
-				}
-				var err error
-				for _, p := range ports {
-					varsP := make(map[string]string)
-					for k, v := range vars {
-						varsP[k] = v
-					}
-					varsP["port"] = p
-					client, sshCfg, err = connect(varsP)
-					if err == nil {
-						r.Set(cacheKey, p, cache.DefaultExpiration)
-						break
-					}
-				}
-				if err != nil {
-					return err
-				}
-
-			} else {
-				var err error
-				client, sshCfg, err = connect(vars)
-				if err != nil {
-					return err
-				}
-			}
-
-			if err := installRequiredFiles(cfg, sshCfg); err != nil {
+			client, sshCfg, err := portsConnection()
+			if err != nil {
 				return err
 			}
 
-			if err := registerVarsCreateFiles(cfg, client); err != nil {
-				return err
+			var wg sync.WaitGroup
+			var errSlice []error
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				if err := installRequiredFiles(cfg, sshCfg); err != nil {
+					errSlice = append(errSlice, err)
+				}
+			}()
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				if err := registerVarsCreateFiles(cfg, client); err != nil {
+					errSlice = append(errSlice, err)
+				}
+			}()
+			wg.Wait()
+			if len(errSlice) > 0 {
+				return multierr.Combine(errSlice...)
+			}
+
+			session, err := client.NewSession()
+			if err != nil {
+				client, sshCfg, err = portsConnection()
+				if err != nil {
+					return err
+				}
+				session, err = client.NewSession()
+				if err != nil {
+					return err
+				}
 			}
 
 			var enablePTY bool
@@ -136,18 +141,6 @@ var (
 			command := shellquote.Join(commandSlice...)
 
 			logger.Debugf("remote command: %v", command)
-
-			session, err := client.NewSession()
-			if err != nil {
-				client, err = newConnection(sshCfg)
-				if err != nil {
-					return err
-				}
-				session, err = client.NewSession()
-				if err != nil {
-					return err
-				}
-			}
 
 			if enablePTY {
 				tios := term.Termios{}
