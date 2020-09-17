@@ -50,18 +50,21 @@ func BuildScripts(cfg *loader.Config) error {
 
 	for i, codeBlock := range codeBlocks {
 		content := codeBlock.Content
-		var header string
-		switch codeBlock.Lang {
-		case "sh":
-			header += "#!/bin/sh\n\n"
-		case "bash":
-			header = "#!/usr/bin/env bash\n\n"
-			header += "set -e\n\n"
-		default:
-			header = "#!/usr/bin/env " + codeBlock.Lang + "\n\n"
-		}
 		content = strings.Trim(content, "\n")
-		content = header + content
+
+		if !strings.HasPrefix( content, "#!") {
+			var header string
+			switch codeBlock.Lang {
+			case "sh":
+				header += "#!/bin/sh\n\n"
+			case "bash":
+				header = "#!/usr/bin/env bash\n\n"
+				header += "set -e\n\n"
+			default:
+				header = "#!/usr/bin/env " + codeBlock.Lang + "\n\n"
+			}
+			content = header + content
+		}
 		content += "\n\n# snip vars export \n"
 		for _, vr := range cfg.RegisterVars {
 			if !vr.Enable {
