@@ -37,6 +37,7 @@ type CfgPlay struct {
 	LoopOn []*CfgLoopRow
 
 	VarsSets       map[string]map[string]*variable.Var
+	LoopSets       map[string][]map[string]*variable.Var
 	LoopSequential *bool
 
 	RegisterVars map[string]*registry.VarDef
@@ -74,6 +75,7 @@ func CreateCfgPlay(app App, m map[string]interface{}, parentCfgPlay *CfgPlay, bu
 
 	cp.Vars = make(map[string]*variable.Var)
 	cp.VarsSets = make(map[string]map[string]*variable.Var)
+	cp.LoopSets = make(map[string][]map[string]*variable.Var)
 
 	cp.App = app
 
@@ -125,6 +127,7 @@ func (cp *CfgPlay) ParseMapRun(m map[string]interface{}, override bool) {
 	cp.ParseDir(m, override)
 	cp.ParseExecTimeout(m, override)
 	cp.ParseVarsSets(m, override)
+	cp.ParseLoopSets(m, override)
 	cp.ParseLoopOn(m, override)
 	cp.ParseLoopSequential(m, override)
 	cp.ParseRetry(m, override)
@@ -260,17 +263,17 @@ func (cp *CfgPlay) ParseExecTimeout(m map[string]interface{}, override bool) {
 func (cp *CfgPlay) ParseVarsSets(m map[string]interface{}, override bool) {
 	switch v := m["vars_sets"].(type) {
 	case map[string]interface{}:
-		loops, err := decode.ToMap(v)
+		vsets, err := decode.ToMap(v)
 		errors.Check(err)
-		for loopKey, loopVal := range loops {
-			switch loopV := loopVal.(type) {
+		for vsetKey, vsetVal := range vsets {
+			switch vsetV := vsetVal.(type) {
 			case map[string]interface{}:
-				_, hk := cp.VarsSets[loopKey]
+				_, hk := cp.VarsSets[vsetKey]
 				if !hk || override {
-					cp.VarsSets[loopKey] = variable.ParseVarsMap(loopV, cp.Depth)
+					cp.VarsSets[vsetKey] = variable.ParseVarsMap(vsetV, cp.Depth)
 				}
 			default:
-				variable.UnexpectedTypeVarValue(loopKey, loopVal)
+				variable.UnexpectedTypeVarValue(vsetKey, vsetVal)
 			}
 		}
 	case nil:
@@ -279,8 +282,50 @@ func (cp *CfgPlay) ParseVarsSets(m map[string]interface{}, override bool) {
 	}
 	if cp.ParentCfgPlay != nil {
 		for k, v := range cp.ParentCfgPlay.VarsSets {
-			if _, hk := cp.VarsSets[loopKey]; !hk {
+			if _, hk := cp.VarsSets[k]; !hk {
 				cp.VarsSets[k] = v
+			}
+		}
+	}
+}
+func (cp *CfgPlay) ParseLoopSets(m map[string]interface{}, override bool) {
+	switch v := m["loop_sets"].(type) {
+	case map[string]interface{}:
+		loops, err := decode.ToMap(v)
+		errors.Check(err)
+		for loopKey, loopVal := range loops {
+			_, hk := cp.LoopSets[loopKey]
+			if hk && !override {
+				continue
+			}
+			switch loopV := loopVal.(type) {
+			case []interface{}:
+				cp.LoopSets[loopKey] = make([]map[string]*variable.Var, len(loopV))
+				for i, rowVal := range loopV {
+					switch rowV := rowVal.(type) {
+					case map[string]interface{}:
+						cp.LoopSets[loopKey][i] = variable.ParseVarsMap(rowV, cp.Depth)
+					case string:
+						if cp.VarsSets[rowV] == nil {
+							logrus.Fatalf("undefined VarsSet %v called by loop_sets %v", rowV, loopKey)
+						}
+						cp.LoopSets[loopKey][i] = cp.VarsSets[rowV]
+					default:
+						variable.UnexpectedTypeVarValue(strconv.Itoa(i), rowVal)
+					}
+				}
+			default:
+				variable.UnexpectedTypeVarValue(loopKey, loopVal)
+			}
+		}
+	case nil:
+	default:
+		unexpectedTypeCfgPlay(m, "loop_sets")
+	}
+	if cp.ParentCfgPlay != nil {
+		for k, v := range cp.ParentCfgPlay.LoopSets {
+			if _, hk := cp.LoopSets[k]; !hk {
+				cp.LoopSets[k] = v
 			}
 		}
 	}
@@ -291,7 +336,14 @@ func (cp *CfgPlay) ParseLoopOn(m map[string]interface{}, override bool) {
 	}
 	switch v := m["loop_on"].(type) {
 	case string:
-
+		if cp.LoopSets[v] == nil {
+			logrus.Fatalf("undefined LoopSet %v called by loop_on", v)
+		}
+		cp.LoopOn = make([]*CfgLoopRow, len(cp.LoopSets[v]))
+		for loopI, loopV := range cp.LoopSets[v] {
+			cfgLoopRow := CreateCfgLoopRow(loopI, v, loopV)
+			cp.LoopOn[loopI] = cfgLoopRow
+		}
 	case []interface{}:
 		cp.LoopOn = make([]*CfgLoopRow, len(v))
 		for loopI, loopV := range v {

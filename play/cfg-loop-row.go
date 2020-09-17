@@ -14,7 +14,7 @@ type CfgLoopRow struct {
 	IsLoopRowItem bool
 }
 
-func CreateCfgLoopRow(index int, key string, loopSet map[string]*variable.Var) *CfgLoopRow {
+func CreateCfgLoopRow(index int, key string, vars map[string]*variable.Var) *CfgLoopRow {
 	var name string
 	if key == "" {
 		name = "loop-index : " + strconv.Itoa(index)
@@ -26,7 +26,7 @@ func CreateCfgLoopRow(index int, key string, loopSet map[string]*variable.Var) *
 		Name:          name,
 		Key:           key,
 		Index:         index,
-		Vars:          loopSet,
+		Vars:          vars,
 		IsLoopRowItem: true,
 	}
 	return cfgLoopRow
