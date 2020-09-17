@@ -106,9 +106,15 @@ func (thr *Thread) Reset() {
 
 func (thr *Thread) Exec(runMain func() error) {
 
+	app := thr.App
+
+	if app.IsExiting() {
+		return
+	}
+
 	thr.ExecRunning = true
 
-	mainWg := thr.App.GetMainProc().WaitGroup
+	mainWg := app.GetMainProc().WaitGroup
 	mainWg.Add(1)
 	defer mainWg.Done()
 

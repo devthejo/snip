@@ -7,4 +7,6 @@ import (
 type App interface {
 	GetConfig() *config.Config
 	GetMainProc() *Main
+	IsExiting() bool
+	Exiting()
 }

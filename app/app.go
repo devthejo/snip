@@ -45,6 +45,8 @@ type App struct {
 	Cache *cache.Cache
 
 	VarsRegistry *registry.NsVars
+
+	ExitingState bool
 }
 
 func New() *App {
@@ -104,6 +106,13 @@ func (app *App) OnPreRun(cmd *cobra.Command) {
 	app.VarsRegistry = registry.CreateNsVars(&registry.NsVarsOptions{
 		BasePath: filepath.Join(usr.HomeDir, ".snip", app.Config.DeploymentName, "vars_persist"),
 	})
+}
+
+func (app *App) IsExiting() bool {
+	return app.ExitingState
+}
+func (app *App) Exiting() {
+	app.ExitingState = true
 }
 
 func (app *App) RunCmd() {

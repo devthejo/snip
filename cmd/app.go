@@ -28,4 +28,6 @@ type App interface {
 	GetLoader(string) *loader.Plugin
 	GetMiddleware(string) *middleware.Plugin
 	GetRunner(string) *runner.Plugin
+	IsExiting() bool
+	Exiting()
 }

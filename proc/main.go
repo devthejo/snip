@@ -46,7 +46,9 @@ func (proc *Main) GetWaitGroup() *sync.WaitGroup {
 }
 
 func (proc *Main) WaitShutdown() bool {
-	cfg := proc.App.GetConfig()
+	app := proc.App
+	cfg := app.GetConfig()
+	app.Exiting()
 
 	chForce := make(chan os.Signal)
 	signal.Notify(chForce, syscall.SIGINT)
