@@ -258,11 +258,6 @@ func (cp *CfgPlay) ParseExecTimeout(m map[string]interface{}, override bool) {
 }
 
 func (cp *CfgPlay) ParseVarsSets(m map[string]interface{}, override bool) {
-	if cp.ParentCfgPlay != nil {
-		for k, v := range cp.ParentCfgPlay.VarsSets {
-			cp.VarsSets[k] = v
-		}
-	}
 	switch v := m["vars_sets"].(type) {
 	case map[string]interface{}:
 		loops, err := decode.ToMap(v)
@@ -281,6 +276,13 @@ func (cp *CfgPlay) ParseVarsSets(m map[string]interface{}, override bool) {
 	case nil:
 	default:
 		unexpectedTypeCfgPlay(m, "vars_sets")
+	}
+	if cp.ParentCfgPlay != nil {
+		for k, v := range cp.ParentCfgPlay.VarsSets {
+			if _, hk := cp.VarsSets[loopKey]; !hk {
+				cp.VarsSets[k] = v
+			}
+		}
 	}
 }
 func (cp *CfgPlay) ParseLoopOn(m map[string]interface{}, override bool) {
