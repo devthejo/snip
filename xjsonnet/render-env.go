@@ -19,6 +19,7 @@ func RenderEnv(src string, envMap map[string]string) (string, error) {
 	vm.NativeFunction(NativeFunctionParseJson5())
 	vm.NativeFunction(NativeFunctionParseBool())
 	vm.NativeFunction(NativeFunctionEnv(envMap))
+	vm.NativeFunction(NativeFunctionEnvOr(envMap))
 	vm.NativeFunction(NativeFunctionEnviron(envMap))
 
 	var bytes []byte
