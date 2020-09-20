@@ -16,6 +16,8 @@ const (
 	FlagLoadersDesc = "default loaders"
 
 	FlagDeploymentNameDesc = "deployment name, must be unique to avoid collisions"
+
+	FlagPlayKeyDesc = "comma separated list of keys (or tree keys) to run skipping all others"
 )
 
 var (
@@ -32,4 +34,6 @@ var (
 	FlagLoadersDefault = `["markdown","yaml"]`
 
 	FlagDeploymentNameDefault = "default"
+
+	FlagPlayKeyDefault = []string{}
 )

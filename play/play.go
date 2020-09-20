@@ -14,6 +14,7 @@ import (
 	"gitlab.com/youtopia.earth/ops/snip/config"
 	"gitlab.com/youtopia.earth/ops/snip/errors"
 	"gitlab.com/youtopia.earth/ops/snip/registry"
+	"gitlab.com/youtopia.earth/ops/snip/tools"
 	"gitlab.com/youtopia.earth/ops/snip/variable"
 )
 
@@ -46,6 +47,8 @@ type Play struct {
 	HasChildren bool
 
 	State StateType
+
+	Skip bool
 }
 
 func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
@@ -102,6 +105,14 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 	}
 
 	logger.Info("  " + icon + " " + cp.GetTitle())
+
+	cfg := cp.App.GetConfig()
+	if !p.HasChildren &&
+		len(cfg.PlayKey) != 0 &&
+		!(tools.SliceContainsString(cfg.PlayKey, p.Key) ||
+			tools.SliceContainsString(cfg.PlayKey, p.TreeKey)) {
+		p.Skip = true
+	}
 
 	var loopRows []*CfgLoopRow
 	if len(cp.LoopOn) == 0 {
@@ -256,6 +267,11 @@ func (p *Play) Run() error {
 
 	logger.Info(icon + " " + p.GetTitle())
 
+	if p.Skip {
+		logger.Info("  skipping...")
+		return nil
+	}
+
 	var errSlice []error
 	runLoopSeq := func(loop *LoopRow) error {
 		if loop.IsLoopRowItem {
@@ -281,33 +297,42 @@ func (p *Play) Run() error {
 			}
 		}
 		var localErrSlice []error
-		for tries := p.Retry + 1; tries > 0; tries-- {
 
-			localErrSlice = make([]error, 0)
-			switch pl := loop.Play.(type) {
-			case []*Play:
+		localErrSlice = make([]error, 0)
+
+		switch pl := loop.Play.(type) {
+		case []*Play:
+			for tries := p.Retry + 1; tries > 0; tries-- {
 				for _, child := range pl {
 					if err := child.Run(); err != nil {
 						localErrSlice = append(localErrSlice, err)
 						break
 					}
 				}
-			case *Cmd:
-				pl.RegisterVarsLoad()
 
+				if len(localErrSlice) == 0 && loop.HasChk {
+					if ok, err := loop.PostChk.Run(); !ok {
+						localErrSlice = append(localErrSlice, err)
+					} else {
+						break
+					}
+				}
+			}
+		case *Cmd:
+			for tries := p.Retry + 1; tries > 0; tries-- {
+				pl.RegisterVarsLoad()
 				if err := pl.Run(); err != nil {
 					localErrSlice = append(localErrSlice, err)
 				}
-			}
 
-			if len(localErrSlice) == 0 && loop.HasChk {
-				if ok, err := loop.PostChk.Run(); !ok {
-					localErrSlice = append(localErrSlice, err)
-				} else {
-					break
+				if len(localErrSlice) == 0 && loop.HasChk {
+					if ok, err := loop.PostChk.Run(); !ok {
+						localErrSlice = append(localErrSlice, err)
+					} else {
+						break
+					}
 				}
 			}
-
 		}
 
 		if len(localErrSlice) > 0 {

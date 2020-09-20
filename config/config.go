@@ -25,4 +25,6 @@ type Config struct {
 	Loaders []string `mapstructure:"LOADERS" json:"loaders,omitempty"`
 
 	DeploymentName string `mapstructure:"DEPLOYMENT_NAME" json:"deployment_name,omitempty"`
+
+	PlayKey []string `mapstructure:"Key" json:"key,omitempty"`
 }
