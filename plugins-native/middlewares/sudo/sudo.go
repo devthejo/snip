@@ -48,7 +48,7 @@ var (
 				case *ssh.Client:
 					err = CloseSSH(v, cfg, pPgid)
 				}
-				if err != nil {
+				if err != nil && err.Error() != "no such process" {
 					logrus.Warnf("failed to kill: %v", err)
 				}
 				return true
