@@ -57,6 +57,8 @@ type Chk struct {
 	TreeKey      string
 
 	PreflightRunnedOnce bool
+
+	RunReport *RunReport
 }
 
 func (chk *Chk) EnvMap() map[string]string {
@@ -105,6 +107,8 @@ func CreateChk(cchk *CfgChk, ctx *RunCtx, parentLoopRow *LoopRow, isPreRun bool)
 		ExecTimeout: parentPlay.ExecTimeout,
 
 		Quiet: cp.Quiet != nil && (*cp.Quiet),
+
+		RunReport: cp.RunReport,
 	}
 
 	depth := cchk.Depth
@@ -195,12 +199,21 @@ func (chk *Chk) Run() (bool, error) {
 
 	ok := err == nil
 
+	au := app.GetAurora()
+	runReport := chk.RunReport
+
 	if !app.IsExiting() {
 		if ok {
-			logger.Info(icon + " check ok")
+			if isPreRun {
+				logger.Info(au.BrightGreen(icon + " check ok"))
+				runReport.OK++
+			} else {
+				logger.Info(au.BrightMagenta(icon + " check ok (changed)"))
+				runReport.Changed++
+			}
 		} else {
 			if isPreRun {
-				logger.Info(icon + " check unready")
+				logger.Info(au.BrightCyan(icon + " check unready"))
 			} else {
 				logger.Errorf(icon+" error: %v", err)
 			}

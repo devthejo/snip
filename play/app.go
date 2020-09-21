@@ -3,6 +3,7 @@ package play
 import (
 	"time"
 
+	"github.com/logrusorgru/aurora"
 	cache "github.com/patrickmn/go-cache"
 
 	"gitlab.com/youtopia.earth/ops/snip/config"
@@ -22,6 +23,7 @@ type App interface {
 	GetLoader(string) *loader.Plugin
 	GetMiddleware(string) *middleware.Plugin
 	GetRunner(string) *runner.Plugin
+	GetAurora() aurora.Aurora
 	IsExiting() bool
 	Exiting()
 }

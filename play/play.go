@@ -315,10 +315,8 @@ func (p *Play) Run() error {
 
 		if loop.HasChk {
 			if ok, _ := loop.PreChk.Run(); ok {
-				p.RunReport.OK++
 				return nil
 			}
-			p.RunReport.Changed++
 		}
 		var localErrSlice []error
 
@@ -376,6 +374,7 @@ func (p *Play) Run() error {
 			errSlice = append(errSlice, localErrSlice...)
 			return multierr.Combine(localErrSlice...)
 		}
+
 		return nil
 	}
 
