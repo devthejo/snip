@@ -47,6 +47,10 @@ var (
 			cmd.Dir = cfg.Dir
 
 			env := cfg.EnvMap()
+			if home, ok := env["HOME"]; !ok || home == "" {
+				usr, _ := user.Current()
+				env["HOME"] = usr.HomeDir
+			}
 			cmd.Env = tools.EnvToPairs(env)
 
 			var sIn io.WriteCloser
