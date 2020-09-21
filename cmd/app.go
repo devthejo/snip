@@ -6,6 +6,7 @@ import (
 	cache "github.com/patrickmn/go-cache"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/logrusorgru/aurora"
 
 	"gitlab.com/youtopia.earth/ops/snip/config"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/loader"
@@ -20,6 +21,7 @@ type App interface {
 	GetViper() *viper.Viper
 	GetConfigLoader() *config.ConfigLoader
 	GetConfigFile() *string
+	GetAurora() aurora.Aurora
 	OnPreRun(*cobra.Command)
 	GetNow() time.Time
 	GetCache() *cache.Cache

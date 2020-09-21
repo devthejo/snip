@@ -19,6 +19,8 @@ require (
 	github.com/json-iterator/go v1.1.9
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
 	github.com/kvz/logstreamer v0.0.0-20150507115422-a635b98146f0
+	github.com/logrusorgru/aurora v2.0.3+incompatible
+	github.com/mattn/go-isatty v0.0.12
 	github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b
 	github.com/mitchellh/mapstructure v1.3.0
 	github.com/ogier/pflag v0.0.1 // indirect

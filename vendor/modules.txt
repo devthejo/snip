@@ -231,6 +231,8 @@ github.com/kevinburke/ssh_config
 github.com/konsorten/go-windows-terminal-sequences
 # github.com/kvz/logstreamer v0.0.0-20150507115422-a635b98146f0
 github.com/kvz/logstreamer
+# github.com/logrusorgru/aurora v2.0.3+incompatible
+github.com/logrusorgru/aurora
 # github.com/magiconair/properties v1.8.1
 github.com/magiconair/properties
 # github.com/mattn/go-colorable v0.1.6

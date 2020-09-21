@@ -1,6 +1,7 @@
 package app
 
 import (
+	"os"
 	"os/user"
 	"path/filepath"
 	"plugin"
@@ -11,6 +12,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	auroraPackage "github.com/logrusorgru/aurora"
+	"github.com/mattn/go-isatty"
 
 	"gitlab.com/youtopia.earth/ops/snip/cmd"
 	"gitlab.com/youtopia.earth/ops/snip/config"
@@ -47,6 +50,8 @@ type App struct {
 	VarsRegistry *registry.NsVars
 
 	ExitingState bool
+
+	Aurora auroraPackage.Aurora
 }
 
 func New() *App {
@@ -97,6 +102,21 @@ func (app *App) GetConfigFile() *string {
 
 func (app *App) OnInitialize() {
 	app.ConfigLoader.OnInitialize()
+	app.InitAurora()
+}
+
+func (app *App) InitAurora() {
+	var enableColors bool
+	if app.Config.LogForceColors {
+		enableColors = true
+	} else {
+		enableColors = isatty.IsTerminal(os.Stdout.Fd())
+	}
+	app.Aurora = auroraPackage.NewAurora(enableColors)
+}
+
+func (app *App) GetAurora() auroraPackage.Aurora {
+	return app.Aurora
 }
 
 func (app *App) OnPreRun(cmd *cobra.Command) {

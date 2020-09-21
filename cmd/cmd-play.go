@@ -1,8 +1,10 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
+	"fmt"
+
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 
 	"gitlab.com/youtopia.earth/ops/snip/config"
 	"gitlab.com/youtopia.earth/ops/snip/play"
@@ -35,8 +37,12 @@ func CmdPlay(app App) *cobra.Command {
 					return err
 				}
 
+				au := app.GetAurora()
 				runReport := playCfg.RunReport
-				logrus.Infof("Report of Play: OK=%d Changed=%d Total=%d", runReport.OK, runReport.Changed, runReport.Total)
+				logrus.Infof("Report of Play: %s %s %s",
+					au.BrightGreen(fmt.Sprintf("OK=%d", runReport.OK)),
+					au.BrightMagenta(fmt.Sprintf("Changed=%d", runReport.Changed)),
+					au.BrightBlue(fmt.Sprintf("Total=%d", runReport.Total)))
 
 				tools.PrintMemUsage()
 
