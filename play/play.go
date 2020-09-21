@@ -297,7 +297,7 @@ func (p *Play) Run() error {
 		p.RunReport.Total++
 
 		if loop.IsLoopRowItem {
-			logger.Info(strings.Repeat("  ", 2) + "⦿ " + loop.Name)
+			logger.Info("  ⦿ " + loop.Name)
 		}
 
 		switch pl := loop.Play.(type) {
