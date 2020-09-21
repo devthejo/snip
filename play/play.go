@@ -294,7 +294,6 @@ func (p *Play) Run() error {
 
 	var errSlice []error
 	runLoopSeq := func(loop *LoopRow) error {
-		p.RunReport.Total++
 
 		if loop.IsLoopRowItem {
 			logger.Info("  ⦿ " + loop.Name)
@@ -314,11 +313,15 @@ func (p *Play) Run() error {
 		}
 
 		if loop.HasChk {
+			p.RunReport.Total++
 			if ok, _ := loop.PreChk.Run(); ok {
 				return nil
 			}
 		} else {
-			p.RunReport.OK++
+			if !p.HasChildren {
+				p.RunReport.Total++
+				p.RunReport.OK++
+			}
 		}
 
 		var localErrSlice []error
