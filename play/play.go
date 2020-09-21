@@ -48,7 +48,8 @@ type Play struct {
 
 	State StateType
 
-	Skip bool
+	Skip           bool
+	NoSkipChildren bool
 }
 
 func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
@@ -107,11 +108,21 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 	logger.Info("  " + icon + " " + cp.GetTitle())
 
 	cfg := cp.App.GetConfig()
-	if !p.HasChildren &&
-		len(cfg.PlayKey) != 0 &&
-		!(tools.SliceContainsString(cfg.PlayKey, p.Key) ||
-			tools.SliceContainsString(cfg.PlayKey, p.TreeKey)) {
-		p.Skip = true
+	if parentLoopRow != nil {
+		p.NoSkipChildren = parentLoopRow.ParentPlay.NoSkipChildren
+	}
+	if len(cfg.PlayKey) != 0 && !p.NoSkipChildren {
+		match := tools.SliceContainsString(cfg.PlayKey, p.Key) ||
+			tools.SliceContainsString(cfg.PlayKey, p.TreeKey)
+		if p.HasChildren {
+			if match {
+				p.NoSkipChildren = true
+			}
+		} else {
+			if !match {
+				p.Skip = true
+			}
+		}
 	}
 
 	var loopRows []*CfgLoopRow
