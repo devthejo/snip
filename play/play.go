@@ -269,6 +269,11 @@ func (p *Play) RegisterVarsSaveUpAndPersist() {
 
 func (p *Play) Run() error {
 
+	app := p.App
+	if app.IsExiting() {
+		return nil
+	}
+
 	var icon string
 	if p.ParentLoopRow == nil {
 		icon = `🠞`
@@ -322,9 +327,14 @@ func (p *Play) Run() error {
 		switch pl := loop.Play.(type) {
 		case []*Play:
 			for tries := p.Retry + 1; tries > 0; tries-- {
+
 				for _, child := range pl {
 					if err := child.Run(); err != nil {
 						localErrSlice = append(localErrSlice, err)
+						break
+					}
+
+					if app.IsExiting() {
 						break
 					}
 				}
@@ -335,6 +345,10 @@ func (p *Play) Run() error {
 					} else {
 						break
 					}
+				}
+
+				if app.IsExiting() {
+					break
 				}
 			}
 		case *Cmd:
@@ -350,6 +364,10 @@ func (p *Play) Run() error {
 					} else {
 						break
 					}
+				}
+
+				if app.IsExiting() {
+					break
 				}
 			}
 		}

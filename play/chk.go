@@ -42,7 +42,7 @@ type Chk struct {
 	Middlewares []*middleware.Middleware
 	Runner      *runner.Runner
 
-	RequiredFiles           map[string]string
+	RequiredFiles              map[string]string
 	RequiredFilesSrcProcessors map[string][]func(*processor.Config, *string) error
 
 	Expect []expect.Batcher
@@ -98,7 +98,7 @@ func CreateChk(cchk *CfgChk, ctx *RunCtx, parentLoopRow *LoopRow, isPreRun bool)
 
 		Dir: cchk.Dir,
 
-		RequiredFiles:           cchk.RequiredFiles,
+		RequiredFiles:              cchk.RequiredFiles,
 		RequiredFilesSrcProcessors: cchk.RequiredFilesSrcProcessors,
 
 		Thread:      thr,
@@ -145,6 +145,12 @@ func (chk *Chk) RunThread() error {
 	return chk.Thread.Run(chk.Main)
 }
 func (chk *Chk) Run() (bool, error) {
+
+	app := chk.App
+	if app.IsExiting() {
+		return false, nil
+	}
+
 	logger := chk.Logger
 	isPreRun := chk.IsPreRun
 
@@ -187,17 +193,21 @@ func (chk *Chk) Run() (bool, error) {
 		"checkingAction": checkingAction,
 	})
 
-	if err != nil {
-		if isPreRun {
-			logger.Info(icon + " check unready")
+	ok := err == nil
+
+	if !app.IsExiting() {
+		if ok {
+			logger.Info(icon + " check ok")
 		} else {
-			logger.Errorf(icon+" error: %v", err)
+			if isPreRun {
+				logger.Info(icon + " check unready")
+			} else {
+				logger.Errorf(icon+" error: %v", err)
+			}
 		}
-		return false, err
 	}
 
-	logger.Info(icon + " check ok")
-	return true, err
+	return ok, err
 }
 
 func (chk *Chk) CreateMutableCmd() *middleware.MutableCmd {
@@ -224,17 +234,17 @@ func (chk *Chk) CreateMutableCmd() *middleware.MutableCmd {
 	}
 
 	mutableCmd := &middleware.MutableCmd{
-		AppConfig:               chk.AppConfig,
-		Command:                 chk.Command,
-		Vars:                    vars,
-		OriginalCommand:         originalCommand,
-		OriginalVars:            originalVars,
-		RequiredFiles:           requiredFiles,
+		AppConfig:                  chk.AppConfig,
+		Command:                    chk.Command,
+		Vars:                       vars,
+		OriginalCommand:            originalCommand,
+		OriginalVars:               originalVars,
+		RequiredFiles:              requiredFiles,
 		RequiredFilesSrcProcessors: requiredFilesProcessors,
-		Expect:                  chk.Expect,
-		Runner:                  chk.Runner,
-		Dir:                     chk.Dir,
-		Closer:                  chk.Closer,
+		Expect:                     chk.Expect,
+		Runner:                     chk.Runner,
+		Dir:                        chk.Dir,
+		Closer:                     chk.Closer,
 	}
 	return mutableCmd
 }
