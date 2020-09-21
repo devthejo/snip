@@ -50,6 +50,8 @@ type Play struct {
 
 	Skip           bool
 	NoSkipChildren bool
+
+	RunReport *RunReport
 }
 
 func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
@@ -78,6 +80,8 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 
 		Depth:       cp.Depth,
 		HasChildren: cp.HasChildren,
+
+		RunReport: cp.RunReport,
 	}
 
 	if cp.Retry != nil {
@@ -283,6 +287,8 @@ func (p *Play) Run() error {
 		return nil
 	}
 
+	p.RunReport.Total++
+
 	var errSlice []error
 	runLoopSeq := func(loop *LoopRow) error {
 		if loop.IsLoopRowItem {
@@ -304,8 +310,10 @@ func (p *Play) Run() error {
 
 		if loop.HasChk {
 			if ok, _ := loop.PreChk.Run(); ok {
+				p.RunReport.OK++
 				return nil
 			}
+			p.RunReport.Changed++
 		}
 		var localErrSlice []error
 

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
+	"github.com/sirupsen/logrus"
 
 	"gitlab.com/youtopia.earth/ops/snip/config"
 	"gitlab.com/youtopia.earth/ops/snip/play"
@@ -24,8 +25,8 @@ func CmdPlay(app App) *cobra.Command {
 					return err
 				}
 
-				config := play.BuildConfig(app)
-				p := play.BuildPlay(config)
+				playCfg := play.BuildConfig(app)
+				p := play.BuildPlay(playCfg)
 
 				if err := p.Start(); err != nil {
 					return err
@@ -33,6 +34,9 @@ func CmdPlay(app App) *cobra.Command {
 				if err := play.Clean(app); err != nil {
 					return err
 				}
+
+				runReport := playCfg.RunReport
+				logrus.Infof("Report of Play: OK=%d Changed=%d Total=%d", runReport.OK, runReport.Changed, runReport.Total)
 
 				tools.PrintMemUsage()
 

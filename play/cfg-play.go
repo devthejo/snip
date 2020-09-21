@@ -67,6 +67,8 @@ type CfgPlay struct {
 	Loaders     *[]*loader.Loader
 	Middlewares *[]*middleware.Middleware
 	Runner      *runner.Runner
+
+	RunReport *RunReport
 }
 
 func CreateCfgPlay(app App, m map[string]interface{}, parentCfgPlay *CfgPlay, buildCtx *BuildCtx) *CfgPlay {
@@ -97,6 +99,12 @@ func CreateCfgPlay(app App, m map[string]interface{}, parentCfgPlay *CfgPlay, bu
 		} else {
 			cp.ParentBuildFile = parentCfgPlay.ParentBuildFile
 		}
+	}
+
+	if parentCfgPlay != nil {
+		cp.RunReport = parentCfgPlay.RunReport
+	} else {
+		cp.RunReport = &RunReport{}
 	}
 
 	cp.SetParentCfgPlay(parentCfgPlay)
