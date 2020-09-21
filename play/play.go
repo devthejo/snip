@@ -292,10 +292,10 @@ func (p *Play) Run() error {
 		return nil
 	}
 
-	p.RunReport.Total++
-
 	var errSlice []error
 	runLoopSeq := func(loop *LoopRow) error {
+		p.RunReport.Total++
+
 		if loop.IsLoopRowItem {
 			logger.Info(strings.Repeat("  ", 2) + "⦿ " + loop.Name)
 		}
@@ -317,7 +317,10 @@ func (p *Play) Run() error {
 			if ok, _ := loop.PreChk.Run(); ok {
 				return nil
 			}
+		} else {
+			p.RunReport.OK++
 		}
+
 		var localErrSlice []error
 
 		localErrSlice = make([]error, 0)

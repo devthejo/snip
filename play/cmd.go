@@ -41,7 +41,7 @@ type Cmd struct {
 	Middlewares []*middleware.Middleware
 	Runner      *runner.Runner
 
-	RequiredFiles           map[string]string
+	RequiredFiles              map[string]string
 	RequiredFilesSrcProcessors map[string][]func(*processor.Config, *string) error
 
 	Expect []expect.Batcher
@@ -101,7 +101,7 @@ func CreateCmd(ccmd *CfgCmd, ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 
 		Dir: ccmd.Dir,
 
-		RequiredFiles:           ccmd.RequiredFiles,
+		RequiredFiles:              ccmd.RequiredFiles,
 		RequiredFilesSrcProcessors: ccmd.RequiredFilesSrcProcessors,
 
 		Thread:      thr,
@@ -175,17 +175,17 @@ func (cmd *Cmd) CreateMutableCmd() *middleware.MutableCmd {
 	}
 
 	mutableCmd := &middleware.MutableCmd{
-		AppConfig:               cmd.AppConfig,
-		Command:                 cmd.Command,
-		Vars:                    vars,
-		OriginalCommand:         originalCommand,
-		OriginalVars:            originalVars,
-		RequiredFiles:           requiredFiles,
+		AppConfig:                  cmd.AppConfig,
+		Command:                    cmd.Command,
+		Vars:                       vars,
+		OriginalCommand:            originalCommand,
+		OriginalVars:               originalVars,
+		RequiredFiles:              requiredFiles,
 		RequiredFilesSrcProcessors: requiredFilesProcessors,
-		Expect:                  cmd.Expect,
-		Runner:                  cmd.Runner,
-		Dir:                     cmd.Dir,
-		Closer:                  cmd.Closer,
+		Expect:                     cmd.Expect,
+		Runner:                     cmd.Runner,
+		Dir:                        cmd.Dir,
+		Closer:                     cmd.Closer,
 	}
 	return mutableCmd
 }
