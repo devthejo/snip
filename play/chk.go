@@ -9,16 +9,17 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
-	expect "gitlab.com/youtopia.earth/ops/snip/goexpect"
-	"gitlab.com/youtopia.earth/ops/snip/variable"
 
 	"gitlab.com/youtopia.earth/ops/snip/config"
+	"gitlab.com/youtopia.earth/ops/snip/goenv"
+	expect "gitlab.com/youtopia.earth/ops/snip/goexpect"
 	snipplugin "gitlab.com/youtopia.earth/ops/snip/plugin"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/middleware"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/processor"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/runner"
 	"gitlab.com/youtopia.earth/ops/snip/proc"
 	"gitlab.com/youtopia.earth/ops/snip/tools"
+	"gitlab.com/youtopia.earth/ops/snip/variable"
 )
 
 type Chk struct {
@@ -126,6 +127,9 @@ func CreateChk(cchk *CfgChk, ctx *RunCtx, parentLoopRow *LoopRow, isPreRun bool)
 	}
 	for k, v := range ctx.Vars.Items() {
 		vars[k] = v.(string)
+	}
+	for k, v := range vars {
+		vars[k], _ = goenv.Expand(v, vars)
 	}
 	chk.Vars = vars
 

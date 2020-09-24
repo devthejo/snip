@@ -9,11 +9,12 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+
 	expect "gitlab.com/youtopia.earth/ops/snip/goexpect"
 	"gitlab.com/youtopia.earth/ops/snip/registry"
 	"gitlab.com/youtopia.earth/ops/snip/variable"
-
 	"gitlab.com/youtopia.earth/ops/snip/config"
+	"gitlab.com/youtopia.earth/ops/snip/goenv"
 	snipplugin "gitlab.com/youtopia.earth/ops/snip/plugin"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/middleware"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/processor"
@@ -125,6 +126,9 @@ func CreateCmd(ccmd *CfgCmd, ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 	}
 	for k, v := range ctx.Vars.Items() {
 		vars[k] = v.(string)
+	}
+	for k, v := range vars {
+		vars[k], _ = goenv.Expand(v, vars)
 	}
 	cmd.Vars = vars
 
