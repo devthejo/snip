@@ -19,7 +19,6 @@ import (
 	"gitlab.com/youtopia.earth/ops/snip/plugin/processor"
 	"gitlab.com/youtopia.earth/ops/snip/plugin/runner"
 	"gitlab.com/youtopia.earth/ops/snip/proc"
-	"gitlab.com/youtopia.earth/ops/snip/tools"
 )
 
 type Cmd struct {
@@ -363,9 +362,6 @@ func (cmd *Cmd) RunRunner() error {
 		appCfg.TreeDirLauncher(cmd.TreeKeyParts))
 
 	kp := cmd.TreeKeyParts
-	// if len(kp) > 0 {
-	// 	kp = kp[0 : len(kp)-1]
-	// }
 	vars["SNIP_VARS_TREEPATH"] = filepath.Join(rootPath, "vars",
 		appCfg.TreeDirVars(kp))
 
@@ -401,11 +397,6 @@ func (cmd *Cmd) PreflightRun() error {
 		}
 	}
 
-	// for dest, src := range cmd.RequiredFiles {
-	// 	logrus.Error(src)
-	// 	logrus.Error(dest)
-	// }
-
 	return nil
 }
 
@@ -413,10 +404,6 @@ func (cmd *Cmd) Main() error {
 
 	logger := cmd.Logger
 	logger.Info("⮞ playing")
-
-	// logger.Debugf("vars: %v", tools.JsonEncode(cmd.Vars))
-	logger.Debugf("env: %v", tools.JsonEncode(cmd.EnvMap()))
-	logger.Debugf("command: %v", strings.Join(cmd.Command, " "))
 
 	if err := cmd.RunRunner(); err != nil {
 		return err
