@@ -38,7 +38,7 @@ func CmdPlay(app App) *cobra.Command {
 				}
 
 				au := app.GetAurora()
-				runReport := playCfg.RunReport
+				runReport := playCfg.GlobalRunCtx.RunReport
 				logrus.Infof("Report of Play: %s %s %s",
 					au.BrightGreen(fmt.Sprintf("OK=%d", runReport.OK)),
 					au.BrightMagenta(fmt.Sprintf("Changed=%d", runReport.Changed)),
@@ -67,6 +67,8 @@ func CmdPlay(app App) *cobra.Command {
 	flags.StringSliceP("key", "k", config.FlagPlayKeyDefault, config.FlagPlayKeyDesc)
 	flags.Bool("key-no-deps", config.FlagPlayKeyNoDepsDefault, config.FlagPlayKeyNoDepsDesc)
 	flags.Bool("key-no-post", config.FlagPlayKeyNoPostDefault, config.FlagPlayKeyNoPostDesc)
+	flags.String("key-start", config.FlagPlayKeyStartDefault, config.FlagPlayKeyStartDesc)
+	flags.String("key-end", config.FlagPlayKeyEndDefault, config.FlagPlayKeyEndDesc)
 
 	return cmd
 }

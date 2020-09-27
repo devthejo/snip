@@ -20,6 +20,8 @@ const (
 	FlagPlayKeyDesc       = "comma separated list of keys (or tree keys) to run skipping all others"
 	FlagPlayKeyNoDepsDesc = "skip also dependencies of provided keys"
 	FlagPlayKeyNoPostDesc = "skip also post_install of provided keys"
+	FlagPlayKeyStartDesc  = "skip all before key"
+	FlagPlayKeyEndDesc    = "skip all after key"
 )
 
 var (
@@ -40,4 +42,6 @@ var (
 	FlagPlayKeyDefault       = []string{}
 	FlagPlayKeyNoDepsDefault = false
 	FlagPlayKeyNoPostDefault = false
+	FlagPlayKeyStartDefault  = ""
+	FlagPlayKeyEndDefault    = ""
 )

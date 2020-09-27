@@ -68,7 +68,7 @@ type CfgPlay struct {
 	Middlewares *[]*middleware.Middleware
 	Runner      *runner.Runner
 
-	RunReport *RunReport
+	GlobalRunCtx *GlobalRunCtx
 
 	Scope string
 }
@@ -104,9 +104,9 @@ func CreateCfgPlay(app App, m map[string]interface{}, parentCfgPlay *CfgPlay, bu
 	}
 
 	if parentCfgPlay != nil {
-		cp.RunReport = parentCfgPlay.RunReport
+		cp.GlobalRunCtx = parentCfgPlay.GlobalRunCtx
 	} else {
-		cp.RunReport = &RunReport{}
+		cp.GlobalRunCtx = CreateGlobalRunCtx()
 	}
 
 	cp.SetParentCfgPlay(parentCfgPlay)

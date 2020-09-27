@@ -59,7 +59,7 @@ type Chk struct {
 
 	PreflightRunnedOnce bool
 
-	RunReport *RunReport
+	GlobalRunCtx *GlobalRunCtx
 }
 
 func (chk *Chk) EnvMap() map[string]string {
@@ -109,7 +109,7 @@ func CreateChk(cchk *CfgChk, ctx *RunCtx, parentLoopRow *LoopRow, isPreRun bool)
 
 		Quiet: cp.Quiet != nil && (*cp.Quiet),
 
-		RunReport: cp.RunReport,
+		GlobalRunCtx: cp.GlobalRunCtx,
 	}
 
 	depth := cchk.Depth
@@ -204,7 +204,7 @@ func (chk *Chk) Run() (bool, error) {
 	ok := err == nil
 
 	au := app.GetAurora()
-	runReport := chk.RunReport
+	runReport := chk.GlobalRunCtx.RunReport
 
 	if !app.IsExiting() {
 		if ok {
