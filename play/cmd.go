@@ -10,16 +10,16 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	expect "gitlab.com/ytopia/ops/snip/goexpect"
-	"gitlab.com/ytopia/ops/snip/registry"
-	"gitlab.com/ytopia/ops/snip/variable"
 	"gitlab.com/ytopia/ops/snip/config"
 	"gitlab.com/ytopia/ops/snip/goenv"
+	expect "gitlab.com/ytopia/ops/snip/goexpect"
 	snipplugin "gitlab.com/ytopia/ops/snip/plugin"
 	"gitlab.com/ytopia/ops/snip/plugin/middleware"
 	"gitlab.com/ytopia/ops/snip/plugin/processor"
 	"gitlab.com/ytopia/ops/snip/plugin/runner"
 	"gitlab.com/ytopia/ops/snip/proc"
+	"gitlab.com/ytopia/ops/snip/registry"
+	"gitlab.com/ytopia/ops/snip/variable"
 )
 
 type Cmd struct {
@@ -122,10 +122,12 @@ func CreateCmd(ccmd *CfgCmd, ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 
 	vars := make(map[string]string)
 	for k, v := range ctx.VarsDefault.Items() {
-		vars[k] = v.(string)
+		runVar := v.(*variable.RunVar)
+		vars[k] = runVar.GetValue()
 	}
 	for k, v := range ctx.Vars.Items() {
-		vars[k] = v.(string)
+		runVar := v.(*variable.RunVar)
+		vars[k] = runVar.GetValue()
 	}
 	for k, v := range vars {
 		vars[k], _ = goenv.Expand(v, vars)

@@ -123,10 +123,12 @@ func CreateChk(cchk *CfgChk, ctx *RunCtx, parentLoopRow *LoopRow, isPreRun bool)
 
 	vars := make(map[string]string)
 	for k, v := range ctx.VarsDefault.Items() {
-		vars[k] = v.(string)
+		runVar := v.(*variable.RunVar)
+		vars[k] = runVar.GetValue()
 	}
 	for k, v := range ctx.Vars.Items() {
-		vars[k] = v.(string)
+		runVar := v.(*variable.RunVar)
+		vars[k] = runVar.GetValue()
 	}
 	for k, v := range vars {
 		vars[k], _ = goenv.Expand(v, vars)
