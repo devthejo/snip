@@ -33,8 +33,9 @@ type CfgPlay struct {
 
 	CfgPlay interface{}
 
-	Vars   map[string]*variable.Var
-	LoopOn []*CfgLoopRow
+	VarsClean *bool
+	Vars      map[string]*variable.Var
+	LoopOn    []*CfgLoopRow
 
 	VarsSets       map[string]map[string]*variable.Var
 	LoopSets       map[string][]map[string]*variable.Var
@@ -136,6 +137,7 @@ func (cp *CfgPlay) ParseMapRun(m map[string]interface{}, override bool) {
 	cp.ParseTitle(m, override)
 	cp.ParseDir(m, override)
 	cp.ParseExecTimeout(m, override)
+	cp.ParseVarsClean(m, override)
 	cp.ParseVarsSets(m, override)
 	cp.ParseLoopSets(m, override)
 	cp.ParseLoopOn(m, override)
@@ -272,6 +274,19 @@ func (cp *CfgPlay) ParseExecTimeout(m map[string]interface{}, override bool) {
 	errors.Check(err)
 	if timeout != 0 {
 		cp.ExecTimeout = &timeout
+	}
+}
+
+func (cp *CfgPlay) ParseVarsClean(m map[string]interface{}, override bool) {
+	if !override && cp.VarsClean != nil {
+		return
+	}
+	switch v := m["vars_clean"].(type) {
+	case bool:
+		cp.VarsClean = &v
+	case nil:
+	default:
+		unexpectedTypeCfgPlay(m, "vars_clean")
 	}
 }
 

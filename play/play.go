@@ -53,6 +53,8 @@ type Play struct {
 
 	GlobalRunCtx *GlobalRunCtx
 	CfgPlay      *CfgPlay
+
+	VarsClean bool
 }
 
 func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
@@ -84,6 +86,10 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 
 		GlobalRunCtx: cp.GlobalRunCtx,
 		CfgPlay:      cp,
+	}
+
+	if cp.VarsClean != nil {
+		p.VarsClean = *cp.VarsClean
 	}
 
 	if cp.Retry != nil {
@@ -174,8 +180,10 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 		vars := cmap.New()
 		varsDefault := cmap.New()
 
-		for k, v := range ctx.Vars.Items() {
-			vars.Set(k, v)
+		if !p.VarsClean {
+			for k, v := range ctx.Vars.Items() {
+				vars.Set(k, v)
+			}
 		}
 		for _, v := range cp.Vars {
 			v.RegisterValueTo(vars)
@@ -184,8 +192,10 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 			v.RegisterValueTo(vars)
 		}
 
-		for k, v := range ctx.VarsDefault.Items() {
-			varsDefault.Set(k, v)
+		if !p.VarsClean {
+			for k, v := range ctx.VarsDefault.Items() {
+				varsDefault.Set(k, v)
+			}
 		}
 		for _, v := range loop.Vars {
 			v.RegisterDefaultTo(varsDefault)
