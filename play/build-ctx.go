@@ -5,10 +5,6 @@ import (
 	"gitlab.com/ytopia/ops/snip/variable"
 )
 
-type LoadedSnippet struct {
-	requiredBy []string
-}
-
 type BuildCtx struct {
 	Parent                          *BuildCtx
 	LoadedSnippets                  map[string]*LoadedSnippet
@@ -52,10 +48,18 @@ func CreateNextBuildCtx(prevBuildCtx *BuildCtx) *BuildCtx {
 	return buildCtx
 }
 
-func (buildCtx *BuildCtx) RegisterLoadedSnippet(snippet string) {
-	loadedSnippet := &LoadedSnippet{}
-	buildCtx.LoadedSnippets[snippet] = loadedSnippet
+func (buildCtx *BuildCtx) LoadedSnippetKey(scope string, snippet string) string {
+	return scope + ":" + snippet
+}
+func (buildCtx *BuildCtx) RegisterLoadedSnippet(scope string, snippet string) {
+	key := buildCtx.LoadedSnippetKey(scope, snippet)
+	if _, hasKey := buildCtx.LoadedSnippets[key]; !hasKey {
+		buildCtx.LoadedSnippets[key] = CreateLoadedSnippet()
+	}
+	loadedSnippet := buildCtx.LoadedSnippets[key]
 	for _, v := range buildCtx.LoadedSnippetsDownstreamParents {
-		v[snippet] = loadedSnippet
+		if _, hasKey := v[key]; !hasKey {
+			v[key] = loadedSnippet
+		}
 	}
 }

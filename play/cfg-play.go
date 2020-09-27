@@ -69,6 +69,8 @@ type CfgPlay struct {
 	Runner      *runner.Runner
 
 	RunReport *RunReport
+
+	Scope string
 }
 
 func CreateCfgPlay(app App, m map[string]interface{}, parentCfgPlay *CfgPlay, buildCtx *BuildCtx) *CfgPlay {
@@ -147,6 +149,7 @@ func (cp *CfgPlay) ParseMapRun(m map[string]interface{}, override bool) {
 	cp.ParseLoader(m, override)
 	cp.ParseMiddlewares(m, override)
 	cp.ParseRunner(m, override)
+	cp.ParseScope(m, override)
 
 	cp.ParseCheck(m, override)
 	cp.ParsePlay(m, override)
@@ -196,15 +199,19 @@ func (cp *CfgPlay) ParsePlay(m map[string]interface{}, override bool) {
 			case *CfgCmd:
 				c.LoadCfgPlaySubstitution()
 				c.RequirePostInstall()
+				c.registerRequiredByPostInstall()
 			}
 		}
 
 	case string:
 		c, err := shellquote.Split(v)
+		// logrus.Errorf("v: %v", v)
 		errors.Check(err)
 		ccmd := CreateCfgCmd(cp, c)
 		cp.CfgPlay = ccmd
-		ccmd.HandleDependencies()
+		ccmd.RequireDependencies()
+		ccmd.registerRequiredByDependencies()
+		ccmd.RegisterInDependencies()
 	case nil:
 	default:
 		unexpectedTypeCfgPlay(m, "play")
@@ -804,6 +811,32 @@ func (cp *CfgPlay) ParseRunner(m map[string]interface{}, override bool) {
 		}
 	default:
 		logrus.Fatalf("unexpected runner type %T value %v", runnerV, runnerV)
+	}
+}
+
+func (cp *CfgPlay) ParseScope(m map[string]interface{}, override bool) {
+	if !override && cp.Scope != "" {
+		return
+	}
+	switch scope := m["scope"].(type) {
+	case string:
+		cp.Scope = scope
+	case nil:
+		switch loopOn := m["loop_on"].(type) {
+		case string:
+			cp.Scope = loopOn
+		default:
+			switch runner := m["runner"].(type) {
+			case string:
+				cp.Scope = runner
+			default:
+				if cp.Scope == "" && cp.ParentCfgPlay != nil {
+					cp.Scope = cp.ParentCfgPlay.Scope
+				}
+			}
+		}
+	default:
+		logrus.Fatalf("unexpected scope type %T value %v", scope, scope)
 	}
 }
 

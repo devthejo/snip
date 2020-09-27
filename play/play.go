@@ -124,7 +124,28 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 			}
 		} else {
 			if !match {
-				p.Skip = true
+				skip := true
+				buildCtx := cp.BuildCtx
+				loadedSnippetKey := buildCtx.LoadedSnippetKey(cp.Scope, p.Key)
+
+				for _, pkey := range cfg.PlayKey {
+					if loadedSnippet, hasKey := buildCtx.LoadedSnippets[loadedSnippetKey]; hasKey {
+						if !cfg.PlayKeyNoDeps {
+							if b, ok := loadedSnippet.requiredByDependencies[pkey]; b && ok {
+								skip = false
+								break
+							}
+						}
+						if !cfg.PlayKeyNoPost {
+							if b, ok := loadedSnippet.requiredByPostInstall[pkey]; b && ok {
+								skip = false
+								break
+							}
+						}
+					}
+				}
+
+				p.Skip = skip
 			}
 		}
 	}

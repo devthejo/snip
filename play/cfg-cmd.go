@@ -59,16 +59,13 @@ func (ccmd *CfgCmd) Parse() {
 	ccmd.LoadLoader()
 }
 
-func (ccmd *CfgCmd) HandleDependencies() {
-	ccmd.RequireDependencies()
-	ccmd.RegisterInDependencies()
-}
-
 func (ccmd *CfgCmd) RequireDependencies() {
 	cp := ccmd.CfgPlay
-	ls := cp.BuildCtx.LoadedSnippetsUpstream
+	buildCtx := cp.BuildCtx
+	ls := buildCtx.LoadedSnippetsUpstream
 	for _, dep := range cp.Dependencies {
-		if _, ok := ls[dep]; ok {
+		loadedDepKey := buildCtx.LoadedSnippetKey(cp.Scope, dep)
+		if _, ok := ls[loadedDepKey]; ok {
 			continue
 		}
 		k := ccmd.OriginalCommand[0]
@@ -79,13 +76,13 @@ func (ccmd *CfgCmd) RequireDependencies() {
 
 		parent := cp.ParentCfgPlay
 
-		buildCtx := CreateNextBuildCtx(cp.BuildCtx)
-		buildCtx.LoadedSnippetsDownstreamParents = nil
+		nextBuildCtx := CreateNextBuildCtx(buildCtx)
+		nextBuildCtx.LoadedSnippetsDownstreamParents = nil
 
 		// default runner from dependency caller
-		buildCtx.DefaultRunner = ccmd.Runner
-		buildCtx.DefaultVars = cp.Vars
-		depPlay := CreateCfgPlay(cp.App, m, parent, buildCtx)
+		nextBuildCtx.DefaultRunner = ccmd.Runner
+		nextBuildCtx.DefaultVars = cp.Vars
+		depPlay := CreateCfgPlay(cp.App, m, parent, nextBuildCtx)
 
 		playSlice := parent.CfgPlay.([]*CfgPlay)
 		playSlice = append(playSlice, depPlay)
@@ -97,10 +94,11 @@ func (ccmd *CfgCmd) RequirePostInstall() {
 	cp := ccmd.CfgPlay
 	buildCtx := cp.BuildCtx
 	ls := buildCtx.LoadedSnippetsDownstream
+	scope := cp.Scope
 
 	for _, dep := range cp.PostInstall {
-
-		if _, ok := ls[dep]; ok {
+		loadedDepKey := buildCtx.LoadedSnippetKey(scope, dep)
+		if _, ok := ls[loadedDepKey]; ok {
 			return
 		}
 
@@ -115,7 +113,39 @@ func (ccmd *CfgCmd) RequirePostInstall() {
 		playSlice := parent.CfgPlay.([]*CfgPlay)
 		playSlice = append(playSlice, CreateCfgPlay(cp.App, m, parent, buildCtx))
 		parent.CfgPlay = playSlice
+	}
+}
 
+func (ccmd *CfgCmd) registerRequiredByDependencies() {
+	cp := ccmd.CfgPlay
+	buildCtx := cp.BuildCtx
+	ls := buildCtx.LoadedSnippets
+	scope := cp.Scope
+	by := ccmd.OriginalCommand[0]
+
+	for _, dep := range cp.Dependencies {
+		loadedDepKey := buildCtx.LoadedSnippetKey(scope, dep)
+		if _, hasKey := ls[loadedDepKey]; !hasKey {
+			ls[loadedDepKey] = CreateLoadedSnippet()
+		}
+		loadedDep := ls[loadedDepKey]
+		loadedDep.requiredByDependencies[by] = true
+	}
+}
+func (ccmd *CfgCmd) registerRequiredByPostInstall() {
+	cp := ccmd.CfgPlay
+	buildCtx := cp.BuildCtx
+	ls := buildCtx.LoadedSnippets
+	scope := cp.Scope
+	by := ccmd.OriginalCommand[0]
+
+	for _, dep := range cp.PostInstall {
+		loadedDepKey := buildCtx.LoadedSnippetKey(scope, dep)
+		if _, hasKey := ls[loadedDepKey]; !hasKey {
+			ls[loadedDepKey] = CreateLoadedSnippet()
+		}
+		loadedDep := ls[loadedDepKey]
+		loadedDep.requiredByDependencies[by] = true
 	}
 }
 
@@ -123,9 +153,7 @@ func (ccmd *CfgCmd) RegisterInDependencies() {
 	cp := ccmd.CfgPlay
 	buildCtx := cp.BuildCtx
 	k := ccmd.OriginalCommand[0]
-	// logrus.Errorf("vars %v", ccmd.CfgPlay.Vars)
-	buildCtx.RegisterLoadedSnippet(k)
-	// buildCtx.RegisterLoadedSnippet(k, ccmd.Runner, ccmd.)
+	buildCtx.RegisterLoadedSnippet(cp.Scope, k)
 }
 
 func (ccmd *CfgCmd) LoadCfgPlaySubstitution() {
