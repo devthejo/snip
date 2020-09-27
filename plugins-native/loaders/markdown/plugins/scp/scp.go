@@ -14,10 +14,10 @@ import (
 	// "github.com/sirupsen/logrus"
 
 	"github.com/sirupsen/logrus"
-	"gitlab.com/youtopia.earth/ops/snip/errors"
-	"gitlab.com/youtopia.earth/ops/snip/plugin/processor"
-	loaderMardownMod "gitlab.com/youtopia.earth/ops/snip/plugins-native/loaders/markdown/mod"
-	"gitlab.com/youtopia.earth/ops/snip/tools"
+	"gitlab.com/ytopia/ops/snip/errors"
+	"gitlab.com/ytopia/ops/snip/plugin/processor"
+	loaderMardownMod "gitlab.com/ytopia/ops/snip/plugins-native/loaders/markdown/mod"
+	"gitlab.com/ytopia/ops/snip/tools"
 )
 
 var (

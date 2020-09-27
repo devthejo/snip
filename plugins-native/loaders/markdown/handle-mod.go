@@ -1,9 +1,9 @@
 package mainNative
 
 import (
-	"gitlab.com/youtopia.earth/ops/snip/plugin/loader"
-	"gitlab.com/youtopia.earth/ops/snip/plugins-native/loaders/markdown/blocks"
-	loaderMardownMod "gitlab.com/youtopia.earth/ops/snip/plugins-native/loaders/markdown/mod"
+	"gitlab.com/ytopia/ops/snip/plugin/loader"
+	"gitlab.com/ytopia/ops/snip/plugins-native/loaders/markdown/blocks"
+	loaderMardownMod "gitlab.com/ytopia/ops/snip/plugins-native/loaders/markdown/mod"
 )
 
 func handleMod(mod string, args []string, codeBlock *blocks.Code, cfg *loader.Config) bool {

@@ -7,8 +7,8 @@ import (
 	"syscall"
 
 	"github.com/sirupsen/logrus"
-	expect "gitlab.com/youtopia.earth/ops/snip/goexpect"
-	"gitlab.com/youtopia.earth/ops/snip/plugin/middleware"
+	expect "gitlab.com/ytopia/ops/snip/goexpect"
+	"gitlab.com/ytopia/ops/snip/plugin/middleware"
 	"golang.org/x/crypto/ssh"
 )
 

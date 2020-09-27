@@ -1,7 +1,7 @@
 package blocks
 
 import (
-	"gitlab.com/youtopia.earth/ops/snip/plugin/processor"
+	"gitlab.com/ytopia/ops/snip/plugin/processor"
 )
 
 type Code struct {

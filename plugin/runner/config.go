@@ -6,9 +6,9 @@ import (
 	cache "github.com/patrickmn/go-cache"
 	"github.com/sirupsen/logrus"
 
-	expect "gitlab.com/youtopia.earth/ops/snip/goexpect"
-	snipplugin "gitlab.com/youtopia.earth/ops/snip/plugin"
-	"gitlab.com/youtopia.earth/ops/snip/registry"
+	expect "gitlab.com/ytopia/ops/snip/goexpect"
+	snipplugin "gitlab.com/ytopia/ops/snip/plugin"
+	"gitlab.com/ytopia/ops/snip/registry"
 )
 
 type Config struct {

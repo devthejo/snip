@@ -6,9 +6,9 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"gitlab.com/youtopia.earth/ops/snip/config"
-	"gitlab.com/youtopia.earth/ops/snip/play"
-	"gitlab.com/youtopia.earth/ops/snip/tools"
+	"gitlab.com/ytopia/ops/snip/config"
+	"gitlab.com/ytopia/ops/snip/play"
+	"gitlab.com/ytopia/ops/snip/tools"
 )
 
 func CmdPlay(app App) *cobra.Command {
@@ -65,6 +65,8 @@ func CmdPlay(app App) *cobra.Command {
 	flags.StringP("deployment-name", "n", config.FlagDeploymentNameDefault, config.FlagDeploymentNameDesc)
 
 	flags.StringSliceP("key", "k", config.FlagPlayKeyDefault, config.FlagPlayKeyDesc)
+	flags.Bool("key-no-deps", config.FlagPlayKeyNoDepsDefault, config.FlagPlayKeyNoDepsDesc)
+	flags.Bool("key-no-post", config.FlagPlayKeyNoPostDefault, config.FlagPlayKeyNoPostDesc)
 
 	return cmd
 }

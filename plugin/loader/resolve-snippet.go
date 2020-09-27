@@ -4,7 +4,7 @@ import (
 	"path"
 	"path/filepath"
 
-	"gitlab.com/youtopia.earth/ops/snip/tools"
+	"gitlab.com/ytopia/ops/snip/tools"
 )
 
 func ResolveSnippetFile(file string) (bool, string, error) {

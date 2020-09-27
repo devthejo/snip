@@ -10,7 +10,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"gitlab.com/youtopia.earth/ops/snip/config"
+	"gitlab.com/ytopia/ops/snip/config"
 )
 
 type Main struct {

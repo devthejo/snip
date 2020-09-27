@@ -12,9 +12,9 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
-	"gitlab.com/youtopia.earth/ops/snip/errors"
-	"gitlab.com/youtopia.earth/ops/snip/goenv"
-	"gitlab.com/youtopia.earth/ops/snip/tools"
+	"gitlab.com/ytopia/ops/snip/errors"
+	"gitlab.com/ytopia/ops/snip/goenv"
+	"gitlab.com/ytopia/ops/snip/tools"
 )
 
 type ConfigLoader struct {

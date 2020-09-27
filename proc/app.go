@@ -1,7 +1,7 @@
 package proc
 
 import (
-	"gitlab.com/youtopia.earth/ops/snip/config"
+	"gitlab.com/ytopia/ops/snip/config"
 )
 
 type App interface {

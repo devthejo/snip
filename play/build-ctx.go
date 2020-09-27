@@ -1,23 +1,27 @@
 package play
 
 import (
-	"gitlab.com/youtopia.earth/ops/snip/plugin/runner"
-	"gitlab.com/youtopia.earth/ops/snip/variable"
+	"gitlab.com/ytopia/ops/snip/plugin/runner"
+	"gitlab.com/ytopia/ops/snip/variable"
 )
+
+type LoadedSnippet struct {
+	requiredBy []string
+}
 
 type BuildCtx struct {
 	Parent                          *BuildCtx
-	LoadedSnippets                  map[string]bool
-	LoadedSnippetsUpstream          map[string]bool
-	LoadedSnippetsDownstream        map[string]bool
-	LoadedSnippetsDownstreamParents []map[string]bool
+	LoadedSnippets                  map[string]*LoadedSnippet
+	LoadedSnippetsUpstream          map[string]*LoadedSnippet
+	LoadedSnippetsDownstream        map[string]*LoadedSnippet
+	LoadedSnippetsDownstreamParents []map[string]*LoadedSnippet
 	DefaultRunner                   *runner.Runner
 	DefaultVars                     map[string]*variable.Var
 }
 
 func CreateBuildCtx() *BuildCtx {
 	buildCtx := &BuildCtx{
-		LoadedSnippets: make(map[string]bool),
+		LoadedSnippets: make(map[string]*LoadedSnippet),
 	}
 	return buildCtx
 }
@@ -30,12 +34,12 @@ func CreateNextBuildCtx(prevBuildCtx *BuildCtx) *BuildCtx {
 		parentBuildCtx = prevBuildCtx
 	}
 
-	loadedSnippets := make(map[string]bool)
+	loadedSnippets := make(map[string]*LoadedSnippet)
 	for k, v := range parentBuildCtx.LoadedSnippets {
 		loadedSnippets[k] = v
 	}
 
-	loadedSnippetsDownstream := make(map[string]bool)
+	loadedSnippetsDownstream := make(map[string]*LoadedSnippet)
 
 	buildCtx := &BuildCtx{
 		Parent:                          parentBuildCtx,
@@ -49,8 +53,9 @@ func CreateNextBuildCtx(prevBuildCtx *BuildCtx) *BuildCtx {
 }
 
 func (buildCtx *BuildCtx) RegisterLoadedSnippet(snippet string) {
-	buildCtx.LoadedSnippets[snippet] = true
+	loadedSnippet := &LoadedSnippet{}
+	buildCtx.LoadedSnippets[snippet] = loadedSnippet
 	for _, v := range buildCtx.LoadedSnippetsDownstreamParents {
-		v[snippet] = true
+		v[snippet] = loadedSnippet
 	}
 }

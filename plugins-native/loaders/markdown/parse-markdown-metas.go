@@ -9,8 +9,8 @@ import (
 	"github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/renderer"
 	"github.com/yuin/goldmark/util"
-	"gitlab.com/youtopia.earth/ops/snip/errors"
-	"gitlab.com/youtopia.earth/ops/snip/plugin/loader"
+	"gitlab.com/ytopia/ops/snip/errors"
+	"gitlab.com/ytopia/ops/snip/plugin/loader"
 )
 
 func ParseMarkdownMetas(cfg *loader.Config) map[string]interface{} {

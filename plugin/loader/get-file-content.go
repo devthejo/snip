@@ -5,7 +5,7 @@ import (
 	"path"
 
 	"github.com/sirupsen/logrus"
-	"gitlab.com/youtopia.earth/ops/snip/errors"
+	"gitlab.com/ytopia/ops/snip/errors"
 )
 
 func GetFileContent(cfg *Config, filePath string) []byte {

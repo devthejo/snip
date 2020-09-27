@@ -6,8 +6,8 @@ import (
 
 	"gopkg.in/yaml.v2"
 
-	"gitlab.com/youtopia.earth/ops/snip/errors"
-	"gitlab.com/youtopia.earth/ops/snip/plugin/loader"
+	"gitlab.com/ytopia/ops/snip/errors"
+	"gitlab.com/ytopia/ops/snip/plugin/loader"
 )
 
 var (

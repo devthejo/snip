@@ -5,9 +5,9 @@ import (
 	// "strings"
 
 	shellquote "github.com/kballard/go-shellquote"
-	expect "gitlab.com/youtopia.earth/ops/snip/goexpect"
+	expect "gitlab.com/ytopia/ops/snip/goexpect"
 
-	"gitlab.com/youtopia.earth/ops/snip/plugin/middleware"
+	"gitlab.com/ytopia/ops/snip/plugin/middleware"
 )
 
 // inspired from https://github.com/ansible/ansible/blob/devel/lib/ansible/plugins/become/su.py

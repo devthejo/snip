@@ -3,7 +3,7 @@ package xjsonnet
 import (
 	"os"
 
-	"gitlab.com/youtopia.earth/ops/snip/tools"
+	"gitlab.com/ytopia/ops/snip/tools"
 )
 
 func Render(src string) (string, error) {

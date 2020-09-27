@@ -1,12 +1,12 @@
 PROJECT_NAME := "snip"
-PKG := "gitlab.com/youtopia.earth/ops/$(PROJECT_NAME)"
+PKG := "gitlab.com/ytopia/ops/$(PROJECT_NAME)"
 
 all: vendor fmt build targz
 install: install-bin autocomplete
 buildstall: build install
 
 docker:
-	docker build -t registry.gitlab.com/youtopia.earth/ops/snip:$${SNIP_TAG:-master} .
+	docker build -t registry.gitlab.com/ytopia/ops/snip:$${SNIP_TAG:-master} .
 
 vendor:
 	go mod vendor

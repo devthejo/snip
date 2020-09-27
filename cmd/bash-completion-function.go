@@ -1,6 +1,6 @@
 package cmd
 
-import "gitlab.com/youtopia.earth/ops/snip/config"
+import "gitlab.com/ytopia/ops/snip/config"
 
 func newBashCompletionFunc(cl *config.ConfigLoader) string {
 	var bashCompletionFunc = `

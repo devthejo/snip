@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"gitlab.com/youtopia.earth/ops/snip/config"
+	"gitlab.com/ytopia/ops/snip/config"
 )
 
 func NewCmd(app App) *cobra.Command {

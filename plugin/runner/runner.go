@@ -1,7 +1,7 @@
 package runner
 
 import (
-	"gitlab.com/youtopia.earth/ops/snip/variable"
+	"gitlab.com/ytopia/ops/snip/variable"
 )
 
 type Runner struct {

@@ -1,7 +1,7 @@
 package loader
 
 import (
-	"gitlab.com/youtopia.earth/ops/snip/variable"
+	"gitlab.com/ytopia/ops/snip/variable"
 )
 
 type Loader struct {

@@ -17,7 +17,9 @@ const (
 
 	FlagDeploymentNameDesc = "deployment name, must be unique to avoid collisions"
 
-	FlagPlayKeyDesc = "comma separated list of keys (or tree keys) to run skipping all others"
+	FlagPlayKeyDesc       = "comma separated list of keys (or tree keys) to run skipping all others"
+	FlagPlayKeyNoDepsDesc = "skip also dependencies of provided keys"
+	FlagPlayKeyNoPostDesc = "skip also post_install of provided keys"
 )
 
 var (
@@ -35,5 +37,7 @@ var (
 
 	FlagDeploymentNameDefault = "default"
 
-	FlagPlayKeyDefault = []string{}
+	FlagPlayKeyDefault       = []string{}
+	FlagPlayKeyNoDepsDefault = false
+	FlagPlayKeyNoPostDefault = false
 )

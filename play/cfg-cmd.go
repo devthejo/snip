@@ -4,14 +4,14 @@ import (
 	"strings"
 
 	"github.com/sirupsen/logrus"
-	"gitlab.com/youtopia.earth/ops/snip/errors"
-	snipplugin "gitlab.com/youtopia.earth/ops/snip/plugin"
-	"gitlab.com/youtopia.earth/ops/snip/plugin/loader"
-	"gitlab.com/youtopia.earth/ops/snip/plugin/middleware"
-	"gitlab.com/youtopia.earth/ops/snip/plugin/processor"
-	"gitlab.com/youtopia.earth/ops/snip/plugin/runner"
-	"gitlab.com/youtopia.earth/ops/snip/registry"
-	"gitlab.com/youtopia.earth/ops/snip/variable"
+	"gitlab.com/ytopia/ops/snip/errors"
+	snipplugin "gitlab.com/ytopia/ops/snip/plugin"
+	"gitlab.com/ytopia/ops/snip/plugin/loader"
+	"gitlab.com/ytopia/ops/snip/plugin/middleware"
+	"gitlab.com/ytopia/ops/snip/plugin/processor"
+	"gitlab.com/ytopia/ops/snip/plugin/runner"
+	"gitlab.com/ytopia/ops/snip/registry"
+	"gitlab.com/ytopia/ops/snip/variable"
 )
 
 type CfgCmd struct {
@@ -68,7 +68,7 @@ func (ccmd *CfgCmd) RequireDependencies() {
 	cp := ccmd.CfgPlay
 	ls := cp.BuildCtx.LoadedSnippetsUpstream
 	for _, dep := range cp.Dependencies {
-		if b, ok := ls[dep]; ok && b {
+		if _, ok := ls[dep]; ok {
 			continue
 		}
 		k := ccmd.OriginalCommand[0]
@@ -100,7 +100,7 @@ func (ccmd *CfgCmd) RequirePostInstall() {
 
 	for _, dep := range cp.PostInstall {
 
-		if b, ok := ls[dep]; ok && b {
+		if _, ok := ls[dep]; ok {
 			return
 		}
 
@@ -123,7 +123,9 @@ func (ccmd *CfgCmd) RegisterInDependencies() {
 	cp := ccmd.CfgPlay
 	buildCtx := cp.BuildCtx
 	k := ccmd.OriginalCommand[0]
+	// logrus.Errorf("vars %v", ccmd.CfgPlay.Vars)
 	buildCtx.RegisterLoadedSnippet(k)
+	// buildCtx.RegisterLoadedSnippet(k, ccmd.Runner, ccmd.)
 }
 
 func (ccmd *CfgCmd) LoadCfgPlaySubstitution() {

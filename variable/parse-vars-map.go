@@ -4,8 +4,8 @@ import (
 	"strconv"
 	"strings"
 
-	"gitlab.com/youtopia.earth/ops/snip/decode"
-	"gitlab.com/youtopia.earth/ops/snip/errors"
+	"gitlab.com/ytopia/ops/snip/decode"
+	"gitlab.com/ytopia/ops/snip/errors"
 )
 
 func ParseVarsMap(varsI map[string]interface{}, depth int) map[string]*Var {

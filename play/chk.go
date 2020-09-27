@@ -10,16 +10,16 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"gitlab.com/youtopia.earth/ops/snip/config"
-	"gitlab.com/youtopia.earth/ops/snip/goenv"
-	expect "gitlab.com/youtopia.earth/ops/snip/goexpect"
-	snipplugin "gitlab.com/youtopia.earth/ops/snip/plugin"
-	"gitlab.com/youtopia.earth/ops/snip/plugin/middleware"
-	"gitlab.com/youtopia.earth/ops/snip/plugin/processor"
-	"gitlab.com/youtopia.earth/ops/snip/plugin/runner"
-	"gitlab.com/youtopia.earth/ops/snip/proc"
-	"gitlab.com/youtopia.earth/ops/snip/tools"
-	"gitlab.com/youtopia.earth/ops/snip/variable"
+	"gitlab.com/ytopia/ops/snip/config"
+	"gitlab.com/ytopia/ops/snip/goenv"
+	expect "gitlab.com/ytopia/ops/snip/goexpect"
+	snipplugin "gitlab.com/ytopia/ops/snip/plugin"
+	"gitlab.com/ytopia/ops/snip/plugin/middleware"
+	"gitlab.com/ytopia/ops/snip/plugin/processor"
+	"gitlab.com/ytopia/ops/snip/plugin/runner"
+	"gitlab.com/ytopia/ops/snip/proc"
+	"gitlab.com/ytopia/ops/snip/tools"
+	"gitlab.com/ytopia/ops/snip/variable"
 )
 
 type Chk struct {

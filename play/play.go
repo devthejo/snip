@@ -11,11 +11,11 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.uber.org/multierr"
 
-	"gitlab.com/youtopia.earth/ops/snip/config"
-	"gitlab.com/youtopia.earth/ops/snip/errors"
-	"gitlab.com/youtopia.earth/ops/snip/registry"
-	"gitlab.com/youtopia.earth/ops/snip/tools"
-	"gitlab.com/youtopia.earth/ops/snip/variable"
+	"gitlab.com/ytopia/ops/snip/config"
+	"gitlab.com/ytopia/ops/snip/errors"
+	"gitlab.com/ytopia/ops/snip/registry"
+	"gitlab.com/ytopia/ops/snip/tools"
+	"gitlab.com/ytopia/ops/snip/variable"
 )
 
 type Play struct {

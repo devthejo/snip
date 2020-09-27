@@ -26,5 +26,7 @@ type Config struct {
 
 	DeploymentName string `mapstructure:"DEPLOYMENT_NAME" json:"deployment_name,omitempty"`
 
-	PlayKey []string `mapstructure:"Key" json:"key,omitempty"`
+	PlayKey       []string `mapstructure:"KEY" json:"key,omitempty"`
+	PlayKeyNoDeps bool     `mapstructure:"KEY_NO_DEPS" json:"key_no_deps,omitempty"`
+	PlayKeyNoPost bool     `mapstructure:"KEY_NO_POST" json:"key_no_post,omitempty"`
 }

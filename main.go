@@ -1,7 +1,7 @@
 package main
 
 import (
-	"gitlab.com/youtopia.earth/ops/snip/app"
+	"gitlab.com/ytopia/ops/snip/app"
 )
 
 func main() {

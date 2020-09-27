@@ -3,12 +3,12 @@ package play
 import (
 	"strings"
 
-	snipplugin "gitlab.com/youtopia.earth/ops/snip/plugin"
-	"gitlab.com/youtopia.earth/ops/snip/plugin/loader"
-	"gitlab.com/youtopia.earth/ops/snip/plugin/middleware"
-	"gitlab.com/youtopia.earth/ops/snip/plugin/processor"
-	"gitlab.com/youtopia.earth/ops/snip/plugin/runner"
-	"gitlab.com/youtopia.earth/ops/snip/variable"
+	snipplugin "gitlab.com/ytopia/ops/snip/plugin"
+	"gitlab.com/ytopia/ops/snip/plugin/loader"
+	"gitlab.com/ytopia/ops/snip/plugin/middleware"
+	"gitlab.com/ytopia/ops/snip/plugin/processor"
+	"gitlab.com/ytopia/ops/snip/plugin/runner"
+	"gitlab.com/ytopia/ops/snip/variable"
 )
 
 type CfgChk struct {

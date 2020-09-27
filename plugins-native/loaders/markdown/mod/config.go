@@ -1,8 +1,8 @@
 package mod
 
 import (
-	"gitlab.com/youtopia.earth/ops/snip/plugin/loader"
-	"gitlab.com/youtopia.earth/ops/snip/plugins-native/loaders/markdown/blocks"
+	"gitlab.com/ytopia/ops/snip/plugin/loader"
+	"gitlab.com/ytopia/ops/snip/plugins-native/loaders/markdown/blocks"
 )
 
 type Config struct {

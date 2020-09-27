@@ -1,9 +1,9 @@
 package loader
 
 import (
-	snipplugin "gitlab.com/youtopia.earth/ops/snip/plugin"
-	"gitlab.com/youtopia.earth/ops/snip/registry"
-	"gitlab.com/youtopia.earth/ops/snip/plugin/processor"
+	snipplugin "gitlab.com/ytopia/ops/snip/plugin"
+	"gitlab.com/ytopia/ops/snip/registry"
+	"gitlab.com/ytopia/ops/snip/plugin/processor"
 )
 
 type Config struct {

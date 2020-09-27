@@ -6,12 +6,12 @@ import (
 	"github.com/logrusorgru/aurora"
 	cache "github.com/patrickmn/go-cache"
 
-	"gitlab.com/youtopia.earth/ops/snip/config"
-	"gitlab.com/youtopia.earth/ops/snip/plugin/loader"
-	"gitlab.com/youtopia.earth/ops/snip/plugin/middleware"
-	"gitlab.com/youtopia.earth/ops/snip/plugin/runner"
-	"gitlab.com/youtopia.earth/ops/snip/proc"
-	"gitlab.com/youtopia.earth/ops/snip/registry"
+	"gitlab.com/ytopia/ops/snip/config"
+	"gitlab.com/ytopia/ops/snip/plugin/loader"
+	"gitlab.com/ytopia/ops/snip/plugin/middleware"
+	"gitlab.com/ytopia/ops/snip/plugin/runner"
+	"gitlab.com/ytopia/ops/snip/proc"
+	"gitlab.com/ytopia/ops/snip/registry"
 )
 
 type App interface {

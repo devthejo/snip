@@ -1,4 +1,4 @@
-module gitlab.com/youtopia.earth/ops/snip
+module gitlab.com/ytopia/ops/snip
 
 go 1.13
 

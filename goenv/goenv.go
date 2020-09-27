@@ -13,7 +13,7 @@ import (
 	"sort"
 	"strings"
 
-	"gitlab.com/youtopia.earth/ops/snip/goenv/parse"
+	"gitlab.com/ytopia/ops/snip/goenv/parse"
 )
 
 const doubleQuoteSpecialChars = "\\\n\r\"!$`"

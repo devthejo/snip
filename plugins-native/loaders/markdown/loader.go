@@ -5,10 +5,10 @@ import (
 
 	cmap "github.com/orcaman/concurrent-map"
 
-	"gitlab.com/youtopia.earth/ops/snip/plugin/loader"
+	"gitlab.com/ytopia/ops/snip/plugin/loader"
 
-	pluginSCP "gitlab.com/youtopia.earth/ops/snip/plugins-native/loaders/markdown/plugins/scp"
-	pluginTMPL "gitlab.com/youtopia.earth/ops/snip/plugins-native/loaders/markdown/plugins/tmpl"
+	pluginSCP "gitlab.com/ytopia/ops/snip/plugins-native/loaders/markdown/plugins/scp"
+	pluginTMPL "gitlab.com/ytopia/ops/snip/plugins-native/loaders/markdown/plugins/tmpl"
 )
 
 var (

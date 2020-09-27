@@ -10,16 +10,16 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	expect "gitlab.com/youtopia.earth/ops/snip/goexpect"
-	"gitlab.com/youtopia.earth/ops/snip/registry"
-	"gitlab.com/youtopia.earth/ops/snip/variable"
-	"gitlab.com/youtopia.earth/ops/snip/config"
-	"gitlab.com/youtopia.earth/ops/snip/goenv"
-	snipplugin "gitlab.com/youtopia.earth/ops/snip/plugin"
-	"gitlab.com/youtopia.earth/ops/snip/plugin/middleware"
-	"gitlab.com/youtopia.earth/ops/snip/plugin/processor"
-	"gitlab.com/youtopia.earth/ops/snip/plugin/runner"
-	"gitlab.com/youtopia.earth/ops/snip/proc"
+	expect "gitlab.com/ytopia/ops/snip/goexpect"
+	"gitlab.com/ytopia/ops/snip/registry"
+	"gitlab.com/ytopia/ops/snip/variable"
+	"gitlab.com/ytopia/ops/snip/config"
+	"gitlab.com/ytopia/ops/snip/goenv"
+	snipplugin "gitlab.com/ytopia/ops/snip/plugin"
+	"gitlab.com/ytopia/ops/snip/plugin/middleware"
+	"gitlab.com/ytopia/ops/snip/plugin/processor"
+	"gitlab.com/ytopia/ops/snip/plugin/runner"
+	"gitlab.com/ytopia/ops/snip/proc"
 )
 
 type Cmd struct {

@@ -5,8 +5,8 @@ import (
 
 	"gitlab.com/golang-commonmark/markdown"
 
-	"gitlab.com/youtopia.earth/ops/snip/plugin/loader"
-	"gitlab.com/youtopia.earth/ops/snip/plugins-native/loaders/markdown/blocks"
+	"gitlab.com/ytopia/ops/snip/plugin/loader"
+	"gitlab.com/ytopia/ops/snip/plugins-native/loaders/markdown/blocks"
 )
 
 const annotationPrefix = "<!-- snip:"

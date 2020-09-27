@@ -14,10 +14,10 @@ import (
 	"github.com/google/goterm/term"
 	"github.com/kvz/logstreamer"
 
-	expect "gitlab.com/youtopia.earth/ops/snip/goexpect"
-	// "gitlab.com/youtopia.earth/ops/snip/loggers"
-	"gitlab.com/youtopia.earth/ops/snip/plugin/runner"
-	"gitlab.com/youtopia.earth/ops/snip/tools"
+	expect "gitlab.com/ytopia/ops/snip/goexpect"
+	// "gitlab.com/ytopia/ops/snip/loggers"
+	"gitlab.com/ytopia/ops/snip/plugin/runner"
+	"gitlab.com/ytopia/ops/snip/tools"
 )
 
 var (

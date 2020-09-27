@@ -19,13 +19,13 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.uber.org/multierr"
 
-	expect "gitlab.com/youtopia.earth/ops/snip/goexpect"
-	// "gitlab.com/youtopia.earth/ops/snip/loggers"
-	"gitlab.com/youtopia.earth/ops/snip/plugin/runner"
-	"gitlab.com/youtopia.earth/ops/snip/registry"
-	"gitlab.com/youtopia.earth/ops/snip/sshclient"
-	"gitlab.com/youtopia.earth/ops/snip/sshutils"
-	"gitlab.com/youtopia.earth/ops/snip/tools"
+	expect "gitlab.com/ytopia/ops/snip/goexpect"
+	// "gitlab.com/ytopia/ops/snip/loggers"
+	"gitlab.com/ytopia/ops/snip/plugin/runner"
+	"gitlab.com/ytopia/ops/snip/registry"
+	"gitlab.com/ytopia/ops/snip/sshclient"
+	"gitlab.com/ytopia/ops/snip/sshutils"
+	"gitlab.com/ytopia/ops/snip/tools"
 )
 
 var (
