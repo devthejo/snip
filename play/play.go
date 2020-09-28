@@ -350,12 +350,14 @@ func (p *Play) Run() error {
 
 	logger := p.Logger
 
-	logger.Info(icon + " " + p.GetTitle())
 
 	if p.Skip {
-		logger.Info("  skipping...")
+		logger.Debug(icon + " " + p.GetTitle())
+		logger.Debug("  skipping...")
 		return nil
 	}
+
+	logger.Info(icon + " " + p.GetTitle())
 
 	gRunCtx := p.GlobalRunCtx
 	runReport := gRunCtx.RunReport
