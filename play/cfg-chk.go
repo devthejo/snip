@@ -23,7 +23,7 @@ type CfgChk struct {
 
 	Dir string
 
-	RequiredFiles           map[string]string
+	RequiredFiles              map[string]string
 	RequiredFilesSrcProcessors map[string][]func(*processor.Config, *string) error
 
 	Depth int
@@ -34,12 +34,12 @@ func CreateCfgChk(cp *CfgPlay, c []string) *CfgChk {
 	copy(originalCommand, c)
 
 	chk := &CfgChk{
-		CfgPlay:                 cp,
-		OriginalCommand:         c,
-		Command:                 c,
-		Depth:                   cp.Depth + 1,
-		Dir:                     cp.Dir,
-		RequiredFiles:           make(map[string]string),
+		CfgPlay:                    cp,
+		OriginalCommand:            c,
+		Command:                    c,
+		Depth:                      cp.Depth + 1,
+		Dir:                        cp.Dir,
+		RequiredFiles:              make(map[string]string),
 		RequiredFilesSrcProcessors: make(map[string][]func(*processor.Config, *string) error),
 	}
 
@@ -61,11 +61,11 @@ func (chk *CfgChk) GetLoaderVarsMap(useVars []string, mVar map[string]*variable.
 		key := strings.ToUpper(useV)
 		v := mVar[key]
 		var val string
-		if v != nil && v.Default != "" {
-			val = v.Default
+		if v != nil && v.GetDefault() != "" {
+			val = v.GetDefault()
 		}
-		if v != nil && v.Value != "" {
-			val = v.Value
+		if v != nil && v.GetValue() != "" {
+			val = v.GetValue()
 		}
 		pVars[strings.ToLower(key)] = val
 	}
@@ -86,13 +86,13 @@ func (chk *CfgChk) GetLoaderConfig(lr *loader.Loader) *loader.Config {
 	command := make([]string, len(chk.Command))
 	copy(command, chk.Command)
 	loaderCfg := &loader.Config{
-		AppConfig:               appConfig,
-		LoaderVars:              loaderVars,
-		DefaultsPlayProps:       make(map[string]interface{}),
-		Command:                 command,
-		RequiredFiles:           chk.RequiredFiles,
+		AppConfig:                  appConfig,
+		LoaderVars:                 loaderVars,
+		DefaultsPlayProps:          make(map[string]interface{}),
+		Command:                    command,
+		RequiredFiles:              chk.RequiredFiles,
 		RequiredFilesSrcProcessors: chk.RequiredFilesSrcProcessors,
-		ParentBuildFile:         chk.CfgPlay.ParentBuildFile,
+		ParentBuildFile:            chk.CfgPlay.ParentBuildFile,
 	}
 
 	return loaderCfg

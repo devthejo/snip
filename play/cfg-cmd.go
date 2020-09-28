@@ -175,11 +175,11 @@ func (ccmd *CfgCmd) GetLoaderVarsMap(useVars []string, mVar map[string]*variable
 		key := strings.ToUpper(useV)
 		v := mVar[key]
 		var val string
-		if v != nil && v.Default != "" {
-			val = v.Default
+		if v != nil && v.GetDefault() != "" {
+			val = v.GetDefault()
 		}
-		if v != nil && v.Value != "" {
-			val = v.Value
+		if v != nil && v.GetValue() != "" {
+			val = v.GetValue()
 		}
 		pVars[strings.ToLower(key)] = val
 	}

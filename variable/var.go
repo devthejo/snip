@@ -15,9 +15,7 @@ import (
 type Var struct {
 	Name string
 
-	Default string
-	Value   string
-	Depth   int
+	Depth int
 
 	Required bool
 
@@ -32,10 +30,10 @@ type Var struct {
 
 	OnPrompt func(*Var)
 
-	DefaultFromFile string
-	DefaultFromVar  string
-	ValueFromFile   string
-	ValueFromVar    string
+	DefaultFromType FromType
+	DefaultParam    string
+	ValueFromType   FromType
+	ValueParam      string
 }
 
 func (vr *Var) Parse(k string, m map[string]interface{}) {
@@ -53,6 +51,15 @@ func (vr *Var) Parse(k string, m map[string]interface{}) {
 	vr.ParsePromptMessage(m)
 	vr.ParsePromptSelectOptions(m)
 	vr.ParsePromptMultiSelectGlue(m)
+}
+
+func (vr *Var) SetValue(v string) {
+	vr.ValueFromType = FromValue
+	vr.ValueParam = v
+}
+func (vr *Var) SetDefault(v string) {
+	vr.DefaultFromType = FromValue
+	vr.DefaultParam = v
 }
 
 func (vr *Var) ParseRequired(v map[string]interface{}) {
@@ -77,14 +84,14 @@ func (vr *Var) ParseRequired(v map[string]interface{}) {
 func (vr *Var) ParseDefault(v map[string]interface{}) {
 	switch val := v["default"].(type) {
 	case string:
-		vr.Default = val
+		vr.SetDefault(val)
 	case int:
-		vr.Default = strconv.Itoa(val)
+		vr.SetDefault(strconv.Itoa(val))
 	case bool:
 		if val {
-			vr.Default = "true"
+			vr.SetDefault("true")
 		} else {
-			vr.Default = "false"
+			vr.SetDefault("false")
 		}
 	case nil:
 	default:
@@ -94,14 +101,14 @@ func (vr *Var) ParseDefault(v map[string]interface{}) {
 func (vr *Var) ParseValue(v map[string]interface{}) {
 	switch val := v["value"].(type) {
 	case string:
-		vr.Value = val
+		vr.SetValue(val)
 	case int:
-		vr.Value = strconv.Itoa(val)
+		vr.SetValue(strconv.Itoa(val))
 	case bool:
 		if val {
-			vr.Value = "true"
+			vr.SetValue("true")
 		} else {
-			vr.Value = "false"
+			vr.SetValue("false")
 		}
 	case nil:
 	default:
@@ -112,7 +119,8 @@ func (vr *Var) ParseValue(v map[string]interface{}) {
 func (vr *Var) ParseDefaultFromVar(v map[string]interface{}) {
 	switch val := v["default_from_var"].(type) {
 	case string:
-		vr.DefaultFromVar = val
+		vr.DefaultFromType = FromVar
+		vr.DefaultParam = strings.ToUpper(val)
 	case nil:
 	default:
 		UnexpectedTypeVar(v, "default_from_var")
@@ -121,8 +129,17 @@ func (vr *Var) ParseDefaultFromVar(v map[string]interface{}) {
 func (vr *Var) ParseValueFromVar(v map[string]interface{}) {
 	switch val := v["value_from_var"].(type) {
 	case string:
-		vr.ValueFromVar = val
+		vr.ValueFromType = FromVar
+		vr.ValueParam = strings.ToUpper(val)
 	case nil:
+		switch val := v["from_var"].(type) {
+		case string:
+			vr.ValueFromType = FromVar
+			vr.ValueParam = strings.ToUpper(val)
+		case nil:
+		default:
+			UnexpectedTypeVar(v, "from_var")
+		}
 	default:
 		UnexpectedTypeVar(v, "value_from_var")
 	}
@@ -131,7 +148,8 @@ func (vr *Var) ParseValueFromVar(v map[string]interface{}) {
 func (vr *Var) ParseDefaultFromFile(v map[string]interface{}) {
 	switch val := v["default_from_file"].(type) {
 	case string:
-		vr.DefaultFromFile = val
+		vr.DefaultFromType = FromFile
+		vr.DefaultParam = val
 	case nil:
 	default:
 		UnexpectedTypeVar(v, "default_from_file")
@@ -140,8 +158,17 @@ func (vr *Var) ParseDefaultFromFile(v map[string]interface{}) {
 func (vr *Var) ParseValueFromFile(v map[string]interface{}) {
 	switch val := v["value_from_file"].(type) {
 	case string:
-		vr.ValueFromFile = val
+		vr.ValueFromType = FromFile
+		vr.ValueParam = val
 	case nil:
+		switch val := v["from_file"].(type) {
+		case string:
+			vr.ValueFromType = FromFile
+			vr.ValueParam = val
+		case nil:
+		default:
+			UnexpectedTypeVar(v, "from_file")
+		}
 	default:
 		UnexpectedTypeVar(v, "value_from_file")
 	}
@@ -253,15 +280,34 @@ func (vr *Var) ParsePromptMultiSelectGlue(v map[string]interface{}) {
 
 func (v *Var) PromptVarDefault() {
 	msg := v.GetPromptMessageDefault()
-	v.PromptVar(&v.Default, msg)
+	v.DefaultFromType = FromValue
+	v.PromptVar(&v.DefaultParam, msg)
 }
 
 func (v *Var) PromptVarValue() {
 	msg := v.GetPromptMessageValue()
-	v.PromptVar(&v.Value, msg)
-	if v.Value == "" && v.Default != "" {
-		v.Value = v.Default
+	v.ValueFromType = FromValue
+	v.PromptVar(&v.ValueParam, msg)
+	if v.ValueParam == "" && v.GetDefault() != "" {
+		v.ValueParam = v.GetDefault()
 	}
+}
+
+func (v *Var) GetDefault() string {
+	var r string
+	switch v.DefaultFromType {
+	case FromValue:
+		return v.DefaultParam
+	}
+	return r
+}
+func (v *Var) GetValue() string {
+	var r string
+	switch v.ValueFromType {
+	case FromValue:
+		return v.ValueParam
+	}
+	return r
 }
 
 func (v *Var) PromptVar(ref *string, msg string) {
@@ -299,16 +345,16 @@ func (v *Var) PromptVar(ref *string, msg string) {
 
 func (v *Var) GetPromptMessageDefault() string {
 	msg := v.PromptMessage
-	if v.Default != "" {
-		msg += " (" + v.Default + ")"
+	if v.GetDefault() != "" {
+		msg += " (" + v.GetDefault() + ")"
 	}
 	msg += " :"
 	return msg
 }
 func (v *Var) GetPromptMessageValue() string {
 	msg := v.PromptMessage
-	if v.Default != "" {
-		msg += " (" + v.Default + ")"
+	if v.GetDefault() != "" {
+		msg += " (" + v.GetDefault() + ")"
 	}
 	msg += " :"
 	return msg
@@ -382,13 +428,13 @@ func (v *Var) AskMultiSelect(ref *string, msg string) {
 }
 
 func (v *Var) PromptOnEmptyDefault() {
-	if v.PromptDefault && v.Default == "" {
+	if v.PromptDefault && v.GetDefault() == "" {
 		v.PromptVarDefault()
 	}
 }
 
 func (v *Var) PromptOnEmptyValue() {
-	if v.PromptValue && v.Value == "" {
+	if v.PromptValue && v.GetValue() == "" {
 		v.PromptVarValue()
 	}
 }
@@ -403,9 +449,9 @@ func (v *Var) RegisterValueTo(vars cmap.ConcurrentMap) {
 		runVar = CreateRunVar()
 		vars.Set(v.Name, runVar)
 	}
-	if v.Value != "" {
-		runVar.FromParam = v.Value
-	}
+
+	runVar.FromType = v.ValueFromType
+	runVar.Param = v.ValueParam
 }
 
 func (v *Var) RegisterDefaultTo(varsDefault cmap.ConcurrentMap) {
@@ -418,13 +464,12 @@ func (v *Var) RegisterDefaultTo(varsDefault cmap.ConcurrentMap) {
 		runVar = CreateRunVar()
 		varsDefault.Set(v.Name, runVar)
 	}
-	if runVar.FromParam == "" {
-		runVar.FromParam = v.Default
-	}
+	runVar.FromType = v.DefaultFromType
+	runVar.Param = v.DefaultParam
 }
 
 func (v *Var) HandleRequired(varsDefault cmap.ConcurrentMap, vars cmap.ConcurrentMap) {
-	if !v.Required || v.Default != "" || v.Value != "" {
+	if !v.Required || v.GetDefault() != "" || v.GetValue() != "" {
 		return
 	}
 
@@ -437,7 +482,7 @@ func (v *Var) HandleRequired(varsDefault cmap.ConcurrentMap, vars cmap.Concurren
 			runVarDefault = CreateRunVar()
 			varsDefault.Set(v.Name, runVarDefault)
 		}
-		if runVarDefault.FromParam != "" {
+		if runVarDefault.Param != "" {
 			return
 		}
 	}
@@ -451,16 +496,17 @@ func (v *Var) HandleRequired(varsDefault cmap.ConcurrentMap, vars cmap.Concurren
 			runVar = CreateRunVar()
 			varsDefault.Set(v.Name, runVar)
 		}
-		if runVar.FromParam != "" {
+		if runVar.Param != "" {
 			return
 		}
 	}
 
 	for {
 		v.PromptVarDefault()
-		if v.Default != "" {
+		if v.GetDefault() != "" {
 			if varsDefault != nil {
-				runVarDefault.FromParam = v.Default
+				runVarDefault.FromType = FromValue
+				runVarDefault.Param = v.DefaultParam
 			}
 			break
 		}

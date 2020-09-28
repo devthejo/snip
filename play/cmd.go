@@ -137,11 +137,11 @@ func (cmd *Cmd) LoadVars() {
 	vars := make(map[string]string)
 	for k, v := range ctx.VarsDefault.Items() {
 		runVar := v.(*variable.RunVar)
-		vars[k] = runVar.GetValue()
+		vars[k] = runVar.GetValue(ctx, cmd.ParentLoopRow.ParentPlay.RunCtx)
 	}
 	for k, v := range ctx.Vars.Items() {
 		runVar := v.(*variable.RunVar)
-		value := runVar.GetValue()
+		value := runVar.GetValue(ctx, cmd.ParentLoopRow.ParentPlay.RunCtx)
 		if value != "" {
 			vars[k] = value
 		}
@@ -210,8 +210,8 @@ func (cmd *Cmd) GetPluginVarsMap(pluginType string, pluginName string, useVars [
 		key := strings.ToUpper(useV)
 
 		v := mVar[key]
-		if v != nil && v.Default != "" {
-			val = v.Default
+		if v != nil && v.GetDefault() != "" {
+			val = v.GetDefault()
 		}
 
 		k1 := strings.ToUpper("@" + key)
@@ -227,8 +227,8 @@ func (cmd *Cmd) GetPluginVarsMap(pluginType string, pluginName string, useVars [
 			val = cv
 		}
 
-		if v != nil && v.Value != "" {
-			val = v.Value
+		if v != nil && v.GetValue() != "" {
+			val = v.GetValue()
 		}
 
 		pVars[strings.ToLower(key)] = val

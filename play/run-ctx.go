@@ -16,3 +16,10 @@ func CreateRunCtx() *RunCtx {
 	}
 	return ctx
 }
+
+func (ctx *RunCtx) GetVars() cmap.ConcurrentMap {
+	return ctx.Vars
+}
+func (ctx *RunCtx) GetVarsDefault() cmap.ConcurrentMap {
+	return ctx.VarsDefault
+}
