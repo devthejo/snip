@@ -1,4 +1,6 @@
-#!/bin/sh
+#!/usr/bin/env bash
+
+set -e
 
 progname=$1
 
@@ -15,7 +17,7 @@ do
 done
 links="[$(echo ${linklist}|sed 's/}{/}, {/g')]"
 
-descr="$(curl -H \"PRIVATE-TOKEN:\ ${PRIVATE_TOKEN}\" ${BASEURL}/repository/tags/${CI_COMMIT_TAG}|jq -r '.message')"
+descr="$(curl --fail -H \"PRIVATE-TOKEN:\ ${PRIVATE_TOKEN}\" ${BASEURL}/repository/tags/${CI_COMMIT_TAG}|jq -r '.message')"
 
 DATA="
 {
@@ -27,4 +29,4 @@ DATA="
   }
 }
 "
-curl -H 'Content-Type: application/json' -X POST -H "PRIVATE-TOKEN: ${PRIVATE_TOKEN}" "${BASEURL}/releases" -d "${DATA}"
+curl --fail -H 'Content-Type: application/json' -X POST -H "PRIVATE-TOKEN: ${PRIVATE_TOKEN}" "${BASEURL}/releases" -d "${DATA}"
