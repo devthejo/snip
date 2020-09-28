@@ -450,8 +450,10 @@ func (v *Var) RegisterValueTo(vars cmap.ConcurrentMap) {
 		vars.Set(v.Name, runVar)
 	}
 
-	runVar.FromType = v.ValueFromType
-	runVar.Param = v.ValueParam
+	if v.GetValue() != "" {
+		runVar.FromType = v.ValueFromType
+		runVar.Param = v.ValueParam
+	}
 }
 
 func (v *Var) RegisterDefaultTo(varsDefault cmap.ConcurrentMap) {
@@ -464,8 +466,10 @@ func (v *Var) RegisterDefaultTo(varsDefault cmap.ConcurrentMap) {
 		runVar = CreateRunVar()
 		varsDefault.Set(v.Name, runVar)
 	}
-	runVar.FromType = v.DefaultFromType
-	runVar.Param = v.DefaultParam
+	if v.GetDefault() != "" {
+		runVar.FromType = v.DefaultFromType
+		runVar.Param = v.DefaultParam
+	}
 }
 
 func (v *Var) HandleRequired(varsDefault cmap.ConcurrentMap, vars cmap.ConcurrentMap) {
