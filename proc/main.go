@@ -80,7 +80,7 @@ func (proc *Main) MainCloser() {
 	<-proc.MainChan
 	if proc.Ended {
 		if proc.ExitCode == 0 {
-			logrus.Info("🗸 done")
+			logrus.Debug("success")
 		} else {
 			logrus.Error("failed")
 		}

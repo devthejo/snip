@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -22,6 +23,8 @@ func CmdPlay(app App) *cobra.Command {
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 
+			startTime := time.Now()
+
 			mainFunc := func() error {
 				if err := play.Clean(app); err != nil {
 					return err
@@ -39,10 +42,13 @@ func CmdPlay(app App) *cobra.Command {
 
 				au := app.GetAurora()
 				runReport := playCfg.GlobalRunCtx.RunReport
-				logrus.Infof("Report of Play: %s %s %s",
+				logrus.Infof("🏁 play report:")
+				logrus.Infof("  result: %s %s %s",
 					au.BrightGreen(fmt.Sprintf("OK=%d", runReport.OK)),
 					au.BrightMagenta(fmt.Sprintf("Changed=%d", runReport.Changed)),
 					au.BrightBlue(fmt.Sprintf("Total=%d", runReport.Total)))
+
+				logrus.Infof("  duration %s", time.Since(startTime).Round(time.Second))
 
 				tools.PrintMemUsage()
 
