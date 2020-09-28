@@ -117,8 +117,6 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 		icon = `⤷`
 	}
 
-	logger.Info("  " + icon + " " + cp.GetTitle())
-
 	cfg := cp.App.GetConfig()
 	if parentLoopRow != nil {
 		p.NoSkipChildren = parentLoopRow.ParentPlay.NoSkipChildren
@@ -145,6 +143,14 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 		b := true
 		gRunCtx.SkippingState = &b
 	}
+
+	if p.Skip {
+		logger.Debug(icon + " " + p.GetTitle())
+		logger.Debug("  skipping...")
+		return nil
+	}
+
+	logger.Info("  " + icon + " " + cp.GetTitle())
 
 	var loopRows []*CfgLoopRow
 	if len(cp.LoopOn) == 0 {
@@ -221,15 +227,21 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 
 		switch pl := cp.CfgPlay.(type) {
 		case []*CfgPlay:
-			sp := make([]*Play, len(pl))
-			for i, child := range pl {
-				sp[i] = CreatePlay(child, runCtx, loop)
+			var sp []*Play
+			for _, child := range pl {
+				np := CreatePlay(child, runCtx, loop)
+				if np != nil {
+					sp = append(sp, np)
+				}
 			}
 			loop.Play = sp
 		case *CfgCmd:
 			if pl.CfgPlaySubstitution != nil {
-				sp := make([]*Play, 1)
-				sp[0] = CreatePlay(pl.CfgPlaySubstitution, runCtx, loop)
+				var sp []*Play
+				np := CreatePlay(pl.CfgPlaySubstitution, runCtx, loop)
+				if np != nil {
+					sp = []*Play{np}
+				}
 				loop.Play = sp
 			} else {
 				loop.Play = CreateCmd(pl, runCtx, loop)
@@ -349,13 +361,6 @@ func (p *Play) Run() error {
 	}
 
 	logger := p.Logger
-
-
-	if p.Skip {
-		logger.Debug(icon + " " + p.GetTitle())
-		logger.Debug("  skipping...")
-		return nil
-	}
 
 	logger.Info(icon + " " + p.GetTitle())
 
