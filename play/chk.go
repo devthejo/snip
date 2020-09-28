@@ -72,7 +72,7 @@ func (chk *Chk) EnvMap() map[string]string {
 	return m
 }
 
-func CreateChk(cchk *CfgChk, ctx *RunCtx, parentLoopRow *LoopRow, isPreRun bool) *Chk {
+func CreateChk(cchk *CfgChk, parentLoopRow *LoopRow, isPreRun bool) *Chk {
 	parentPlay := parentLoopRow.ParentPlay
 	cp := cchk.CfgPlay
 	app := cp.App
@@ -121,20 +121,6 @@ func CreateChk(cchk *CfgChk, ctx *RunCtx, parentLoopRow *LoopRow, isPreRun bool)
 	chk.TreeKeyParts = GetTreeKeyParts(chk.ParentLoopRow)
 	chk.TreeKey = strings.Join(chk.TreeKeyParts, "|")
 
-	vars := make(map[string]string)
-	for k, v := range ctx.VarsDefault.Items() {
-		runVar := v.(*variable.RunVar)
-		vars[k] = runVar.GetValue()
-	}
-	for k, v := range ctx.Vars.Items() {
-		runVar := v.(*variable.RunVar)
-		vars[k] = runVar.GetValue()
-	}
-	for k, v := range vars {
-		vars[k], _ = goenv.Expand(v, vars)
-	}
-	chk.Vars = vars
-
 	logger := logrus.WithFields(logrus.Fields{
 		"tree":   chk.TreeKey,
 		"action": "checking",
@@ -145,6 +131,26 @@ func CreateChk(cchk *CfgChk, ctx *RunCtx, parentLoopRow *LoopRow, isPreRun bool)
 	thr.Logger = logger
 
 	return chk
+}
+
+func (chk *Chk) LoadVars() {
+	ctx := chk.ParentLoopRow.RunCtx
+	vars := make(map[string]string)
+	for k, v := range ctx.VarsDefault.Items() {
+		runVar := v.(*variable.RunVar)
+		vars[k] = runVar.GetValue()
+	}
+	for k, v := range ctx.Vars.Items() {
+		runVar := v.(*variable.RunVar)
+		value := runVar.GetValue()
+		if value != "" {
+			vars[k] = value
+		}
+	}
+	for k, v := range vars {
+		vars[k], _ = goenv.Expand(v, vars)
+	}
+	chk.Vars = vars
 }
 
 func (chk *Chk) RunThread() error {

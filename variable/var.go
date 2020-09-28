@@ -33,9 +33,9 @@ type Var struct {
 	OnPrompt func(*Var)
 
 	DefaultFromFile string
-	DefaultFromVar string
-	ValueFromFile string
-	ValueFromVar string
+	DefaultFromVar  string
+	ValueFromFile   string
+	ValueFromVar    string
 }
 
 func (vr *Var) Parse(k string, m map[string]interface{}) {

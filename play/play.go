@@ -7,7 +7,6 @@ import (
 	"sync"
 	"time"
 
-	cmap "github.com/orcaman/concurrent-map"
 	"github.com/sirupsen/logrus"
 	"go.uber.org/multierr"
 
@@ -50,6 +49,7 @@ type Play struct {
 
 	Skip           bool
 	NoSkipChildren bool
+	NoSkip         bool
 
 	GlobalRunCtx *GlobalRunCtx
 	CfgPlay      *CfgPlay
@@ -108,15 +108,6 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 	logger = logger.WithContext(loggerCtx)
 	p.Logger = logger
 
-	var icon string
-	if cp.ParentCfgPlay == nil {
-		icon = `🠞`
-	} else if !cp.HasChildren {
-		icon = `⯈`
-	} else {
-		icon = `⤷`
-	}
-
 	cfg := cp.App.GetConfig()
 	if parentLoopRow != nil {
 		p.NoSkipChildren = parentLoopRow.ParentPlay.NoSkipChildren
@@ -145,12 +136,10 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 	}
 
 	if p.Skip {
-		logger.Debug(icon + " " + p.GetTitle())
+		logger.Debug("  " + p.GetTitleMsg())
 		logger.Debug("  skipping...")
 		return nil
 	}
-
-	logger.Info("  " + icon + " " + cp.GetTitle())
 
 	var loopRows []*CfgLoopRow
 	if len(cp.LoopOn) == 0 {
@@ -168,6 +157,8 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 	p.LoopRow = make([]*LoopRow, len(loopRows))
 	for i, cfgLoopRow := range loopRows {
 
+		runCtx := CreateRunCtx()
+
 		loop := &LoopRow{
 			Name:          cfgLoopRow.Name,
 			Key:           cfgLoopRow.Key,
@@ -175,19 +166,78 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 			Vars:          cfgLoopRow.Vars,
 			IsLoopRowItem: cfgLoopRow.IsLoopRowItem,
 			ParentPlay:    p,
+			RunCtx:        runCtx,
 		}
 
 		p.LoopRow[i] = loop
 
+		if cp.CfgChk != nil {
+			loop.HasChk = true
+			loop.PreChk = CreateChk(cp.CfgChk, loop, true)
+			loop.PostChk = CreateChk(cp.CfgChk, loop, false)
+			p.NoSkip = true
+		}
+
+		switch pl := cp.CfgPlay.(type) {
+		case []*CfgPlay:
+			var sp []*Play
+			for _, child := range pl {
+				np := CreatePlay(child, runCtx, loop)
+				if np != nil {
+					sp = append(sp, np)
+					if np.NoSkip {
+						p.NoSkip = true
+					}
+				}
+			}
+			loop.Play = sp
+		case *CfgCmd:
+			if pl.CfgPlaySubstitution != nil {
+				var sp []*Play
+				np := CreatePlay(pl.CfgPlaySubstitution, runCtx, loop)
+				if np != nil {
+					sp = []*Play{np}
+					if np.NoSkip {
+						p.NoSkip = true
+					}
+				}
+				loop.Play = sp
+			} else {
+				loop.Play = CreateCmd(pl, loop)
+				p.NoSkip = true
+			}
+		}
+
+	}
+
+	return p
+}
+
+func (p *Play) LoadVars() {
+	logger := p.Logger
+
+	if !p.NoSkip {
+		logger.Debug("  " + p.GetTitleMsg())
+		logger.Debug("  skipping...")
+		return
+	}
+
+	logger.Info("  " + p.GetTitleMsg())
+
+	cp := p.CfgPlay
+
+	parentCtx := p.RunCtx
+
+	for _, loop := range p.LoopRow {
+		ctx := loop.RunCtx
+		vars := ctx.Vars
+		varsDefault := ctx.VarsDefault
+
 		if loop.IsLoopRowItem {
 			logger.Info(strings.Repeat("  ", 2) + "⦿ " + loop.Name)
 		}
-
-		vars := cmap.New()
-		varsDefault := cmap.New()
-
 		if !p.VarsClean {
-			for k, v := range ctx.Vars.Items() {
+			for k, v := range parentCtx.Vars.Items() {
 				vars.Set(k, v)
 			}
 		}
@@ -199,7 +249,7 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 		}
 
 		if !p.VarsClean {
-			for k, v := range ctx.VarsDefault.Items() {
+			for k, v := range parentCtx.VarsDefault.Items() {
 				varsDefault.Set(k, v)
 			}
 		}
@@ -214,43 +264,20 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 
 		cp.PromptPluginVars()
 
-		runCtx := &RunCtx{
-			Vars:        vars,
-			VarsDefault: varsDefault,
+		if loop.HasChk {
+			loop.PreChk.LoadVars()
+			loop.PostChk.LoadVars()
 		}
 
-		if cp.CfgChk != nil {
-			loop.HasChk = true
-			loop.PreChk = CreateChk(cp.CfgChk, runCtx, loop, true)
-			loop.PostChk = CreateChk(cp.CfgChk, runCtx, loop, false)
-		}
-
-		switch pl := cp.CfgPlay.(type) {
-		case []*CfgPlay:
-			var sp []*Play
-			for _, child := range pl {
-				np := CreatePlay(child, runCtx, loop)
-				if np != nil {
-					sp = append(sp, np)
-				}
+		switch pl := loop.Play.(type) {
+		case []*Play:
+			for _, p := range pl {
+				p.LoadVars()
 			}
-			loop.Play = sp
-		case *CfgCmd:
-			if pl.CfgPlaySubstitution != nil {
-				var sp []*Play
-				np := CreatePlay(pl.CfgPlaySubstitution, runCtx, loop)
-				if np != nil {
-					sp = []*Play{np}
-				}
-				loop.Play = sp
-			} else {
-				loop.Play = CreateCmd(pl, runCtx, loop)
-			}
+		case *Cmd:
+			pl.LoadVars()
 		}
 	}
-
-	return p
-
 }
 
 func (p *Play) handlePlayKey(match bool) {
@@ -295,6 +322,19 @@ func (p *Play) KeysMatch(keys []string) bool {
 }
 func (p *Play) KeyMatch(key string) bool {
 	return p.Key == key || p.TreeKey == key
+}
+
+func (p *Play) GetTitleMsg() string {
+	cp := p.CfgPlay
+	var icon string
+	if cp.ParentCfgPlay == nil {
+		icon = `🠞`
+	} else if !cp.HasChildren {
+		icon = `⯈`
+	} else {
+		icon = `⤷`
+	}
+	return icon + " " + p.GetTitle()
 }
 
 func (p *Play) GetTitle() string {
@@ -348,6 +388,10 @@ func (p *Play) Run() error {
 
 	app := p.App
 	if app.IsExiting() {
+		return nil
+	}
+
+	if !p.NoSkip {
 		return nil
 	}
 

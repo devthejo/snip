@@ -8,7 +8,6 @@ import (
 
 	shellquote "github.com/kballard/go-shellquote"
 	"github.com/mgutz/ansi"
-	cmap "github.com/orcaman/concurrent-map"
 	"github.com/sirupsen/logrus"
 
 	"gitlab.com/ytopia/ops/snip/decode"
@@ -207,7 +206,6 @@ func (cp *CfgPlay) ParsePlay(m map[string]interface{}, override bool) {
 
 	case string:
 		c, err := shellquote.Split(v)
-		// logrus.Errorf("v: %v", v)
 		errors.Check(err)
 		ccmd := CreateCfgCmd(cp, c)
 		cp.CfgPlay = ccmd
@@ -964,11 +962,10 @@ func (cp *CfgPlay) PromptPluginVars() {
 
 func (cp *CfgPlay) BuildRoot() *Play {
 	logrus.Infof(ansi.Color("≡ ", "green") + "collecting variables")
-	ctx := &RunCtx{
-		Vars:        cmap.New(),
-		VarsDefault: cmap.New(),
-	}
-	return CreatePlay(cp, ctx, nil)
+	ctx := CreateRunCtx()
+	rootPlay := CreatePlay(cp, ctx, nil)
+	rootPlay.LoadVars()
+	return rootPlay
 }
 
 func unexpectedTypeCfgPlay(m map[string]interface{}, key string) {

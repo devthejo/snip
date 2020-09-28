@@ -17,6 +17,7 @@ type LoopRow struct {
 	HasChk        bool
 	PreChk        *Chk
 	PostChk       *Chk
+	RunCtx        *RunCtx
 }
 
 func (l *LoopRow) GetKey() string {

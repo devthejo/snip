@@ -69,7 +69,7 @@ func (cmd *Cmd) EnvMap() map[string]string {
 	return m
 }
 
-func CreateCmd(ccmd *CfgCmd, ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
+func CreateCmd(ccmd *CfgCmd, parentLoopRow *LoopRow) *Cmd {
 	parentPlay := parentLoopRow.ParentPlay
 	cp := ccmd.CfgPlay
 	app := cp.App
@@ -120,20 +120,6 @@ func CreateCmd(ccmd *CfgCmd, ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 	cmd.TreeKeyParts = GetTreeKeyParts(cmd.ParentLoopRow)
 	cmd.TreeKey = strings.Join(cmd.TreeKeyParts, "|")
 
-	vars := make(map[string]string)
-	for k, v := range ctx.VarsDefault.Items() {
-		runVar := v.(*variable.RunVar)
-		vars[k] = runVar.GetValue()
-	}
-	for k, v := range ctx.Vars.Items() {
-		runVar := v.(*variable.RunVar)
-		vars[k] = runVar.GetValue()
-	}
-	for k, v := range vars {
-		vars[k], _ = goenv.Expand(v, vars)
-	}
-	cmd.Vars = vars
-
 	logger := logrus.WithFields(logrus.Fields{
 		"tree":   cmd.TreeKey,
 		"action": "running",
@@ -144,6 +130,26 @@ func CreateCmd(ccmd *CfgCmd, ctx *RunCtx, parentLoopRow *LoopRow) *Cmd {
 	thr.Logger = logger
 
 	return cmd
+}
+
+func (cmd *Cmd) LoadVars() {
+	ctx := cmd.ParentLoopRow.RunCtx
+	vars := make(map[string]string)
+	for k, v := range ctx.VarsDefault.Items() {
+		runVar := v.(*variable.RunVar)
+		vars[k] = runVar.GetValue()
+	}
+	for k, v := range ctx.Vars.Items() {
+		runVar := v.(*variable.RunVar)
+		value := runVar.GetValue()
+		if value != "" {
+			vars[k] = value
+		}
+	}
+	for k, v := range vars {
+		vars[k], _ = goenv.Expand(v, vars)
+	}
+	cmd.Vars = vars
 }
 
 func (cmd *Cmd) Run() error {
