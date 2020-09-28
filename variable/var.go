@@ -54,10 +54,16 @@ func (vr *Var) Parse(k string, m map[string]interface{}) {
 }
 
 func (vr *Var) SetValue(v string) {
+	if v == "" {
+		return
+	}
 	vr.ValueFromType = FromValue
 	vr.ValueParam = v
 }
 func (vr *Var) SetDefault(v string) {
+	if v == "" {
+		return
+	}
 	vr.DefaultFromType = FromValue
 	vr.DefaultParam = v
 }
@@ -450,7 +456,7 @@ func (v *Var) RegisterValueTo(vars cmap.ConcurrentMap) {
 		vars.Set(v.Name, runVar)
 	}
 
-	if v.GetValue() != "" {
+	if v.ValueParam != "" {
 		runVar.FromType = v.ValueFromType
 		runVar.Param = v.ValueParam
 	}
@@ -466,7 +472,7 @@ func (v *Var) RegisterDefaultTo(varsDefault cmap.ConcurrentMap) {
 		runVar = CreateRunVar()
 		varsDefault.Set(v.Name, runVar)
 	}
-	if v.GetDefault() != "" {
+	if v.DefaultParam != "" {
 		runVar.FromType = v.DefaultFromType
 		runVar.Param = v.DefaultParam
 	}

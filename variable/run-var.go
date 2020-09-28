@@ -1,5 +1,11 @@
 package variable
 
+import (
+	"io/ioutil"
+
+	"github.com/sirupsen/logrus"
+)
+
 type FromType int
 
 const (
@@ -34,7 +40,11 @@ func (runVar *RunVar) GetValue(ctxs ...RunCtx) string {
 			}
 		}
 	case FromFile:
-
+		content, err := ioutil.ReadFile(runVar.Param)
+		if err != nil {
+			logrus.Debugf("unable to read from_file file %v, %v", runVar.Param, err)
+		}
+		r = string(content)
 	}
 	return r
 }
