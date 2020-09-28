@@ -21,5 +21,14 @@ func CreateRunVar() *RunVar {
 }
 
 func (runVar *RunVar) GetValue() string {
-	return runVar.FromParam
+	var r string
+	switch runVar.FromType {
+	case FromValue:
+		r = runVar.FromParam
+	case FromVar:
+
+	case FromFile:
+
+	}
+	return r
 }
