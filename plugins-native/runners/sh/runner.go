@@ -15,7 +15,6 @@ import (
 	"github.com/kvz/logstreamer"
 
 	expect "gitlab.com/ytopia/ops/snip/goexpect"
-	// "gitlab.com/ytopia/ops/snip/loggers"
 	"gitlab.com/ytopia/ops/snip/plugin/runner"
 	"gitlab.com/ytopia/ops/snip/tools"
 )
@@ -92,13 +91,12 @@ var (
 					pty.Master.Close()
 				}
 				wait = func() error {
-					if err := cmd.Wait(); err != nil {
-						return err
+					var err error
+					if errCmd := cmd.Wait(); errCmd != nil {
+						err = errCmd
 					}
-					if err := pty.Slave.Close(); err != nil {
-						return err
-					}
-					return nil
+					pty.Slave.Close()
+					return err
 				}
 
 			} else {
