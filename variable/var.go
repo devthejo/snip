@@ -457,8 +457,7 @@ func (v *Var) RegisterValueTo(vars cmap.ConcurrentMap) {
 	}
 
 	if v.ValueParam != "" {
-		runVar.FromType = v.ValueFromType
-		runVar.Param = v.ValueParam
+		runVar.Set(v.ValueFromType, v.ValueParam)
 	}
 }
 
@@ -473,8 +472,7 @@ func (v *Var) RegisterDefaultTo(varsDefault cmap.ConcurrentMap) {
 		varsDefault.Set(v.Name, runVar)
 	}
 	if v.DefaultParam != "" {
-		runVar.FromType = v.DefaultFromType
-		runVar.Param = v.DefaultParam
+		runVar.Set(v.DefaultFromType, v.DefaultParam)
 	}
 }
 
@@ -515,8 +513,7 @@ func (v *Var) HandleRequired(varsDefault cmap.ConcurrentMap, vars cmap.Concurren
 		v.PromptVarDefault()
 		if v.GetDefault() != "" {
 			if varsDefault != nil {
-				runVarDefault.FromType = FromValue
-				runVarDefault.Param = v.DefaultParam
+				runVarDefault.Set(FromValue, v.DefaultParam)
 			}
 			break
 		}

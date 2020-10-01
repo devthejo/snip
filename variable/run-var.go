@@ -16,6 +16,7 @@ const (
 
 type RunVar struct {
 	FromType FromType
+	LazyLoad bool
 	Param    string
 }
 
@@ -24,6 +25,21 @@ func CreateRunVar() *RunVar {
 		FromType: FromValue,
 	}
 	return runVar
+}
+
+func (runVar *RunVar) Set(fromType FromType, param string) {
+	runVar.FromType = fromType
+	runVar.Param = param
+	switch(fromType) {
+	case FromValue:
+		runVar.LazyLoad = false
+	case FromVar:
+		runVar.LazyLoad = true
+	case FromFile:
+		runVar.LazyLoad = true
+	default:
+		runVar.LazyLoad = true
+	}
 }
 
 func (runVar *RunVar) GetValue(ctxs ...RunCtx) string {
