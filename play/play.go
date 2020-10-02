@@ -469,7 +469,6 @@ func (p *Play) Run() error {
 			}
 		case *Cmd:
 			for tries := p.Retry + 1; tries > 0; tries-- {
-				pl.RegisterVarsLoad()
 				if err := pl.Run(); err != nil {
 					localErrSlice = append(localErrSlice, err)
 				}

@@ -156,6 +156,8 @@ func (chk *Chk) Run() (bool, error) {
 		return false, nil
 	}
 
+	chk.RegisterVarsLoad()
+
 	logger := chk.Logger
 	isPreRun := chk.IsPreRun
 
@@ -332,6 +334,17 @@ func (chk *Chk) ApplyMiddlewares() error {
 	chk.Runner = mutableCmd.Runner
 
 	return nil
+}
+
+func (chk *Chk) RegisterVarsLoad() {
+	varsRegistry := chk.App.GetVarsRegistry()
+	for i := 0; i < len(chk.TreeKeyParts); i++ {
+		kp := chk.TreeKeyParts[0 : i+1]
+		regVarsMap := varsRegistry.GetMapBySlice(kp)
+		for k, v := range regVarsMap {
+			chk.RunVars.SetValueString(k, v)
+		}
+	}
 }
 
 func (chk *Chk) RunRunner() error {

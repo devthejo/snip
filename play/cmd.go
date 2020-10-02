@@ -144,6 +144,8 @@ func CreateCmd(ccmd *CfgCmd, parentLoopRow *LoopRow) *Cmd {
 // }
 
 func (cmd *Cmd) Run() error {
+	cmd.RegisterVarsLoad()
+
 	if cmd.Thread.ExecExited {
 		cmd.Thread.Reset()
 	}
