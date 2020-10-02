@@ -32,7 +32,7 @@ var (
 				defer os.Remove(tmpfileEnvName)
 
 				vars := make(map[string]string)
-				for k, v := range processorCfg.Vars {
+				for k, v := range processorCfg.RunVars.GetAll() {
 					if k[0:1] != "@" {
 						vars[k] = v
 					}

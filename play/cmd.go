@@ -11,7 +11,6 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"gitlab.com/ytopia/ops/snip/config"
-	"gitlab.com/ytopia/ops/snip/goenv"
 	expect "gitlab.com/ytopia/ops/snip/goexpect"
 	snipplugin "gitlab.com/ytopia/ops/snip/plugin"
 	"gitlab.com/ytopia/ops/snip/plugin/middleware"
@@ -19,7 +18,6 @@ import (
 	"gitlab.com/ytopia/ops/snip/plugin/runner"
 	"gitlab.com/ytopia/ops/snip/proc"
 	"gitlab.com/ytopia/ops/snip/registry"
-	"gitlab.com/ytopia/ops/snip/variable"
 )
 
 type Cmd struct {
@@ -31,7 +29,8 @@ type Cmd struct {
 	ParentLoopRow *LoopRow
 
 	Command []string
-	Vars    map[string]string
+	// Vars map[string]string
+	RunVars *RunVars
 
 	ExecTimeout *time.Duration
 
@@ -57,16 +56,6 @@ type Cmd struct {
 	TreeKey      string
 
 	PreflightRunnedOnce bool
-}
-
-func (cmd *Cmd) EnvMap() map[string]string {
-	m := make(map[string]string)
-	for k, v := range cmd.Vars {
-		if k[0:1] != "@" {
-			m[k] = v
-		}
-	}
-	return m
 }
 
 func CreateCmd(ccmd *CfgCmd, parentLoopRow *LoopRow) *Cmd {
@@ -109,6 +98,8 @@ func CreateCmd(ccmd *CfgCmd, parentLoopRow *LoopRow) *Cmd {
 
 		RegisterVars: registerVars,
 		Quiet:        cp.Quiet != nil && (*cp.Quiet),
+
+		RunVars: parentLoopRow.RunVars,
 	}
 
 	depth := ccmd.Depth
@@ -132,25 +123,25 @@ func CreateCmd(ccmd *CfgCmd, parentLoopRow *LoopRow) *Cmd {
 	return cmd
 }
 
-func (cmd *Cmd) LoadVars() {
-	ctx := cmd.ParentLoopRow.RunCtx
-	vars := make(map[string]string)
-	for k, v := range ctx.VarsDefault.Items() {
-		runVar := v.(*variable.RunVar)
-		vars[k] = runVar.GetValue(ctx, cmd.ParentLoopRow.ParentPlay.RunCtx)
-	}
-	for k, v := range ctx.Vars.Items() {
-		runVar := v.(*variable.RunVar)
-		value := runVar.GetValue(ctx, cmd.ParentLoopRow.ParentPlay.RunCtx)
-		if value != "" {
-			vars[k] = value
-		}
-	}
-	for k, v := range vars {
-		vars[k], _ = goenv.Expand(v, vars)
-	}
-	cmd.Vars = vars
-}
+// func (cmd *Cmd) LoadVars() {
+// ctx := cmd.ParentLoopRow.RunVars
+// vars := make(map[string]string)
+// for k, v := range ctx.Defaults.Items() {
+// 	runVar := v.(*variable.RunVar)
+// 	vars[k] = runVar.GetValue(ctx, cmd.ParentLoopRow.ParentPlay.RunVars)
+// }
+// for k, v := range ctx.Values.Items() {
+// 	runVar := v.(*variable.RunVar)
+// 	value := runVar.GetValue(ctx, cmd.ParentLoopRow.ParentPlay.RunVars)
+// 	if value != "" {
+// 		vars[k] = value
+// 	}
+// }
+// for k, v := range vars {
+// 	vars[k], _ = goenv.Expand(v, vars)
+// }
+// cmd.Vars = vars
+// }
 
 func (cmd *Cmd) Run() error {
 	if cmd.Thread.ExecExited {
@@ -163,10 +154,6 @@ func (cmd *Cmd) Run() error {
 }
 
 func (cmd *Cmd) CreateMutableCmd() *middleware.MutableCmd {
-	originalVars := make(map[string]string)
-	for k, v := range cmd.Vars {
-		originalVars[k] = v
-	}
 	originalCommand := make([]string, len(cmd.Command))
 	copy(originalCommand, cmd.Command)
 
@@ -180,17 +167,16 @@ func (cmd *Cmd) CreateMutableCmd() *middleware.MutableCmd {
 		requiredFilesProcessors[k] = v
 	}
 
-	vars := make(map[string]string)
-	for k, v := range cmd.Vars {
-		vars[k] = v
-	}
+	// vars := make(map[string]string)
+	// for k, v := range cmd.Vars {
+	// 	vars[k] = v
+	// }
 
 	mutableCmd := &middleware.MutableCmd{
-		AppConfig:                  cmd.AppConfig,
-		Command:                    cmd.Command,
-		Vars:                       vars,
+		AppConfig: cmd.AppConfig,
+		Command:   cmd.Command,
+		// Vars:                       vars,
 		OriginalCommand:            originalCommand,
-		OriginalVars:               originalVars,
 		RequiredFiles:              requiredFiles,
 		RequiredFilesSrcProcessors: requiredFilesProcessors,
 		Expect:                     cmd.Expect,
@@ -199,41 +185,6 @@ func (cmd *Cmd) CreateMutableCmd() *middleware.MutableCmd {
 		Closer:                     cmd.Closer,
 	}
 	return mutableCmd
-}
-
-func (cmd *Cmd) GetPluginVarsMap(pluginType string, pluginName string, useVars []string, mVar map[string]*variable.Var) map[string]string {
-	pVars := make(map[string]string)
-	for _, useV := range useVars {
-
-		var val string
-
-		key := strings.ToUpper(useV)
-
-		v := mVar[key]
-		if v != nil && v.GetDefault() != "" {
-			val = v.GetDefault()
-		}
-
-		k1 := strings.ToUpper("@" + key)
-		if cv, ok := cmd.Vars[k1]; ok {
-			val = cv
-		}
-		k2 := strings.ToUpper("@" + pluginName + "_" + key)
-		if cv, ok := cmd.Vars[k2]; ok {
-			val = cv
-		}
-		k3 := strings.ToUpper("@" + pluginType + "_" + pluginName + "_" + key)
-		if cv, ok := cmd.Vars[k3]; ok {
-			val = cv
-		}
-
-		if v != nil && v.GetValue() != "" {
-			val = v.GetValue()
-		}
-
-		pVars[strings.ToLower(key)] = val
-	}
-	return pVars
 }
 
 func (cmd *Cmd) ApplyMiddlewares() error {
@@ -246,7 +197,7 @@ func (cmd *Cmd) ApplyMiddlewares() error {
 
 		cfgMiddleware := middlewareStack[i]
 
-		middlewareVars := cmd.GetPluginVarsMap("middleware", cfgMiddleware.Name, cfgMiddleware.Plugin.UseVars, cfgMiddleware.Vars)
+		middlewareVars := cmd.RunVars.GetPluginVars("middleware", cfgMiddleware.Name, cfgMiddleware.Plugin.UseVars, cfgMiddleware.Vars)
 
 		middlewareConfig := &middleware.Config{
 			AppConfig:      cmd.AppConfig,
@@ -267,7 +218,7 @@ func (cmd *Cmd) ApplyMiddlewares() error {
 	}
 
 	cmd.Command = mutableCmd.Command
-	cmd.Vars = mutableCmd.Vars
+	// cmd.Vars = mutableCmd.Vars
 	cmd.RequiredFiles = mutableCmd.RequiredFiles
 	cmd.RequiredFilesSrcProcessors = mutableCmd.RequiredFilesSrcProcessors
 	cmd.Expect = mutableCmd.Expect
@@ -317,7 +268,7 @@ func (cmd *Cmd) RegisterVarsLoad() {
 		kp := cmd.TreeKeyParts[0 : i+1]
 		regVarsMap := varsRegistry.GetMapBySlice(kp)
 		for k, v := range regVarsMap {
-			cmd.Vars[k] = v
+			cmd.RunVars.SetValueString(k, v)
 		}
 	}
 }
@@ -330,12 +281,7 @@ func (cmd *Cmd) RunRunner() error {
 		r.Plugin = cmd.App.GetRunner(r.Name)
 	}
 
-	runnerVars := cmd.GetPluginVarsMap("runner", r.Name, r.Plugin.UseVars, r.Vars)
-
-	vars := make(map[string]string)
-	for k, v := range cmd.Vars {
-		vars[k] = v
-	}
+	runnerVars := cmd.RunVars.GetPluginVars("runner", r.Name, r.Plugin.UseVars, r.Vars)
 
 	registerVars := make(map[string]*registry.VarDef)
 	for k, v := range cmd.RegisterVars {
@@ -345,6 +291,8 @@ func (cmd *Cmd) RunRunner() error {
 	if cmd.ExecTimeout != nil {
 		cmd.Thread.SetTimeout(cmd.ExecTimeout)
 	}
+
+	vars := cmd.RunVars.GetAll()
 
 	runCfg := &runner.Config{
 		AppConfig:     cmd.AppConfig,
@@ -394,7 +342,7 @@ func (cmd *Cmd) PreflightRun() error {
 		return err
 	}
 	processorCfg := &processor.Config{
-		Vars: cmd.Vars,
+		RunVars: cmd.RunVars,
 	}
 	for dest, src := range cmd.RequiredFiles {
 		if processors, ok := cmd.RequiredFilesSrcProcessors[src]; ok {

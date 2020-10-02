@@ -30,7 +30,7 @@ func CreateRunVar() *RunVar {
 func (runVar *RunVar) Set(fromType FromType, param string) {
 	runVar.FromType = fromType
 	runVar.Param = param
-	switch(fromType) {
+	switch fromType {
 	case FromValue:
 		runVar.LazyLoad = false
 	case FromVar:
@@ -42,7 +42,7 @@ func (runVar *RunVar) Set(fromType FromType, param string) {
 	}
 }
 
-func (runVar *RunVar) GetValue(ctxs ...RunCtx) string {
+func (runVar *RunVar) GetValue(ctxs ...RunVars) string {
 
 	var r string
 	switch runVar.FromType {
@@ -65,11 +65,11 @@ func (runVar *RunVar) GetValue(ctxs ...RunCtx) string {
 	return r
 }
 
-func (runVar *RunVar) getValueOfCtx(ctx RunCtx, ctxs []RunCtx) string {
+func (runVar *RunVar) getValueOfCtx(ctx RunVars, ctxs []RunVars) string {
 	var r string
 	k := runVar.Param
-	vars := ctx.GetVars()
-	varsDefault := ctx.GetVarsDefault()
+	vars := ctx.GetValues()
+	varsDefault := ctx.GetDefaults()
 	if v, ok := vars.Get(k); ok {
 		rv := v.(*RunVar)
 		r = rv.GetValue(ctxs...)

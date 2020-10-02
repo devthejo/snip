@@ -961,10 +961,12 @@ func (cp *CfgPlay) PromptPluginVars() {
 }
 
 func (cp *CfgPlay) BuildRoot() *Play {
-	logrus.Infof(ansi.Color("≡ ", "green") + "collecting variables")
-	ctx := CreateRunCtx()
+	ctx := CreateRunVars()
 	rootPlay := CreatePlay(cp, ctx, nil)
+
+	logrus.Infof(ansi.Color("≡ ", "green") + "collecting variables")
 	rootPlay.LoadVars()
+
 	return rootPlay
 }
 

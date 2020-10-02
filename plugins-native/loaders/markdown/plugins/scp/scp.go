@@ -61,7 +61,7 @@ var (
 				}
 				sum := fmt.Sprintf("%x", sha256.Sum256(b))
 				key := "SNIP_SHA256_" + tools.KeyEnv(targetFile)
-				processorCfg.Vars[key] = sum
+				processorCfg.RunVars.SetValueString(key, sum)
 				return nil
 			}
 

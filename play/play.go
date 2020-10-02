@@ -20,7 +20,7 @@ import (
 type Play struct {
 	App App
 
-	RunCtx *RunCtx
+	RunVars *RunVars
 
 	ParentLoopRow *LoopRow
 
@@ -57,7 +57,7 @@ type Play struct {
 	VarsClean bool
 }
 
-func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
+func CreatePlay(cp *CfgPlay, ctx *RunVars, parentLoopRow *LoopRow) *Play {
 	var loopSequential bool
 	if cp.LoopSequential != nil {
 		loopSequential = *cp.LoopSequential
@@ -96,7 +96,7 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 		p.Retry = *cp.Retry
 	}
 
-	p.RunCtx = ctx
+	p.RunVars = ctx
 	p.ParentLoopRow = parentLoopRow
 
 	p.TreeKeyParts = GetTreeKeyParts(p)
@@ -117,22 +117,22 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 		p.handlePlayKey(match)
 	}
 
-	gRunCtx := p.GlobalRunCtx
-	if cfg.PlayKeyStart != "" && gRunCtx.SkippingState == nil {
+	gRunVars := p.GlobalRunCtx
+	if cfg.PlayKeyStart != "" && gRunVars.SkippingState == nil {
 		b := true
-		gRunCtx.SkippingState = &b
+		gRunVars.SkippingState = &b
 	}
 
 	if cfg.PlayKeyStart != "" && p.KeyMatch(cfg.PlayKeyStart) {
 		b := false
-		gRunCtx.SkippingState = &b
+		gRunVars.SkippingState = &b
 	}
-	if gRunCtx.SkippingState != nil && !p.NoSkipChildren {
-		p.handlePlayKey(!*gRunCtx.SkippingState)
+	if gRunVars.SkippingState != nil && !p.NoSkipChildren {
+		p.handlePlayKey(!*gRunVars.SkippingState)
 	}
 	if cfg.PlayKeyEnd != "" && p.KeyMatch(cfg.PlayKeyEnd) {
 		b := true
-		gRunCtx.SkippingState = &b
+		gRunVars.SkippingState = &b
 	}
 
 	if p.Skip {
@@ -157,7 +157,7 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 	p.LoopRow = make([]*LoopRow, len(loopRows))
 	for i, cfgLoopRow := range loopRows {
 
-		runCtx := CreateRunCtx()
+		runCtx := ctx.NewChild()
 
 		loop := &LoopRow{
 			Name:          cfgLoopRow.Name,
@@ -166,7 +166,7 @@ func CreatePlay(cp *CfgPlay, ctx *RunCtx, parentLoopRow *LoopRow) *Play {
 			Vars:          cfgLoopRow.Vars,
 			IsLoopRowItem: cfgLoopRow.IsLoopRowItem,
 			ParentPlay:    p,
-			RunCtx:        runCtx,
+			RunVars:       runCtx,
 		}
 
 		p.LoopRow[i] = loop
@@ -226,56 +226,49 @@ func (p *Play) LoadVars() {
 
 	cp := p.CfgPlay
 
-	parentCtx := p.RunCtx
+	parentCtx := p.RunVars
 
 	for _, loop := range p.LoopRow {
-		ctx := loop.RunCtx
-		vars := ctx.Vars
-		varsDefault := ctx.VarsDefault
+		ctx := loop.RunVars
+		values := ctx.Values
+		defaults := ctx.Defaults
 
 		if loop.IsLoopRowItem {
 			logger.Info(strings.Repeat("  ", 2) + "⦿ " + loop.Name)
 		}
 		if !p.VarsClean {
-			for k, v := range parentCtx.Vars.Items() {
-				vars.Set(k, v)
+			for k, v := range parentCtx.Values.Items() {
+				values.Set(k, v)
 			}
 		}
 		for _, v := range cp.Vars {
-			v.RegisterValueTo(vars)
+			v.RegisterValueTo(values)
 		}
 		for _, v := range loop.Vars {
-			v.RegisterValueTo(vars)
+			v.RegisterValueTo(values)
 		}
 
 		if !p.VarsClean {
-			for k, v := range parentCtx.VarsDefault.Items() {
-				varsDefault.Set(k, v)
+			for k, v := range parentCtx.Defaults.Items() {
+				defaults.Set(k, v)
 			}
 		}
 		for _, v := range loop.Vars {
-			v.RegisterDefaultTo(varsDefault)
-			v.HandleRequired(varsDefault, vars)
+			v.RegisterDefaultTo(defaults)
+			v.HandleRequired(defaults, values)
 		}
 		for _, v := range cp.Vars {
-			v.RegisterDefaultTo(varsDefault)
-			v.HandleRequired(varsDefault, vars)
+			v.RegisterDefaultTo(defaults)
+			v.HandleRequired(defaults, values)
 		}
 
 		cp.PromptPluginVars()
-
-		if loop.HasChk {
-			loop.PreChk.LoadVars()
-			loop.PostChk.LoadVars()
-		}
 
 		switch pl := loop.Play.(type) {
 		case []*Play:
 			for _, p := range pl {
 				p.LoadVars()
 			}
-		case *Cmd:
-			pl.LoadVars()
 		}
 	}
 }
@@ -408,8 +401,8 @@ func (p *Play) Run() error {
 
 	logger.Info(icon + " " + p.GetTitle())
 
-	gRunCtx := p.GlobalRunCtx
-	runReport := gRunCtx.RunReport
+	gRunVars := p.GlobalRunCtx
+	runReport := gRunVars.RunReport
 
 	var errSlice []error
 	runLoopSeq := func(loop *LoopRow) error {
@@ -423,12 +416,12 @@ func (p *Play) Run() error {
 			if err := pl.PreflightRun(); err != nil {
 				return err
 			}
-			if loop.HasChk {
-				for k, v := range pl.Vars {
-					loop.PreChk.Vars[k] = v
-					loop.PostChk.Vars[k] = v
-				}
-			}
+			// if loop.HasChk {
+			// 	for k, v := range pl.Vars {
+			// 		loop.PreChk.Vars[k] = v
+			// 		loop.PostChk.Vars[k] = v
+			// 	}
+			// }
 		}
 
 		if loop.HasChk {

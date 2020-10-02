@@ -11,15 +11,12 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"gitlab.com/ytopia/ops/snip/config"
-	"gitlab.com/ytopia/ops/snip/goenv"
 	expect "gitlab.com/ytopia/ops/snip/goexpect"
 	snipplugin "gitlab.com/ytopia/ops/snip/plugin"
 	"gitlab.com/ytopia/ops/snip/plugin/middleware"
 	"gitlab.com/ytopia/ops/snip/plugin/processor"
 	"gitlab.com/ytopia/ops/snip/plugin/runner"
 	"gitlab.com/ytopia/ops/snip/proc"
-	"gitlab.com/ytopia/ops/snip/tools"
-	"gitlab.com/ytopia/ops/snip/variable"
 )
 
 type Chk struct {
@@ -33,7 +30,8 @@ type Chk struct {
 	IsPreRun bool
 
 	Command []string
-	Vars    map[string]string
+	// Vars    map[string]string
+	RunVars *RunVars
 
 	ExecTimeout *time.Duration
 
@@ -60,16 +58,6 @@ type Chk struct {
 	PreflightRunnedOnce bool
 
 	GlobalRunCtx *GlobalRunCtx
-}
-
-func (chk *Chk) EnvMap() map[string]string {
-	m := make(map[string]string)
-	for k, v := range chk.Vars {
-		if k[0:1] != "@" {
-			m[k] = v
-		}
-	}
-	return m
 }
 
 func CreateChk(cchk *CfgChk, parentLoopRow *LoopRow, isPreRun bool) *Chk {
@@ -110,6 +98,8 @@ func CreateChk(cchk *CfgChk, parentLoopRow *LoopRow, isPreRun bool) *Chk {
 		Quiet: cp.Quiet != nil && (*cp.Quiet),
 
 		GlobalRunCtx: cp.GlobalRunCtx,
+
+		RunVars: parentLoopRow.RunVars,
 	}
 
 	depth := cchk.Depth
@@ -121,37 +111,36 @@ func CreateChk(cchk *CfgChk, parentLoopRow *LoopRow, isPreRun bool) *Chk {
 	chk.TreeKeyParts = GetTreeKeyParts(chk.ParentLoopRow)
 	chk.TreeKey = strings.Join(chk.TreeKeyParts, "|")
 
+	loggerCtx := context.WithValue(context.Background(), config.LogContextKey("indentation"), chk.Depth+1)
 	logger := logrus.WithFields(logrus.Fields{
 		"tree":   chk.TreeKey,
 		"action": "checking",
-	})
-	loggerCtx := context.WithValue(context.Background(), config.LogContextKey("indentation"), chk.Depth+1)
-	logger = logger.WithContext(loggerCtx)
+	}).WithContext(loggerCtx)
 	chk.Logger = logger
 	thr.Logger = logger
 
 	return chk
 }
 
-func (chk *Chk) LoadVars() {
-	ctx := chk.ParentLoopRow.RunCtx
-	vars := make(map[string]string)
-	for k, v := range ctx.VarsDefault.Items() {
-		runVar := v.(*variable.RunVar)
-		vars[k] = runVar.GetValue(ctx, chk.ParentLoopRow.ParentPlay.RunCtx)
-	}
-	for k, v := range ctx.Vars.Items() {
-		runVar := v.(*variable.RunVar)
-		value := runVar.GetValue(ctx, chk.ParentLoopRow.ParentPlay.RunCtx)
-		if value != "" {
-			vars[k] = value
-		}
-	}
-	for k, v := range vars {
-		vars[k], _ = goenv.Expand(v, vars)
-	}
-	chk.Vars = vars
-}
+// func (chk *Chk) LoadVars() {
+// 	ctx := chk.ParentLoopRow.RunVars
+// 	vars := make(map[string]string)
+// 	for k, v := range ctx.Defaults.Items() {
+// 		runVar := v.(*variable.RunVar)
+// 		vars[k] = runVar.GetValue(ctx, chk.ParentLoopRow.ParentPlay.RunVars)
+// 	}
+// 	for k, v := range ctx.Values.Items() {
+// 		runVar := v.(*variable.RunVar)
+// 		value := runVar.GetValue(ctx, chk.ParentLoopRow.ParentPlay.RunVars)
+// 		if value != "" {
+// 			vars[k] = value
+// 		}
+// 	}
+// 	for k, v := range vars {
+// 		vars[k], _ = goenv.Expand(v, vars)
+// 	}
+// 	chk.Vars = vars
+// }
 
 func (chk *Chk) RunThread() error {
 	if chk.Thread.ExecExited {
@@ -236,10 +225,6 @@ func (chk *Chk) Run() (bool, error) {
 }
 
 func (chk *Chk) CreateMutableCmd() *middleware.MutableCmd {
-	originalVars := make(map[string]string)
-	for k, v := range chk.Vars {
-		originalVars[k] = v
-	}
 	originalCommand := make([]string, len(chk.Command))
 	copy(originalCommand, chk.Command)
 
@@ -253,17 +238,16 @@ func (chk *Chk) CreateMutableCmd() *middleware.MutableCmd {
 		requiredFilesProcessors[k] = v
 	}
 
-	vars := make(map[string]string)
-	for k, v := range chk.Vars {
-		vars[k] = v
-	}
+	// vars := make(map[string]string)
+	// for k, v := range chk.Vars {
+	// 	vars[k] = v
+	// }
 
 	mutableCmd := &middleware.MutableCmd{
-		AppConfig:                  chk.AppConfig,
-		Command:                    chk.Command,
-		Vars:                       vars,
+		AppConfig: chk.AppConfig,
+		Command:   chk.Command,
+		// Vars:                       vars,
 		OriginalCommand:            originalCommand,
-		OriginalVars:               originalVars,
 		RequiredFiles:              requiredFiles,
 		RequiredFilesSrcProcessors: requiredFilesProcessors,
 		Expect:                     chk.Expect,
@@ -272,41 +256,6 @@ func (chk *Chk) CreateMutableCmd() *middleware.MutableCmd {
 		Closer:                     chk.Closer,
 	}
 	return mutableCmd
-}
-
-func (chk *Chk) GetPluginVarsMap(pluginType string, pluginName string, useVars []string, mVar map[string]*variable.Var) map[string]string {
-	pVars := make(map[string]string)
-	for _, useV := range useVars {
-
-		var val string
-
-		key := strings.ToUpper(useV)
-
-		v := mVar[key]
-		if v != nil && v.GetDefault() != "" {
-			val = v.GetDefault()
-		}
-
-		k1 := strings.ToUpper("@" + key)
-		if cv, ok := chk.Vars[k1]; ok {
-			val = cv
-		}
-		k2 := strings.ToUpper("@" + pluginName + "_" + key)
-		if cv, ok := chk.Vars[k2]; ok {
-			val = cv
-		}
-		k3 := strings.ToUpper("@" + pluginType + "_" + pluginName + "_" + key)
-		if cv, ok := chk.Vars[k3]; ok {
-			val = cv
-		}
-
-		if v != nil && v.GetValue() != "" {
-			val = v.GetValue()
-		}
-
-		pVars[strings.ToLower(key)] = val
-	}
-	return pVars
 }
 
 func (chk *Chk) BuildLauncher() error {
@@ -353,7 +302,7 @@ func (chk *Chk) ApplyMiddlewares() error {
 
 		cfgMiddleware := middlewareStack[i]
 
-		middlewareVars := chk.GetPluginVarsMap("middleware", cfgMiddleware.Name, cfgMiddleware.Plugin.UseVars, cfgMiddleware.Vars)
+		middlewareVars := chk.RunVars.GetPluginVars("middleware", cfgMiddleware.Name, cfgMiddleware.Plugin.UseVars, cfgMiddleware.Vars)
 
 		middlewareConfig := &middleware.Config{
 			AppConfig:      chk.AppConfig,
@@ -374,7 +323,7 @@ func (chk *Chk) ApplyMiddlewares() error {
 	}
 
 	chk.Command = mutableCmd.Command
-	chk.Vars = mutableCmd.Vars
+	// chk.Vars = mutableCmd.Vars
 	chk.RequiredFiles = mutableCmd.RequiredFiles
 	chk.RequiredFilesSrcProcessors = mutableCmd.RequiredFilesSrcProcessors
 	chk.Expect = mutableCmd.Expect
@@ -385,17 +334,6 @@ func (chk *Chk) ApplyMiddlewares() error {
 	return nil
 }
 
-func (chk *Chk) RegisterVarsLoad() {
-	varsRegistry := chk.App.GetVarsRegistry()
-	for i := 0; i < len(chk.TreeKeyParts); i++ {
-		kp := chk.TreeKeyParts[0 : i+1]
-		regVarsMap := varsRegistry.GetMapBySlice(kp)
-		for k, v := range regVarsMap {
-			chk.Vars[k] = v
-		}
-	}
-}
-
 func (chk *Chk) RunRunner() error {
 
 	r := chk.Runner
@@ -404,16 +342,13 @@ func (chk *Chk) RunRunner() error {
 		r.Plugin = chk.App.GetRunner(r.Name)
 	}
 
-	runnerVars := chk.GetPluginVarsMap("runner", r.Name, r.Plugin.UseVars, r.Vars)
-
-	vars := make(map[string]string)
-	for k, v := range chk.Vars {
-		vars[k] = v
-	}
+	runnerVars := chk.RunVars.GetPluginVars("runner", r.Name, r.Plugin.UseVars, r.Vars)
 
 	if chk.ExecTimeout != nil {
 		chk.Thread.SetTimeout(chk.ExecTimeout)
 	}
+
+	vars := chk.RunVars.GetAll()
 
 	runCfg := &runner.Config{
 		AppConfig:     chk.AppConfig,
@@ -450,8 +385,6 @@ func (chk *Chk) RunRunner() error {
 
 func (chk *Chk) Main() error {
 
-	logger := chk.Logger
-
 	if !chk.PreflightRunnedOnce {
 		if err := chk.BuildLauncher(); err != nil {
 			return err
@@ -461,10 +394,6 @@ func (chk *Chk) Main() error {
 		}
 		chk.PreflightRunnedOnce = true
 	}
-
-	// logger.Debugf("vars: %v", tools.JsonEncode(chk.Vars))
-	logger.Debugf("env: %v", tools.JsonEncode(chk.EnvMap()))
-	logger.Debugf("command: %v", strings.Join(chk.Command, " "))
 
 	if err := chk.RunRunner(); err != nil {
 		return err
