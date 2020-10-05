@@ -171,11 +171,15 @@ func CreatePlay(cp *CfgPlay, ctx *RunVars, parentLoopRow *LoopRow) *Play {
 
 		p.LoopRow[i] = loop
 
-		if cp.CfgChk != nil {
+		if cp.CfgPreChk != nil || cp.CfgPostChk != nil {
 			loop.HasChk = true
-			loop.PreChk = CreateChk(cp.CfgChk, loop, true)
-			loop.PostChk = CreateChk(cp.CfgChk, loop, false)
 			p.NoSkip = true
+			if cp.CfgPreChk != nil {
+				loop.PreChk = CreateChk(cp.CfgPreChk, loop, true)
+			}
+			if cp.CfgPostChk != nil {
+				loop.PostChk = CreateChk(cp.CfgPostChk, loop, false)
+			}
 		}
 
 		switch pl := cp.CfgPlay.(type) {

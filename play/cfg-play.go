@@ -45,7 +45,10 @@ type CfgPlay struct {
 	Quiet *bool
 
 	Check  []string
-	CfgChk *CfgChk
+	PreCheck  []string
+	PostCheck  []string
+	CfgPreChk *CfgChk
+	CfgPostChk *CfgChk
 
 	Retry *int
 
@@ -153,6 +156,8 @@ func (cp *CfgPlay) ParseMapRun(m map[string]interface{}, override bool) {
 	cp.ParseScope(m, override)
 
 	cp.ParseCheck(m, override)
+	cp.ParsePreCheck(m, override)
+	cp.ParsePostCheck(m, override)
 	cp.ParsePlay(m, override)
 }
 
@@ -667,8 +672,65 @@ func (cp *CfgPlay) ParseCheck(m map[string]interface{}, override bool) {
 	default:
 		unexpectedTypeCmd(m, "check")
 	}
-	if len(cp.Check) > 0 {
-		cp.CfgChk = CreateCfgChk(cp, cp.Check)
+}
+func (cp *CfgPlay) ParsePreCheck(m map[string]interface{}, override bool) {
+	if !override && cp.PreCheck != nil {
+		return
+	}
+	switch v := m["pre_check"].(type) {
+	case string:
+		if strings.Contains(v, "\n") {
+			cp.PreCheck = []string{v}
+		} else {
+			s, err := shellquote.Split(v)
+			errors.Check(err)
+			cp.PreCheck = s
+		}
+	case []interface{}:
+		s, err := decode.ToStrings(v)
+		errors.Check(err)
+		cp.PreCheck = s
+	case nil:
+		if _, ok := m["pre_check"]; ok {
+			cp.PreCheck = make([]string, 0)
+		}
+	default:
+		unexpectedTypeCmd(m, "pre_check")
+	}
+	if len(cp.PreCheck) > 0 {
+		cp.CfgPreChk = CreateCfgChk(cp, cp.PreCheck)
+	} else if len(cp.Check) > 0 {
+		cp.CfgPreChk = CreateCfgChk(cp, cp.Check)
+	}
+}
+func (cp *CfgPlay) ParsePostCheck(m map[string]interface{}, override bool) {
+	if !override && cp.PostCheck != nil {
+		return
+	}
+	switch v := m["post_check"].(type) {
+	case string:
+		if strings.Contains(v, "\n") {
+			cp.PostCheck = []string{v}
+		} else {
+			s, err := shellquote.Split(v)
+			errors.Check(err)
+			cp.PostCheck = s
+		}
+	case []interface{}:
+		s, err := decode.ToStrings(v)
+		errors.Check(err)
+		cp.PostCheck = s
+	case nil:
+		if _, ok := m["post_check"]; ok {
+			cp.PostCheck = make([]string, 0)
+		}
+	default:
+		unexpectedTypeCmd(m, "post_check")
+	}
+	if len(cp.PostCheck) > 0 {
+		cp.CfgPostChk = CreateCfgChk(cp, cp.PostCheck)
+	} else if len(cp.Check) > 0 {
+		cp.CfgPostChk = CreateCfgChk(cp, cp.Check)
 	}
 }
 
