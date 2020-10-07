@@ -33,10 +33,11 @@ func CmdPlay(app App) *cobra.Command {
 				playCfg := play.BuildConfig(app)
 				p := play.BuildPlay(playCfg)
 
-				if err := p.Start(); err != nil {
-					return err
-				}
-				if err := play.Clean(app); err != nil {
+				err := p.Start()
+
+				play.Clean(app)
+
+				if err != nil {
 					return err
 				}
 
