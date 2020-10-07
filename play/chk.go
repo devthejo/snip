@@ -30,7 +30,6 @@ type Chk struct {
 	IsPreRun bool
 
 	Command []string
-	// Vars    map[string]string
 	RunVars *RunVars
 
 	ExecTimeout *time.Duration
@@ -121,26 +120,6 @@ func CreateChk(cchk *CfgChk, parentLoopRow *LoopRow, isPreRun bool) *Chk {
 
 	return chk
 }
-
-// func (chk *Chk) LoadVars() {
-// 	ctx := chk.ParentLoopRow.RunVars
-// 	vars := make(map[string]string)
-// 	for k, v := range ctx.Defaults.Items() {
-// 		runVar := v.(*variable.RunVar)
-// 		vars[k] = runVar.GetValue(ctx, chk.ParentLoopRow.ParentPlay.RunVars)
-// 	}
-// 	for k, v := range ctx.Values.Items() {
-// 		runVar := v.(*variable.RunVar)
-// 		value := runVar.GetValue(ctx, chk.ParentLoopRow.ParentPlay.RunVars)
-// 		if value != "" {
-// 			vars[k] = value
-// 		}
-// 	}
-// 	for k, v := range vars {
-// 		vars[k], _ = goenv.Expand(v, vars)
-// 	}
-// 	chk.Vars = vars
-// }
 
 func (chk *Chk) RunThread() error {
 	if chk.Thread.ExecExited {
@@ -240,15 +219,9 @@ func (chk *Chk) CreateMutableCmd() *middleware.MutableCmd {
 		requiredFilesProcessors[k] = v
 	}
 
-	// vars := make(map[string]string)
-	// for k, v := range chk.Vars {
-	// 	vars[k] = v
-	// }
-
 	mutableCmd := &middleware.MutableCmd{
 		AppConfig: chk.AppConfig,
 		Command:   chk.Command,
-		// Vars:                       vars,
 		OriginalCommand:            originalCommand,
 		RequiredFiles:              requiredFiles,
 		RequiredFilesSrcProcessors: requiredFilesProcessors,
@@ -325,7 +298,6 @@ func (chk *Chk) ApplyMiddlewares() error {
 	}
 
 	chk.Command = mutableCmd.Command
-	// chk.Vars = mutableCmd.Vars
 	chk.RequiredFiles = mutableCmd.RequiredFiles
 	chk.RequiredFilesSrcProcessors = mutableCmd.RequiredFilesSrcProcessors
 	chk.Expect = mutableCmd.Expect

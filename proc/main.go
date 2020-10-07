@@ -19,8 +19,9 @@ type Main struct {
 	ContextCancel context.CancelFunc
 	MainChan      chan os.Signal
 	WaitGroup     *sync.WaitGroup
-	ExitCode      int
 	Ended         bool
+	ExitCode      int
+	Success       bool
 }
 
 func CreateMain(app App) *Main {
@@ -80,6 +81,7 @@ func (proc *Main) MainCloser() {
 	<-proc.MainChan
 	if proc.Ended {
 		if proc.ExitCode == 0 {
+			proc.Success = true
 			logrus.Debug("success")
 		} else {
 			logrus.Error("failed")

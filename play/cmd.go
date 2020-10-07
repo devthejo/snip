@@ -29,7 +29,6 @@ type Cmd struct {
 	ParentLoopRow *LoopRow
 
 	Command []string
-	// Vars map[string]string
 	RunVars *RunVars
 
 	ExecTimeout *time.Duration
@@ -123,26 +122,6 @@ func CreateCmd(ccmd *CfgCmd, parentLoopRow *LoopRow) *Cmd {
 	return cmd
 }
 
-// func (cmd *Cmd) LoadVars() {
-// ctx := cmd.ParentLoopRow.RunVars
-// vars := make(map[string]string)
-// for k, v := range ctx.Defaults.Items() {
-// 	runVar := v.(*variable.RunVar)
-// 	vars[k] = runVar.GetValue(ctx, cmd.ParentLoopRow.ParentPlay.RunVars)
-// }
-// for k, v := range ctx.Values.Items() {
-// 	runVar := v.(*variable.RunVar)
-// 	value := runVar.GetValue(ctx, cmd.ParentLoopRow.ParentPlay.RunVars)
-// 	if value != "" {
-// 		vars[k] = value
-// 	}
-// }
-// for k, v := range vars {
-// 	vars[k], _ = goenv.Expand(v, vars)
-// }
-// cmd.Vars = vars
-// }
-
 func (cmd *Cmd) Run() error {
 	cmd.RegisterVarsLoad()
 
@@ -169,15 +148,9 @@ func (cmd *Cmd) CreateMutableCmd() *middleware.MutableCmd {
 		requiredFilesProcessors[k] = v
 	}
 
-	// vars := make(map[string]string)
-	// for k, v := range cmd.Vars {
-	// 	vars[k] = v
-	// }
-
 	mutableCmd := &middleware.MutableCmd{
-		AppConfig: cmd.AppConfig,
-		Command:   cmd.Command,
-		// Vars:                       vars,
+		AppConfig:                  cmd.AppConfig,
+		Command:                    cmd.Command,
 		OriginalCommand:            originalCommand,
 		RequiredFiles:              requiredFiles,
 		RequiredFilesSrcProcessors: requiredFilesProcessors,
@@ -220,7 +193,6 @@ func (cmd *Cmd) ApplyMiddlewares() error {
 	}
 
 	cmd.Command = mutableCmd.Command
-	// cmd.Vars = mutableCmd.Vars
 	cmd.RequiredFiles = mutableCmd.RequiredFiles
 	cmd.RequiredFilesSrcProcessors = mutableCmd.RequiredFilesSrcProcessors
 	cmd.Expect = mutableCmd.Expect

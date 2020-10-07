@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
+	"path/filepath"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -23,17 +25,39 @@ func CmdPlay(app App) *cobra.Command {
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 
+			cfg := app.GetConfig()
+
 			startTime := time.Now()
+
+			main := app.GetMainProc()
 
 			mainFunc := func() error {
 				if err := play.Clean(app); err != nil {
 					return err
 				}
 
+				resumeFile := filepath.Join(play.GetRootPath(app), "resume")
+				if cfg.PlayResume {
+					if resume, err := ioutil.ReadFile(resumeFile); err == nil {
+						logrus.Infof("🔁 resuming from %s", resume)
+						cfg.PlayKeyStart = string(resume)
+					}
+				}
+
 				playCfg := play.BuildConfig(app)
+
 				p := play.BuildPlay(playCfg)
 
+				gRunCtx := playCfg.GlobalRunCtx
+
 				err := p.Start()
+
+				if main.Success {
+					gRunCtx.CurrentTreeKey = ""
+				}
+
+				logrus.Debugf("resume saved: %v", gRunCtx.CurrentTreeKey)
+				ioutil.WriteFile(resumeFile, []byte(gRunCtx.CurrentTreeKey), 0644)
 
 				play.Clean(app)
 
@@ -42,7 +66,7 @@ func CmdPlay(app App) *cobra.Command {
 				}
 
 				au := app.GetAurora()
-				runReport := playCfg.GlobalRunCtx.RunReport
+				runReport := gRunCtx.RunReport
 				logrus.Infof("🏁 play report:")
 				logrus.Infof("  result: %s %s %s",
 					au.BrightGreen(fmt.Sprintf("OK=%d", runReport.OK)),
@@ -56,7 +80,6 @@ func CmdPlay(app App) *cobra.Command {
 				return nil
 			}
 
-			main := app.GetMainProc()
 			main.Run(mainFunc)
 
 		},
@@ -76,6 +99,7 @@ func CmdPlay(app App) *cobra.Command {
 	flags.Bool("key-no-post", config.FlagPlayKeyNoPostDefault, config.FlagPlayKeyNoPostDesc)
 	flags.String("key-start", config.FlagPlayKeyStartDefault, config.FlagPlayKeyStartDesc)
 	flags.String("key-end", config.FlagPlayKeyEndDefault, config.FlagPlayKeyEndDesc)
+	flags.BoolP("resume", "r", config.FlagPlayResumeDefault, config.FlagPlayResumeDesc)
 
 	return cmd
 }

@@ -392,6 +392,8 @@ func (p *Play) Run() error {
 		return nil
 	}
 
+	p.GlobalRunCtx.CurrentTreeKey = p.TreeKey
+
 	logger := p.Logger
 	logger.Info(p.GetTitleMsg())
 
@@ -410,12 +412,6 @@ func (p *Play) Run() error {
 			if err := pl.PreflightRun(); err != nil {
 				return err
 			}
-			// if loop.HasChk {
-			// 	for k, v := range pl.Vars {
-			// 		loop.PreChk.Vars[k] = v
-			// 		loop.PostChk.Vars[k] = v
-			// 	}
-			// }
 		}
 
 		if loop.HasChk {

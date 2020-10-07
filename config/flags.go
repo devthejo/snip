@@ -22,6 +22,7 @@ const (
 	FlagPlayKeyNoPostDesc = "skip also post_install of provided keys"
 	FlagPlayKeyStartDesc  = "skip all before key"
 	FlagPlayKeyEndDesc    = "skip all after key"
+	FlagPlayResumeDesc    = "resume feeding --key-start with previous interrupted playing"
 )
 
 var (
@@ -44,4 +45,5 @@ var (
 	FlagPlayKeyNoPostDefault = false
 	FlagPlayKeyStartDefault  = ""
 	FlagPlayKeyEndDefault    = ""
+	FlagPlayResumeDefault    = false
 )

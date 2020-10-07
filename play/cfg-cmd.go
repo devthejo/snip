@@ -279,9 +279,6 @@ func (ccmd *CfgCmd) ParseLoader() {
 				break
 			}
 		}
-		// if ccmd.Loader == nil {
-		// 	logrus.Fatalf("no loader match with %v at depth %v", ccmd.Command, ccmd.Depth)
-		// }
 		return
 	}
 
@@ -292,11 +289,6 @@ func (ccmd *CfgCmd) ParseLoader() {
 			break
 		}
 	}
-
-	// if ccmd.Loader == nil {
-	// 	logrus.Fatalf("no loader match with %v at depth %v", ccmd.Command, ccmd.Depth)
-	// 	return
-	// }
 
 }
 
