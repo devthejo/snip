@@ -44,10 +44,10 @@ type CfgPlay struct {
 
 	Quiet *bool
 
-	Check  []string
-	PreCheck  []string
+	Check      []string
+	PreCheck   []string
 	PostCheck  []string
-	CfgPreChk *CfgChk
+	CfgPreChk  *CfgChk
 	CfgPostChk *CfgChk
 
 	Retry *int
@@ -893,26 +893,38 @@ func (cp *CfgPlay) ParseScope(m map[string]interface{}, override bool) {
 	if !override && cp.Scope != "" {
 		return
 	}
+
+	var scopeSlice []string
+
+	switch scopeNs := m["scope_namespace"].(type) {
+	case string:
+		scopeSlice = append(scopeSlice, scopeNs)
+	case nil:
+	default:
+		logrus.Fatalf("unexpected scope_namespace type %T value %v", scopeNs, scopeNs)
+	}
+
 	switch scope := m["scope"].(type) {
 	case string:
-		cp.Scope = scope
+		scopeSlice = append(scopeSlice, scope)
 	case nil:
+		switch runner := m["runner"].(type) {
+		case string:
+			scopeSlice = append(scopeSlice, runner)
+		default:
+			if cp.Scope == "" && cp.ParentCfgPlay != nil {
+				scopeSlice = append(scopeSlice, cp.ParentCfgPlay.Scope)
+			}
+		}
 		switch loopOn := m["loop_on"].(type) {
 		case string:
-			cp.Scope = loopOn
-		default:
-			switch runner := m["runner"].(type) {
-			case string:
-				cp.Scope = runner
-			default:
-				if cp.Scope == "" && cp.ParentCfgPlay != nil {
-					cp.Scope = cp.ParentCfgPlay.Scope
-				}
-			}
+			scopeSlice = append(scopeSlice, loopOn)
 		}
 	default:
 		logrus.Fatalf("unexpected scope type %T value %v", scope, scope)
 	}
+
+	cp.Scope = strings.Join(scopeSlice, ":")
 }
 
 func (cp *CfgPlay) ParseMiddlewares(m map[string]interface{}, override bool) {
