@@ -2,6 +2,7 @@ package variable
 
 import (
 	"io/ioutil"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 )
@@ -61,6 +62,7 @@ func (runVar *RunVar) GetValue(ctxs ...RunVars) string {
 			logrus.Debugf("unable to read from_file file %v, %v", runVar.Param, err)
 		}
 		r = string(content)
+		r = strings.TrimRight(r, "\n")
 	}
 	return r
 }
