@@ -392,18 +392,8 @@ func (p *Play) Run() error {
 		return nil
 	}
 
-	var icon string
-	if p.ParentLoopRow == nil {
-		icon = `🠞`
-	} else if !p.HasChildren {
-		icon = `⯈`
-	} else {
-		icon = `⤷`
-	}
-
 	logger := p.Logger
-
-	logger.Info(icon + " " + p.GetTitle())
+	logger.Info(p.GetTitleMsg())
 
 	gRunVars := p.GlobalRunCtx
 	runReport := gRunVars.RunReport
