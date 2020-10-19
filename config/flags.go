@@ -36,7 +36,7 @@ var (
 	FlagShutdownTimeoutDefault = "5"
 
 	FlagRunnerDefault  = "sh"
-	FlagLoadersDefault = `["markdown","yaml"]`
+	FlagLoadersDefault = `["markdown"]`
 
 	FlagDeploymentNameDefault = "default"
 
