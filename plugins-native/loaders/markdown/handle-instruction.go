@@ -1,9 +1,9 @@
 package mainNative
 
 import (
-	"strings"
-	"path/filepath"
 	"io/ioutil"
+	"path/filepath"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 	"gitlab.com/golang-commonmark/markdown"
@@ -12,7 +12,7 @@ import (
 	"gitlab.com/ytopia/ops/snip/plugins-native/loaders/markdown/blocks"
 )
 
-func handleInstruction(t string, args []string, parseMdLoopParams *ParseMdLoopParams, cfg *loader.Config, codeBlocks *[]*blocks.Code, snippetPath string) {
+func handleInstruction(tIndex int, t string, args []string, parseMdLoopParams *ParseMdLoopParams, cfg *loader.Config, codeBlocks *[]*blocks.Code, snippetPath string) {
 	switch t {
 	case "ignore-next":
 		parseMdLoopParams.ignoreCodeOnce = true
@@ -73,10 +73,10 @@ func handleInstruction(t string, args []string, parseMdLoopParams *ParseMdLoopPa
 			logrus.Fatalf(`file not found in markdown include: "%v"`, file)
 		}
 		t := &markdown.Fence{
-			Params: lg,
+			Params:  lg,
 			Content: string(b),
 		}
-		handleToken(cfg, t, codeBlocks, parseMdLoopParams, snippetPath)
+		handleToken(cfg, tIndex, t, codeBlocks, parseMdLoopParams, snippetPath)
 	default:
 		logrus.Fatalf("unkown snip instruction %v", t)
 	}

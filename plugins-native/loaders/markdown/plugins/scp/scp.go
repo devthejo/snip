@@ -16,13 +16,13 @@ import (
 	"github.com/sirupsen/logrus"
 	"gitlab.com/ytopia/ops/snip/errors"
 	"gitlab.com/ytopia/ops/snip/plugin/processor"
-	loaderMardownMod "gitlab.com/ytopia/ops/snip/plugins-native/loaders/markdown/mod"
+	loaderMarkdownMod "gitlab.com/ytopia/ops/snip/plugins-native/loaders/markdown/mod"
 	"gitlab.com/ytopia/ops/snip/tools"
 )
 
 var (
-	Mod = loaderMardownMod.Plugin{
-		Mod: func(modCfg *loaderMardownMod.Config) error {
+	Mod = loaderMarkdownMod.Plugin{
+		Mod: func(modCfg *loaderMarkdownMod.Config) error {
 			cfg := modCfg.LoaderConfig
 			codeBlock := modCfg.CodeBlock
 			args := modCfg.Args

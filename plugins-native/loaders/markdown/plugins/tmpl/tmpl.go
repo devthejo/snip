@@ -11,12 +11,12 @@ import (
 	"github.com/joho/godotenv"
 
 	"gitlab.com/ytopia/ops/snip/plugin/processor"
-	loaderMardownMod "gitlab.com/ytopia/ops/snip/plugins-native/loaders/markdown/mod"
+	loaderMarkdownMod "gitlab.com/ytopia/ops/snip/plugins-native/loaders/markdown/mod"
 )
 
 var (
-	Mod = loaderMardownMod.Plugin{
-		Mod: func(modCfg *loaderMardownMod.Config) error {
+	Mod = loaderMarkdownMod.Plugin{
+		Mod: func(modCfg *loaderMarkdownMod.Config) error {
 
 			loaderCfg := modCfg.LoaderConfig
 

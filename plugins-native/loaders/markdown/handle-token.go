@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"gitlab.com/golang-commonmark/markdown"
-  // "github.com/sirupsen/logrus"
+	// "github.com/sirupsen/logrus"
 
 	"gitlab.com/ytopia/ops/snip/plugin/loader"
 	"gitlab.com/ytopia/ops/snip/plugins-native/loaders/markdown/blocks"
@@ -13,7 +13,7 @@ import (
 const annotationPrefix = "<!-- snip:"
 const annotationSuffix = "-->"
 
-func handleToken(cfg *loader.Config, t interface{}, codeBlocks *[]*blocks.Code, parseMdLoopParams *ParseMdLoopParams, snippetPath string) {
+func handleToken(cfg *loader.Config, tIndex int, t interface{}, codeBlocks *[]*blocks.Code, parseMdLoopParams *ParseMdLoopParams, snippetPath string) {
 	switch tok := t.(type) {
 	case *markdown.Inline:
 		if strings.HasPrefix(tok.Content, annotationPrefix) &&
@@ -23,7 +23,7 @@ func handleToken(cfg *loader.Config, t interface{}, codeBlocks *[]*blocks.Code, 
 			content = strings.TrimSuffix(content, annotationSuffix)
 			arr := strings.Split(content, " ")
 			if len(arr) > 0 {
-				handleInstruction(arr[0], arr[1:], parseMdLoopParams, cfg, codeBlocks, snippetPath)
+				handleInstruction(tIndex, arr[0], arr[1:], parseMdLoopParams, cfg, codeBlocks, snippetPath)
 			}
 		}
 	case *markdown.Fence:
@@ -35,7 +35,6 @@ func handleToken(cfg *loader.Config, t interface{}, codeBlocks *[]*blocks.Code, 
 		if tok.Content == "" || tok.Params == "" {
 			return
 		}
-
 
 		lang := tok.Params
 		langArgs := strings.Split(lang, " ")
@@ -71,6 +70,7 @@ func handleToken(cfg *loader.Config, t interface{}, codeBlocks *[]*blocks.Code, 
 		codeBlock := &blocks.Code{
 			Lang:    lang,
 			Content: tok.Content,
+			Index:   tIndex,
 		}
 
 		if parseMdLoopParams.handleModsOnce {

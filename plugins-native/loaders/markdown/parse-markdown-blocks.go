@@ -22,9 +22,10 @@ func ParseMarkdownBlocks(cfg *loader.Config) []*blocks.Code {
 	md := markdown.New(markdown.XHTMLOutput(true), markdown.Nofollow(true))
 	tokens := md.Parse(source)
 	var codeBlocks []*blocks.Code
+	codeBlocksP := &codeBlocks
 	parseMdLoopParams := &ParseMdLoopParams{}
-	for _, t := range tokens {
-		handleToken(cfg, t, &codeBlocks, parseMdLoopParams, snippetPath)
+	for index, t := range tokens {
+		handleToken(cfg, index, t, codeBlocksP, parseMdLoopParams, snippetPath)
 	}
 
 	return codeBlocks
