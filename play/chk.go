@@ -178,9 +178,6 @@ func (chk *Chk) RunThreadLoop() error {
 			chk.Thread.Cancel()
 			return err
 		default:
-			if try == 1 {
-				log.Debug("waiting...")
-			}
 			if try > 0 {
 				log.Debugf("interval %v", chk.Interval)
 				time.Sleep(chk.Interval)
@@ -191,13 +188,15 @@ func (chk *Chk) RunThreadLoop() error {
 			err = chk.RunThread()
 
 			if err == nil {
-				log.Debugf("ready")
 				return nil
-			} else if (isRetryTypeInt && try >= retryTypeInt) || (!isRetryTypeInt && !retryTypeBool) {
-				log.Errorf("failed retry=%v", retry)
+			} else if isRetryTypeInt && try >= retryTypeInt {
+				log.Debugf("failed retry=%v", retryTypeInt)
+				return err
+			} else if !isRetryTypeInt && !retryTypeBool {
+				log.Debugf("failed retry=%v", retryTypeBool)
 				return err
 			} else if chk.Timeout != 0 && time.Now().After(timeoutTime) {
-				log.Errorf("failed timeout=%v", chk.Timeout)
+				log.Debugf("failed timeout=%v", chk.Timeout)
 				return err
 			} else {
 				try++
