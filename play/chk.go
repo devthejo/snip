@@ -57,6 +57,10 @@ type Chk struct {
 	PreflightRunnedOnce bool
 
 	GlobalRunCtx *GlobalRunCtx
+
+	Retry    interface{}
+	Interval time.Duration
+	Timeout  time.Duration
 }
 
 func CreateChk(cchk *CfgChk, parentLoopRow *LoopRow, isPreRun bool) *Chk {
@@ -110,6 +114,16 @@ func CreateChk(cchk *CfgChk, parentLoopRow *LoopRow, isPreRun bool) *Chk {
 	chk.TreeKeyParts = GetTreeKeyParts(chk.ParentLoopRow)
 	chk.TreeKey = strings.Join(chk.TreeKeyParts, "|")
 
+	if isPreRun {
+		chk.Retry = cp.PreCheckRetry
+		chk.Interval = cp.PreCheckInterval
+		chk.Timeout = cp.PreCheckTimeout
+	} else {
+		chk.Retry = cp.PostCheckRetry
+		chk.Interval = cp.PostCheckInterval
+		chk.Timeout = cp.PostCheckTimeout
+	}
+
 	loggerCtx := context.WithValue(context.Background(), config.LogContextKey("indentation"), chk.Depth+1)
 	logger := logrus.WithFields(logrus.Fields{
 		"tree":   chk.TreeKey,
@@ -119,6 +133,79 @@ func CreateChk(cchk *CfgChk, parentLoopRow *LoopRow, isPreRun bool) *Chk {
 	thr.Logger = logger
 
 	return chk
+}
+
+func (chk *Chk) RunThreadLoop() error {
+
+	log := chk.Logger
+
+	startedTime := time.Now()
+	var timeoutTime time.Time
+	ctx := context.Background()
+	var cancel context.CancelFunc
+	if chk.Timeout != 0 {
+		timeoutTime = startedTime.Add(chk.Timeout)
+		ctx, cancel = context.WithTimeout(ctx, chk.Timeout)
+	} else {
+		ctx, cancel = context.WithCancel(ctx)
+	}
+
+	mainProc := chk.Thread.App.GetMainProc()
+
+	go func() {
+		<-mainProc.Done()
+		cancel()
+	}()
+
+	retry := chk.Retry
+	var isRetryTypeInt bool
+	var retryTypeInt int
+	var retryTypeBool bool
+	switch r := retry.(type) {
+	case *int:
+		retryTypeInt = *r
+		isRetryTypeInt = true
+	case *bool:
+		retryTypeBool = *r
+	}
+
+	var err error
+
+	try := 0
+	for {
+		select {
+		case <-ctx.Done():
+			chk.Thread.Cancel()
+			return err
+		default:
+			if try == 1 {
+				log.Debug("waiting...")
+			}
+			if try > 0 {
+				log.Debugf("interval %v", chk.Interval)
+				time.Sleep(chk.Interval)
+				log.Infof("retry: %v...", try)
+			}
+			log.Debugf("try: %v...", try+1)
+
+			err = chk.RunThread()
+
+			if err == nil {
+				log.Debugf("ready")
+				return nil
+			} else if (isRetryTypeInt && try >= retryTypeInt) || (!isRetryTypeInt && !retryTypeBool) {
+				log.Errorf("failed retry=%v", retry)
+				return err
+			} else if chk.Timeout != 0 && time.Now().After(timeoutTime) {
+				log.Errorf("failed timeout=%v", chk.Timeout)
+				return err
+			} else {
+				try++
+			}
+		}
+	}
+
+	return err
 }
 
 func (chk *Chk) RunThread() error {
@@ -149,7 +236,7 @@ func (chk *Chk) Run() (bool, error) {
 		checkingAction = "post"
 	}
 
-	err := chk.RunThread()
+	err := chk.RunThreadLoop()
 
 	var pState string
 	var cState string
@@ -220,8 +307,8 @@ func (chk *Chk) CreateMutableCmd() *middleware.MutableCmd {
 	}
 
 	mutableCmd := &middleware.MutableCmd{
-		AppConfig: chk.AppConfig,
-		Command:   chk.Command,
+		AppConfig:                  chk.AppConfig,
+		Command:                    chk.Command,
 		OriginalCommand:            originalCommand,
 		RequiredFiles:              requiredFiles,
 		RequiredFilesSrcProcessors: requiredFilesProcessors,

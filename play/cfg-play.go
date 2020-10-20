@@ -44,9 +44,20 @@ type CfgPlay struct {
 
 	Quiet *bool
 
-	Check      []string
-	PreCheck   []string
-	PostCheck  []string
+	CheckRetry        interface{}
+	PreCheckRetry     interface{}
+	PostCheckRetry    interface{}
+	CheckInterval     time.Duration
+	PreCheckInterval  time.Duration
+	PostCheckInterval time.Duration
+	CheckTimeout      time.Duration
+	PreCheckTimeout   time.Duration
+	PostCheckTimeout  time.Duration
+
+	Check     []string
+	PreCheck  []string
+	PostCheck []string
+
 	CfgPreChk  *CfgChk
 	CfgPostChk *CfgChk
 
@@ -155,9 +166,20 @@ func (cp *CfgPlay) ParseMapRun(m map[string]interface{}, override bool) {
 	cp.ParseRunner(m, override)
 	cp.ParseScope(m, override)
 
+	cp.ParseCheckRetry(m, override)
+	cp.ParsePreCheckRetry(m, override)
+	cp.ParsePostCheckRetry(m, override)
+	cp.ParseCheckTimeout(m, override)
+	cp.ParsePreCheckTimeout(m, override)
+	cp.ParsePostCheckTimeout(m, override)
+	cp.ParseCheckInterval(m, override)
+	cp.ParsePreCheckInterval(m, override)
+	cp.ParsePostCheckInterval(m, override)
+
 	cp.ParseCheck(m, override)
 	cp.ParsePreCheck(m, override)
 	cp.ParsePostCheck(m, override)
+
 	cp.ParsePlay(m, override)
 }
 
@@ -757,6 +779,186 @@ func (cp *CfgPlay) ParseRetry(m map[string]interface{}, override bool) {
 	default:
 		unexpectedTypeCfgPlay(m, "retry")
 	}
+}
+
+func (cp *CfgPlay) ParseCheckRetry(m map[string]interface{}, override bool) {
+	if !override && cp.CheckRetry != nil {
+		return
+	}
+	switch v := m["check_retry"].(type) {
+	case int64:
+		r := int(v)
+		cp.CheckRetry = &r
+	case int:
+		cp.CheckRetry = &v
+	case string:
+		if v == "false" {
+			b := false
+			cp.CheckRetry = &b
+		} else if v == "true" {
+			b := true
+			cp.CheckRetry = &b
+		}
+		r, err := strconv.Atoi(v)
+		if err != nil {
+			unexpectedTypeCfgPlay(m, "check_retry")
+		}
+		cp.CheckRetry = &r
+	case bool:
+		cp.CheckRetry = &v
+	case nil:
+		if cp.ParentCfgPlay != nil {
+			cp.CheckRetry = cp.ParentCfgPlay.CheckRetry
+		}
+	default:
+		unexpectedTypeCfgPlay(m, "check_retry")
+	}
+}
+
+func (cp *CfgPlay) ParsePreCheckRetry(m map[string]interface{}, override bool) {
+	if !override && cp.PreCheckRetry != nil {
+		return
+	}
+	switch v := m["pre_check_retry"].(type) {
+	case int64:
+		r := int(v)
+		cp.PreCheckRetry = &r
+	case int:
+		cp.PreCheckRetry = &v
+	case string:
+		if v == "false" {
+			b := false
+			cp.PreCheckRetry = &b
+		} else if v == "true" {
+			b := true
+			cp.PreCheckRetry = &b
+		}
+		r, err := strconv.Atoi(v)
+		if err != nil {
+			unexpectedTypeCfgPlay(m, "pre_check_retry")
+		}
+		cp.PreCheckRetry = &r
+	case bool:
+		cp.PreCheckRetry = &v
+	case nil:
+		cp.PreCheckRetry = cp.CheckRetry
+	default:
+		unexpectedTypeCfgPlay(m, "pre_check_retry")
+	}
+}
+func (cp *CfgPlay) ParsePostCheckRetry(m map[string]interface{}, override bool) {
+	if !override && cp.PostCheckRetry != nil {
+		return
+	}
+	switch v := m["post_check_retry"].(type) {
+	case int64:
+		r := int(v)
+		cp.PostCheckRetry = &r
+	case int:
+		cp.PostCheckRetry = &v
+	case string:
+		if v == "false" {
+			b := false
+			cp.PostCheckRetry = &b
+		} else if v == "true" {
+			b := true
+			cp.PostCheckRetry = &b
+		}
+		r, err := strconv.Atoi(v)
+		if err != nil {
+			unexpectedTypeCfgPlay(m, "post_check_retry")
+		}
+		cp.PostCheckRetry = &r
+	case bool:
+		cp.PostCheckRetry = &v
+	case nil:
+		cp.PostCheckRetry = cp.CheckRetry
+	default:
+		unexpectedTypeCfgPlay(m, "post_check_retry")
+	}
+}
+func (cp *CfgPlay) ParseCheckTimeout(m map[string]interface{}, override bool) {
+	if !override && cp.CheckTimeout != 0 {
+		return
+	}
+	timeoutDuration, err := decode.Duration(m["check_timeout"])
+	if err != nil {
+		logrus.Error(err)
+		logrus.Fatalf(`Unexpected check_timeout format "%v", expected seconds (e.g: 60) or duration (e.g 1h15m30s)`, timeoutDuration)
+	}
+	cp.CheckTimeout = timeoutDuration
+}
+func (cp *CfgPlay) ParsePreCheckTimeout(m map[string]interface{}, override bool) {
+	if !override && cp.PreCheckTimeout != 0 {
+		return
+	}
+	timeoutDuration, err := decode.Duration(m["pre_check_timeout"])
+	if err != nil {
+		logrus.Error(err)
+		logrus.Fatalf(`Unexpected pre_check_timeout format "%v", expected seconds (e.g: 60) or duration (e.g 1h15m30s)`, timeoutDuration)
+	}
+	if timeoutDuration == 0 {
+		timeoutDuration = cp.CheckTimeout
+	}
+	cp.PreCheckTimeout = timeoutDuration
+}
+func (cp *CfgPlay) ParsePostCheckTimeout(m map[string]interface{}, override bool) {
+	if !override && cp.PostCheckTimeout != 0 {
+		return
+	}
+	timeoutDuration, err := decode.Duration(m["post_check_timeout"])
+	if err != nil {
+		logrus.Error(err)
+		logrus.Fatalf(`Unexpected post_check_timeout format "%v", expected seconds (e.g: 60) or duration (e.g 1h15m30s)`, timeoutDuration)
+	}
+	if timeoutDuration == 0 {
+		timeoutDuration = cp.CheckTimeout
+	}
+	cp.PostCheckTimeout = timeoutDuration
+}
+
+func (cp *CfgPlay) ParseCheckInterval(m map[string]interface{}, override bool) {
+	if !override && cp.CheckInterval != 0 {
+		return
+	}
+	if checkInterval, ok := m["check_interval"]; ok {
+		intervalDuration, err := decode.Duration(checkInterval)
+		if err != nil {
+			logrus.Error(err)
+			logrus.Fatalf(`Unexpected check_interval format "%v", expected seconds (e.g: 60) or duration (e.g 1h15m30s)`, intervalDuration)
+		}
+		cp.CheckInterval = intervalDuration
+	} else {
+		cp.CheckInterval = time.Second * 2
+	}
+}
+func (cp *CfgPlay) ParsePreCheckInterval(m map[string]interface{}, override bool) {
+	if !override && cp.PreCheckInterval != 0 {
+		return
+	}
+	intervalDuration, err := decode.Duration(m["pre_check_interval"])
+	if err != nil {
+		logrus.Error(err)
+		logrus.Fatalf(`Unexpected pre_check_interval format "%v", expected seconds (e.g: 60) or duration (e.g 1h15m30s)`, intervalDuration)
+	}
+	if intervalDuration == 0 {
+		intervalDuration = cp.CheckInterval
+	}
+	cp.PreCheckInterval = intervalDuration
+}
+func (cp *CfgPlay) ParsePostCheckInterval(m map[string]interface{}, override bool) {
+	if !override && cp.PostCheckInterval != 0 {
+		return
+	}
+	intervalDuration, err := decode.Duration(m["post_check_timeout"])
+	if err != nil {
+		logrus.Error(err)
+		logrus.Fatalf(`Unexpected post_check_timeout format "%v", expected seconds (e.g: 60) or duration (e.g 1h15m30s)`, intervalDuration)
+	}
+	if intervalDuration == 0 {
+		intervalDuration = cp.CheckInterval
+	}
+	cp.PostCheckInterval = intervalDuration
 }
 
 func (cp *CfgPlay) ParseDependencies(m map[string]interface{}, override bool) {
