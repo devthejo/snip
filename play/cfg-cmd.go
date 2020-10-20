@@ -40,7 +40,7 @@ func CreateCfgCmd(cp *CfgPlay, c []string) *CfgCmd {
 	copy(originalCommand, c)
 	ccmd := &CfgCmd{
 		CfgPlay:                    cp,
-		OriginalCommand:            c,
+		OriginalCommand:            originalCommand,
 		Command:                    c,
 		Depth:                      cp.Depth + 1,
 		Dir:                        cp.Dir,

@@ -35,7 +35,7 @@ func CreateCfgChk(cp *CfgPlay, c []string) *CfgChk {
 
 	chk := &CfgChk{
 		CfgPlay:                    cp,
-		OriginalCommand:            c,
+		OriginalCommand:            originalCommand,
 		Command:                    c,
 		Depth:                      cp.Depth + 1,
 		Dir:                        cp.Dir,

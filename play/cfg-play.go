@@ -696,7 +696,7 @@ func (cp *CfgPlay) ParseCheck(m map[string]interface{}, override bool) {
 	}
 }
 func (cp *CfgPlay) ParsePreCheck(m map[string]interface{}, override bool) {
-	if !override && cp.PreCheck != nil {
+	if !override && cp.CfgPreChk != nil {
 		return
 	}
 	switch v := m["pre_check"].(type) {
@@ -726,7 +726,7 @@ func (cp *CfgPlay) ParsePreCheck(m map[string]interface{}, override bool) {
 	}
 }
 func (cp *CfgPlay) ParsePostCheck(m map[string]interface{}, override bool) {
-	if !override && cp.PostCheck != nil {
+	if !override && cp.CfgPostChk != nil {
 		return
 	}
 	switch v := m["post_check"].(type) {

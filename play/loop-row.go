@@ -14,7 +14,6 @@ type LoopRow struct {
 	ParentPlay    *Play
 	Play          interface{}
 	IsLoopRowItem bool
-	HasChk        bool
 	PreChk        *Chk
 	PostChk       *Chk
 	RunVars        *RunVars

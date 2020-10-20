@@ -122,6 +122,7 @@ func CreateChk(cchk *CfgChk, parentLoopRow *LoopRow, isPreRun bool) *Chk {
 		chk.Retry = cp.PostCheckRetry
 		chk.Interval = cp.PostCheckInterval
 		chk.Timeout = cp.PostCheckTimeout
+		logrus.Errorf("command %v", command)
 	}
 
 	loggerCtx := context.WithValue(context.Background(), config.LogContextKey("indentation"), chk.Depth+1)
@@ -324,7 +325,15 @@ func (chk *Chk) BuildLauncher() error {
 	appCfg := chk.AppConfig
 	rootPath := GetRootPath(chk.App)
 	treeDir := appCfg.TreeDirLauncher(chk.TreeKeyParts)
-	launcherFilename := "check.bash"
+
+	var launcherFilename string
+	if chk.IsPreRun {
+		launcherFilename = "pre"
+	} else {
+		launcherFilename = "post"
+	}
+	launcherFilename += "_check.bash"
+
 	launcherDir := filepath.Join("build", "launcher", treeDir)
 	launcherFile := filepath.Join(launcherDir, launcherFilename)
 	launcherDirAbs := filepath.Join(rootPath, launcherDir)

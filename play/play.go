@@ -172,7 +172,6 @@ func CreatePlay(cp *CfgPlay, ctx *RunVars, parentLoopRow *LoopRow) *Play {
 		p.LoopRow[i] = loop
 
 		if cp.CfgPreChk != nil || cp.CfgPostChk != nil {
-			loop.HasChk = true
 			p.NoSkip = true
 			if cp.CfgPreChk != nil {
 				loop.PreChk = CreateChk(cp.CfgPreChk, loop, true)
@@ -414,7 +413,7 @@ func (p *Play) Run() error {
 			}
 		}
 
-		if loop.HasChk {
+		if loop.PreChk != nil {
 			runReport.Total++
 			if ok, _ := loop.PreChk.Run(); ok {
 				return nil
@@ -445,7 +444,7 @@ func (p *Play) Run() error {
 					}
 				}
 
-				if len(localErrSlice) == 0 && loop.HasChk {
+				if len(localErrSlice) == 0 && loop.PostChk != nil {
 					if ok, err := loop.PostChk.Run(); !ok {
 						localErrSlice = append(localErrSlice, err)
 					} else {
@@ -463,7 +462,7 @@ func (p *Play) Run() error {
 					localErrSlice = append(localErrSlice, err)
 				}
 
-				if len(localErrSlice) == 0 && loop.HasChk {
+				if len(localErrSlice) == 0 && loop.PostChk != nil {
 					if ok, err := loop.PostChk.Run(); !ok {
 						localErrSlice = append(localErrSlice, err)
 					} else {
