@@ -59,7 +59,7 @@ func CmdPlay(app App) *cobra.Command {
 				logrus.Debugf("resume saved: %v", gRunCtx.CurrentTreeKey)
 				ioutil.WriteFile(resumeFile, []byte(gRunCtx.CurrentTreeKey), 0644)
 
-				// play.Clean(app)
+				play.Clean(app)
 
 				if err != nil {
 					return err
