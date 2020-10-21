@@ -122,7 +122,6 @@ func CreateChk(cchk *CfgChk, parentLoopRow *LoopRow, isPreRun bool) *Chk {
 		chk.Retry = cp.PostCheckRetry
 		chk.Interval = cp.PostCheckInterval
 		chk.Timeout = cp.PostCheckTimeout
-		logrus.Errorf("command %v", command)
 	}
 
 	loggerCtx := context.WithValue(context.Background(), config.LogContextKey("indentation"), chk.Depth+1)
