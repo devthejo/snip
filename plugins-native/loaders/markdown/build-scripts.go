@@ -59,6 +59,8 @@ func BuildScripts(cfg *loader.Config) error {
 				header += "#!/bin/sh\n\n"
 			case "bash":
 				header = "#!/usr/bin/env bash\n\n"
+				header += "BASH_ENV=${BASH_ENV:-/etc/profile}\n"
+				header += `[ -f "$BASH_ENV" ] && source $BASH_ENV` + "\n"
 				header += "set -e\n\n"
 			default:
 				header = "#!/usr/bin/env " + codeBlock.Lang + "\n\n"

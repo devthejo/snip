@@ -343,6 +343,8 @@ func (chk *Chk) BuildLauncher() error {
 	}
 
 	launcherContent := "#!/usr/bin/env bash\n"
+	launcherContent += "BASH_ENV=${BASH_ENV:-/etc/profile}\n"
+	launcherContent += `[ -f "$BASH_ENV" ] && source $BASH_ENV` + "\n"
 	launcherContent += "set -e\n"
 	launcherContent += strings.Join(chk.Command, " ")
 
