@@ -1239,6 +1239,9 @@ func (cp *CfgPlay) PromptPluginVars() {
 func (cp *CfgPlay) BuildRoot() *Play {
 	ctx := CreateRunVars()
 	rootPlay := CreatePlay(cp, ctx, nil)
+	if rootPlay == nil {
+		logrus.Fatal("no root play config found in current working directory")
+	}
 
 	logrus.Infof(ansi.Color("≡ ", "green") + "collecting variables")
 	rootPlay.LoadVars()
