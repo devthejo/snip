@@ -47,9 +47,8 @@ type Play struct {
 
 	State StateType
 
-	Skip           bool
-	NoSkipChildren bool
 	NoSkip         bool
+	NoSkipChildren bool
 
 	GlobalRunCtx *GlobalRunCtx
 	CfgPlay      *CfgPlay
@@ -108,39 +107,6 @@ func CreatePlay(cp *CfgPlay, ctx *RunVars, parentLoopRow *LoopRow) *Play {
 	logger = logger.WithContext(loggerCtx)
 	p.Logger = logger
 
-	cfg := cp.App.GetConfig()
-	if parentLoopRow != nil {
-		p.NoSkipChildren = parentLoopRow.ParentPlay.NoSkipChildren
-	}
-	if len(cfg.PlayKey) != 0 && !p.NoSkipChildren {
-		match := p.KeysMatch(cfg.PlayKey)
-		p.handlePlayKey(match)
-	}
-
-	gRunVars := p.GlobalRunCtx
-	if cfg.PlayKeyStart != "" && gRunVars.SkippingState == nil {
-		b := true
-		gRunVars.SkippingState = &b
-	}
-
-	if cfg.PlayKeyStart != "" && p.KeyMatch(cfg.PlayKeyStart) {
-		b := false
-		gRunVars.SkippingState = &b
-	}
-	if gRunVars.SkippingState != nil && !p.NoSkipChildren {
-		p.handlePlayKey(!*gRunVars.SkippingState)
-	}
-	if cfg.PlayKeyEnd != "" && p.KeyMatch(cfg.PlayKeyEnd) {
-		b := true
-		gRunVars.SkippingState = &b
-	}
-
-	if p.Skip {
-		logger.Debug("  " + p.GetTitleMsg())
-		logger.Debug("  skipping...")
-		return nil
-	}
-
 	var loopRows []*CfgLoopRow
 	if len(cp.LoopOn) == 0 {
 		loopRows = append(loopRows, &CfgLoopRow{
@@ -157,7 +123,7 @@ func CreatePlay(cp *CfgPlay, ctx *RunVars, parentLoopRow *LoopRow) *Play {
 	p.LoopRow = make([]*LoopRow, len(loopRows))
 	for i, cfgLoopRow := range loopRows {
 
-		runCtx := ctx.NewChild()
+		runCtx := p.RunVars.NewChild()
 
 		loop := &LoopRow{
 			Name:          cfgLoopRow.Name,
@@ -171,14 +137,11 @@ func CreatePlay(cp *CfgPlay, ctx *RunVars, parentLoopRow *LoopRow) *Play {
 
 		p.LoopRow[i] = loop
 
-		if cp.CfgPreChk != nil || cp.CfgPostChk != nil {
-			p.NoSkip = true
-			if cp.CfgPreChk != nil {
-				loop.PreChk = CreateChk(cp.CfgPreChk, loop, true)
-			}
-			if cp.CfgPostChk != nil {
-				loop.PostChk = CreateChk(cp.CfgPostChk, loop, false)
-			}
+		if cp.CfgPreChk != nil {
+			loop.PreChk = CreateChk(cp.CfgPreChk, loop, true)
+		}
+		if cp.CfgPostChk != nil {
+			loop.PostChk = CreateChk(cp.CfgPostChk, loop, false)
 		}
 
 		switch pl := cp.CfgPlay.(type) {
@@ -188,9 +151,6 @@ func CreatePlay(cp *CfgPlay, ctx *RunVars, parentLoopRow *LoopRow) *Play {
 				np := CreatePlay(child, runCtx, loop)
 				if np != nil {
 					sp = append(sp, np)
-					if np.NoSkip {
-						p.NoSkip = true
-					}
 				}
 			}
 			loop.Play = sp
@@ -200,20 +160,74 @@ func CreatePlay(cp *CfgPlay, ctx *RunVars, parentLoopRow *LoopRow) *Play {
 				np := CreatePlay(pl.CfgPlaySubstitution, runCtx, loop)
 				if np != nil {
 					sp = []*Play{np}
-					if np.NoSkip {
-						p.NoSkip = true
-					}
 				}
 				loop.Play = sp
 			} else {
 				loop.Play = CreateCmd(pl, loop)
-				p.NoSkip = true
 			}
 		}
 
 	}
 
 	return p
+}
+
+func (p *Play) LoadSkip() {
+
+	cp := p.CfgPlay
+
+	cfg := cp.App.GetConfig()
+	if p.ParentLoopRow != nil && p.ParentLoopRow.ParentPlay.NoSkipChildren {
+		p.NoSkipChildren = true
+		p.NoSkip = true
+	}
+
+	if len(cfg.PlayKey) != 0 {
+		if p.KeysMatchSlice(cfg.PlayKey) {
+			p.NoSkipChildren = true
+		}
+		match := p.KeysMatch(p.GlobalRunCtx.NoSkipTreeKeys)
+		p.handlePlayKey(match)
+	}
+
+	gRunVars := p.GlobalRunCtx
+	if cfg.PlayKeyStart != "" && gRunVars.SkippingState == nil {
+		b := true
+		gRunVars.SkippingState = &b
+	}
+
+	if cfg.PlayKeyStart != "" && p.KeyMatch(cfg.PlayKeyStart) {
+		b := false
+		gRunVars.SkippingState = &b
+	}
+	if gRunVars.SkippingState != nil {
+		p.handlePlayKey(!*gRunVars.SkippingState)
+	}
+	if cfg.PlayKeyEnd != "" && p.KeyMatch(cfg.PlayKeyEnd) {
+		b := true
+		gRunVars.SkippingState = &b
+	}
+
+	for _, loop := range p.LoopRow {
+		switch pl := loop.Play.(type) {
+		case *Cmd:
+			if p.NoSkip {
+				p.GlobalRunCtx.NoSkipTreeKeys[p.Key] = true
+				p.GlobalRunCtx.NoSkipTreeKeys[p.TreeKey] = true
+			}
+		case []*Play:
+			if cp.CfgPreChk != nil || cp.CfgPostChk != nil {
+				p.NoSkip = true
+			}
+			for _, child := range pl {
+				child.LoadSkip()
+				if child.NoSkip {
+					p.NoSkip = true
+				}
+			}
+		}
+	}
+
 }
 
 func (p *Play) LoadVars() {
@@ -280,42 +294,45 @@ func (p *Play) handlePlayKey(match bool) {
 	app := p.App
 	cfg := app.GetConfig()
 	cp := p.CfgPlay
-	if p.HasChildren {
-		if match {
-			p.NoSkipChildren = true
-		}
+	if match {
+		p.NoSkip = true
 	} else {
-		if !match {
-			skip := true
-			buildCtx := cp.BuildCtx
-			loadedSnippetKey := buildCtx.LoadedSnippetKey(cp.Scope, p.Key)
-
-			for _, pkey := range cfg.PlayKey {
-				if loadedSnippet, hasKey := buildCtx.LoadedSnippets[loadedSnippetKey]; hasKey {
-					if !cfg.PlayKeyNoDeps {
-						if b, ok := loadedSnippet.requiredByDependencies[pkey]; b && ok {
-							skip = false
-							break
-						}
+		buildCtx := cp.BuildCtx
+		loadedSnippetKey := buildCtx.LoadedSnippetKey(cp.Scope, p.Key)
+		for pkey := range p.GlobalRunCtx.NoSkipTreeKeys {
+			if loadedSnippet, hasKey := buildCtx.LoadedSnippets[loadedSnippetKey]; hasKey {
+				if !cfg.PlayKeyNoDeps {
+					if b, ok := loadedSnippet.requiredByDependencies[pkey]; b && ok {
+						p.NoSkip = true
+						break
 					}
-					if !cfg.PlayKeyNoPost {
-						if b, ok := loadedSnippet.requiredByPostInstall[pkey]; b && ok {
-							skip = false
-							break
-						}
+				}
+				if !cfg.PlayKeyNoPost {
+					if b, ok := loadedSnippet.requiredByPostInstall[pkey]; b && ok {
+						p.NoSkip = true
+						break
 					}
 				}
 			}
-
-			p.Skip = skip
 		}
+
 	}
 }
 
-func (p *Play) KeysMatch(keys []string) bool {
+func (p *Play) KeysMatchSlice(keys []string) bool {
 	return tools.SliceContainsString(keys, p.Key) ||
 		tools.SliceContainsString(keys, p.TreeKey)
 }
+func (p *Play) KeysMatch(keys map[string]bool) bool {
+	if b, ok := keys[p.Key]; b && ok {
+		return true
+	}
+	if b, ok := keys[p.TreeKey]; b && ok {
+		return true
+	}
+	return false
+}
+
 func (p *Play) KeyMatch(key string) bool {
 	return p.Key == key || p.TreeKey == key
 }

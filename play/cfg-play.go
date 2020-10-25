@@ -121,6 +121,12 @@ func CreateCfgPlay(app App, m map[string]interface{}, parentCfgPlay *CfgPlay, bu
 		cp.GlobalRunCtx = parentCfgPlay.GlobalRunCtx
 	} else {
 		cp.GlobalRunCtx = CreateGlobalRunCtx()
+
+		cfg := app.GetConfig()
+		for _, pkey := range cfg.PlayKey {
+			cp.GlobalRunCtx.NoSkipTreeKeys[pkey] = true
+		}
+
 	}
 
 	cp.SetParentCfgPlay(parentCfgPlay)
@@ -1241,6 +1247,17 @@ func (cp *CfgPlay) BuildRoot() *Play {
 	rootPlay := CreatePlay(cp, ctx, nil)
 	if rootPlay == nil {
 		logrus.Fatal("no root play config found in current working directory")
+	}
+
+	nstk := rootPlay.GlobalRunCtx.NoSkipTreeKeys
+	nstkl := len(nstk)
+	for {
+		rootPlay.LoadSkip()
+		if l := len(nstk); nstkl != l {
+			nstkl = l
+		} else {
+			break
+		}
 	}
 
 	logrus.Infof(ansi.Color("≡ ", "green") + "collecting variables")
