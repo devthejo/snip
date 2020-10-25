@@ -188,6 +188,8 @@ func (p *Play) LoadSkip() {
 		}
 		match := p.KeysMatch(p.GlobalRunCtx.NoSkipTreeKeys)
 		p.handlePlayKey(match)
+	} else {
+		p.NoSkip = true
 	}
 
 	gRunVars := p.GlobalRunCtx
