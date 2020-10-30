@@ -95,8 +95,8 @@ func CmdPlay(app App) *cobra.Command {
 	flags.StringP("deployment-name", "n", config.FlagDeploymentNameDefault, config.FlagDeploymentNameDesc)
 
 	flags.StringSliceP("key", "k", config.FlagPlayKeyDefault, config.FlagPlayKeyDesc)
-	flags.Bool("key-no-deps", config.FlagPlayKeyNoDepsDefault, config.FlagPlayKeyNoDepsDesc)
-	flags.Bool("key-no-post", config.FlagPlayKeyNoPostDefault, config.FlagPlayKeyNoPostDesc)
+	flags.Bool("key-deps", config.FlagPlayKeyDepsDefault, config.FlagPlayKeyDepsDesc)
+	flags.Bool("key-post", config.FlagPlayKeyPostDefault, config.FlagPlayKeyPostDesc)
 	flags.String("key-start", config.FlagPlayKeyStartDefault, config.FlagPlayKeyStartDesc)
 	flags.String("key-end", config.FlagPlayKeyEndDefault, config.FlagPlayKeyEndDesc)
 	flags.BoolP("resume", "r", config.FlagPlayResumeDefault, config.FlagPlayResumeDesc)

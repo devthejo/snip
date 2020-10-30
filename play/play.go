@@ -303,13 +303,13 @@ func (p *Play) handlePlayKey(match bool) {
 		loadedSnippetKey := buildCtx.LoadedSnippetKey(cp.Scope, p.Key)
 		for pkey := range p.GlobalRunCtx.NoSkipTreeKeys {
 			if loadedSnippet, hasKey := buildCtx.LoadedSnippets[loadedSnippetKey]; hasKey {
-				if !cfg.PlayKeyNoDeps {
+				if cfg.PlayKeyDeps {
 					if b, ok := loadedSnippet.requiredByDependencies[pkey]; b && ok {
 						p.NoSkip = true
 						break
 					}
 				}
-				if !cfg.PlayKeyNoPost {
+				if cfg.PlayKeyPost {
 					if b, ok := loadedSnippet.requiredByPostInstall[pkey]; b && ok {
 						p.NoSkip = true
 						break

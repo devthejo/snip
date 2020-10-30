@@ -26,10 +26,10 @@ type Config struct {
 
 	DeploymentName string `mapstructure:"DEPLOYMENT_NAME" json:"deployment_name,omitempty"`
 
-	PlayKey       []string `mapstructure:"KEY" json:"key,omitempty"`
-	PlayKeyNoDeps bool     `mapstructure:"KEY_NO_DEPS" json:"key_no_deps,omitempty"`
-	PlayKeyNoPost bool     `mapstructure:"KEY_NO_POST" json:"key_no_post,omitempty"`
-	PlayKeyStart  string   `mapstructure:"KEY_START" json:"key_start,omitempty"`
-	PlayKeyEnd    string   `mapstructure:"KEY_END" json:"key_end,omitempty"`
-	PlayResume    bool   `mapstructure:"RESUME" json:"resume,omitempty"`
+	PlayKey      []string `mapstructure:"KEY" json:"key,omitempty"`
+	PlayKeyDeps  bool     `mapstructure:"KEY_NO_DEPS" json:"key_deps,omitempty"`
+	PlayKeyPost  bool     `mapstructure:"KEY_NO_POST" json:"key_post,omitempty"`
+	PlayKeyStart string   `mapstructure:"KEY_START" json:"key_start,omitempty"`
+	PlayKeyEnd   string   `mapstructure:"KEY_END" json:"key_end,omitempty"`
+	PlayResume   bool     `mapstructure:"RESUME" json:"resume,omitempty"`
 }

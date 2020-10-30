@@ -17,12 +17,12 @@ const (
 
 	FlagDeploymentNameDesc = "deployment name, must be unique to avoid collisions"
 
-	FlagPlayKeyDesc       = "comma separated list of keys (or tree keys) to run skipping all others"
-	FlagPlayKeyNoDepsDesc = "skip also dependencies of provided keys"
-	FlagPlayKeyNoPostDesc = "skip also post_install of provided keys"
-	FlagPlayKeyStartDesc  = "skip all before key"
-	FlagPlayKeyEndDesc    = "skip all after key"
-	FlagPlayResumeDesc    = "resume feeding --key-start with previous interrupted playing"
+	FlagPlayKeyDesc      = "comma separated list of keys (or tree keys) to run skipping all others"
+	FlagPlayKeyDepsDesc  = "load out of scope dependencies of provided keys"
+	FlagPlayKeyPostDesc  = "load out of scope post_install of provided keys"
+	FlagPlayKeyStartDesc = "skip all before key"
+	FlagPlayKeyEndDesc   = "skip all after key"
+	FlagPlayResumeDesc   = "resume feeding --key-start with previous interrupted playing"
 )
 
 var (
@@ -40,10 +40,10 @@ var (
 
 	FlagDeploymentNameDefault = "default"
 
-	FlagPlayKeyDefault       = []string{}
-	FlagPlayKeyNoDepsDefault = false
-	FlagPlayKeyNoPostDefault = false
-	FlagPlayKeyStartDefault  = ""
-	FlagPlayKeyEndDefault    = ""
-	FlagPlayResumeDefault    = false
+	FlagPlayKeyDefault      = []string{}
+	FlagPlayKeyDepsDefault  = false
+	FlagPlayKeyPostDefault  = false
+	FlagPlayKeyStartDefault = ""
+	FlagPlayKeyEndDefault   = ""
+	FlagPlayResumeDefault   = false
 )
