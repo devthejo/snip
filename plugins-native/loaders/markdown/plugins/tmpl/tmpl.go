@@ -7,7 +7,7 @@ import (
 	"os/user"
 	"path/filepath"
 
-	"github.com/hairyhenderson/gomplate/v3"
+	gomplate "github.com/hairyhenderson/gomplate/v3"
 	"github.com/joho/godotenv"
 
 	"gitlab.com/ytopia/ops/snip/plugin/processor"
@@ -75,9 +75,11 @@ var (
 				tmpfileName := tmpfile.Name()
 
 				b := buf.Bytes()
-				if err := ioutil.WriteFile(tmpfileName, b, 0644); err != nil {
+				if err := ioutil.WriteFile(tmpfileName, b, 0755); err != nil {
 					return err
 				}
+
+				os.Chmod(tmpfileName, 0755)
 
 				// logrus.Error(buf.String())
 
