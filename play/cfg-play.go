@@ -42,7 +42,10 @@ type CfgPlay struct {
 
 	RegisterVars map[string]*registry.VarDef
 
-	Quiet *bool
+	Quiet          *bool
+	CheckQuiet     *bool
+	PreCheckQuiet  *bool
+	PostCheckQuiet *bool
 
 	CheckRetry        interface{}
 	PreCheckRetry     interface{}
@@ -85,6 +88,8 @@ type CfgPlay struct {
 	GlobalRunCtx *GlobalRunCtx
 
 	Scope string
+
+	Tmpdir *bool
 }
 
 func CreateCfgPlay(app App, m map[string]interface{}, parentCfgPlay *CfgPlay, buildCtx *BuildCtx) *CfgPlay {
@@ -165,6 +170,9 @@ func (cp *CfgPlay) ParseMapRun(m map[string]interface{}, override bool) {
 	cp.ParseVars(m, override)
 	cp.ParseRegisterVars(m, override)
 	cp.ParseQuiet(m, override)
+	cp.ParseCheckQuiet(m, override)
+	cp.ParsePreCheckQuiet(m, override)
+	cp.ParsePostCheckQuiet(m, override)
 	cp.ParseDependencies(m, override)
 	cp.ParsePostInstall(m, override)
 	cp.ParseLoader(m, override)
@@ -185,6 +193,8 @@ func (cp *CfgPlay) ParseMapRun(m map[string]interface{}, override bool) {
 	cp.ParseCheck(m, override)
 	cp.ParsePreCheck(m, override)
 	cp.ParsePostCheck(m, override)
+
+	cp.ParseTmpdir(m, override)
 
 	cp.ParsePlay(m, override)
 }
@@ -676,6 +686,21 @@ func (cp *CfgPlay) ParseQuiet(m map[string]interface{}, override bool) {
 	}
 }
 
+func (cp *CfgPlay) ParseTmpdir(m map[string]interface{}, override bool) {
+	switch v := m["tmpdir"].(type) {
+	case bool:
+		if cp.Tmpdir == nil || override {
+			cp.Tmpdir = &v
+		}
+	case nil:
+		if cp.ParentCfgPlay != nil && cp.ParentCfgPlay.Tmpdir != nil {
+			cp.Tmpdir = cp.ParentCfgPlay.Tmpdir
+		}
+	default:
+		unexpectedTypeCfgPlay(m, "tmpdir")
+	}
+}
+
 func (cp *CfgPlay) ParseCheck(m map[string]interface{}, override bool) {
 	if !override && cp.Check != nil {
 		return
@@ -759,6 +784,55 @@ func (cp *CfgPlay) ParsePostCheck(m map[string]interface{}, override bool) {
 		cp.CfgPostChk = CreateCfgChk(cp, cp.PostCheck)
 	} else if len(cp.Check) > 0 {
 		cp.CfgPostChk = CreateCfgChk(cp, cp.Check)
+	}
+}
+
+func (cp *CfgPlay) ParseCheckQuiet(m map[string]interface{}, override bool) {
+	switch v := m["check_quiet"].(type) {
+	case bool:
+		if cp.CheckQuiet == nil || override {
+			cp.CheckQuiet = &v
+		}
+	case nil:
+		if cp.ParentCfgPlay != nil && cp.ParentCfgPlay.CheckQuiet != nil {
+			cp.CheckQuiet = cp.ParentCfgPlay.CheckQuiet
+		} else if cp.Quiet != nil {
+			cp.CheckQuiet = cp.Quiet
+		}
+	default:
+		unexpectedTypeCfgPlay(m, "check_quiet")
+	}
+}
+func (cp *CfgPlay) ParsePreCheckQuiet(m map[string]interface{}, override bool) {
+	if !override && cp.PreCheckQuiet != nil {
+		return
+	}
+	switch v := m["pre_check_quiet"].(type) {
+	case bool:
+		cp.PreCheckQuiet = &v
+	case nil:
+		if cp.PreCheckQuiet == nil && cp.CheckQuiet != nil {
+			v := *cp.CheckQuiet
+			cp.PreCheckQuiet = &v
+		}
+	default:
+		unexpectedTypeCmd(m, "pre_check_quiet")
+	}
+}
+func (cp *CfgPlay) ParsePostCheckQuiet(m map[string]interface{}, override bool) {
+	if !override && cp.PostCheckQuiet != nil {
+		return
+	}
+	switch v := m["post_check_quiet"].(type) {
+	case bool:
+		cp.PostCheckQuiet = &v
+	case nil:
+		if cp.PostCheckQuiet == nil && cp.CheckQuiet != nil {
+			v := *cp.CheckQuiet
+			cp.PostCheckQuiet = &v
+		}
+	default:
+		unexpectedTypeCmd(m, "post_check_quiet")
 	}
 }
 

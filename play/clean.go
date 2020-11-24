@@ -16,6 +16,7 @@ func Clean(app App) error {
 var cleanDirs = []string{
 	"build",
 	"vars",
+	"tmp",
 }
 
 func cleanRootPath(app App) error {

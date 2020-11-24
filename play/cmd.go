@@ -4,6 +4,7 @@ import (
 	"context"
 	"io/ioutil"
 	"os"
+	"os/user"
 	"path/filepath"
 	"strings"
 	"time"
@@ -55,6 +56,8 @@ type Cmd struct {
 	TreeKey      string
 
 	PreflightRunnedOnce bool
+
+	Tmpdir bool
 }
 
 func CreateCmd(ccmd *CfgCmd, parentLoopRow *LoopRow) *Cmd {
@@ -99,6 +102,8 @@ func CreateCmd(ccmd *CfgCmd, parentLoopRow *LoopRow) *Cmd {
 		Quiet:        cp.Quiet != nil && (*cp.Quiet),
 
 		RunVars: parentLoopRow.RunVars,
+
+		Tmpdir: cp.Tmpdir != nil && (*cp.Tmpdir),
 	}
 
 	depth := ccmd.Depth
@@ -219,6 +224,20 @@ func (cmd *Cmd) BuildLauncher() error {
 	}
 
 	launcherContent := "#!/usr/bin/env bash\n"
+
+	if cmd.Tmpdir {
+		usr, _ := user.Current()
+		rootPath := filepath.Join(usr.HomeDir, ".snip", appCfg.DeploymentName, "tmpdir")
+		if err := os.MkdirAll(rootPath, os.ModePerm); err != nil {
+			return err
+		}
+		tempDir, err := ioutil.TempDir(rootPath, "tmpdir-")
+		if err != nil {
+			return err
+		}
+		launcherContent += "cd " + tempDir + "\n"
+	}
+
 	launcherContent += "exec " + cmd.Command[0] + " $@> >(tee ${SNIP_VARS_TREEPATH}/raw.stdout)"
 
 	err := ioutil.WriteFile(launcherFileAbs, []byte(launcherContent), 0755)

@@ -98,8 +98,6 @@ func CreateChk(cchk *CfgChk, parentLoopRow *LoopRow, isPreRun bool) *Chk {
 		Thread:      thr,
 		ExecTimeout: parentPlay.ExecTimeout,
 
-		Quiet: cp.Quiet != nil && (*cp.Quiet),
-
 		GlobalRunCtx: cp.GlobalRunCtx,
 
 		RunVars: parentLoopRow.RunVars,
@@ -122,6 +120,12 @@ func CreateChk(cchk *CfgChk, parentLoopRow *LoopRow, isPreRun bool) *Chk {
 		chk.Retry = cp.PostCheckRetry
 		chk.Interval = cp.PostCheckInterval
 		chk.Timeout = cp.PostCheckTimeout
+	}
+
+	if isPreRun {
+		chk.Quiet = cp.PreCheckQuiet != nil && (*cp.PreCheckQuiet)
+	} else {
+		chk.Quiet = cp.PostCheckQuiet != nil && (*cp.PostCheckQuiet)
 	}
 
 	loggerCtx := context.WithValue(context.Background(), config.LogContextKey("indentation"), chk.Depth+1)
