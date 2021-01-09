@@ -32,4 +32,6 @@ type Config struct {
 	PlayKeyStart string   `mapstructure:"KEY_START" json:"key_start,omitempty"`
 	PlayKeyEnd   string   `mapstructure:"KEY_END" json:"key_end,omitempty"`
 	PlayResume   bool     `mapstructure:"RESUME" json:"resume,omitempty"`
+
+	PlayNoClean bool `mapstructure:"NO_CLEAN" json:"no_clean,omitempty"`
 }

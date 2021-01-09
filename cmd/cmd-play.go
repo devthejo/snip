@@ -59,7 +59,9 @@ func CmdPlay(app App) *cobra.Command {
 				logrus.Debugf("resume saved: %v", gRunCtx.CurrentTreeKey)
 				ioutil.WriteFile(resumeFile, []byte(gRunCtx.CurrentTreeKey), 0644)
 
-				play.Clean(app)
+				if !cfg.PlayNoClean {
+					play.Clean(app)
+				}
 
 				if err != nil {
 					return err
@@ -99,6 +101,7 @@ func CmdPlay(app App) *cobra.Command {
 	flags.Bool("key-post", config.FlagPlayKeyPostDefault, config.FlagPlayKeyPostDesc)
 	flags.String("key-start", config.FlagPlayKeyStartDefault, config.FlagPlayKeyStartDesc)
 	flags.String("key-end", config.FlagPlayKeyEndDefault, config.FlagPlayKeyEndDesc)
+	flags.Bool("no-clean", config.FlagPlayNoCleanDefault, config.FlagPlayNoCleanDesc)
 	flags.BoolP("resume", "r", config.FlagPlayResumeDefault, config.FlagPlayResumeDesc)
 
 	return cmd
