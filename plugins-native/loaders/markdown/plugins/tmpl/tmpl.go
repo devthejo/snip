@@ -62,7 +62,8 @@ var (
 
 				err = gomplate.RunTemplates(config)
 				if err != nil {
-					logrus.Errorf("Error in gomplate template: %v", err)
+					logrus.Fatalf("Error in gomplate template: %v", err)
+					return err
 				}
 
 				usr, _ := user.Current()
