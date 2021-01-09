@@ -24,12 +24,20 @@ var (
 
 			// args := modCfg.Args
 			processor := func(processorCfg *processor.Config, src *string) error {
-				tmpfileEnv, err := ioutil.TempFile("", "snip-tmpl*.env")
+				usr, _ := user.Current()
+				rootPath := filepath.Join(usr.HomeDir, ".snip", loaderCfg.AppConfig.DeploymentName)
+
+				tmplDirVars := "tmp/tmplvars"
+				tmpDirVars := filepath.Join(rootPath, tmplDirVars)
+				if err := os.MkdirAll(tmpDirVars, os.ModePerm); err != nil {
+					return err
+				}
+
+				tmpfileEnv, err := ioutil.TempFile(tmpDirVars, "snip-tmpl*.env")
 				if err != nil {
 					return err
 				}
 				tmpfileEnvName := tmpfileEnv.Name()
-				defer os.Remove(tmpfileEnvName)
 
 				vars := make(map[string]string)
 				for k, v := range processorCfg.RunVars.GetAll() {
@@ -64,9 +72,7 @@ var (
 					return err
 				}
 
-				usr, _ := user.Current()
 				tmplDir := "tmp/tmpl"
-				rootPath := filepath.Join(usr.HomeDir, ".snip", loaderCfg.AppConfig.DeploymentName)
 				tmpDir := filepath.Join(rootPath, tmplDir)
 				if err := os.MkdirAll(tmpDir, os.ModePerm); err != nil {
 					return err
