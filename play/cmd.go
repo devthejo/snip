@@ -342,7 +342,7 @@ func (cmd *Cmd) PreflightRun() error {
 			for _, processor := range processors {
 				err := processor(processorCfg, &src)
 				if err != nil {
-					logrus.Error(err)
+					logrus.Fatal(err)
 					return err
 				}
 			}
