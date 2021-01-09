@@ -9,6 +9,7 @@ import (
 
 	gomplate "github.com/hairyhenderson/gomplate/v3"
 	"github.com/joho/godotenv"
+	"github.com/sirupsen/logrus"
 
 	"gitlab.com/ytopia/ops/snip/plugin/processor"
 	loaderMarkdownMod "gitlab.com/ytopia/ops/snip/plugins-native/loaders/markdown/mod"
@@ -59,7 +60,10 @@ var (
 					Contexts: []string{".=file://" + tmpfileEnvName},
 				}
 
-				gomplate.RunTemplates(config)
+				err = gomplate.RunTemplates(config)
+				if err != nil {
+					logrus.Errorf("Error in gomplate template: %v", err)
+				}
 
 				usr, _ := user.Current()
 				tmplDir := "tmp/tmpl"
