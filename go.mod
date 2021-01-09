@@ -39,5 +39,5 @@ require (
 	go.uber.org/multierr v1.1.0
 	golang.org/x/crypto v0.0.0-20200728195943-123391ffb6de
 	google.golang.org/grpc v1.29.1
-	gopkg.in/yaml.v2 v2.2.8
+	gopkg.in/yaml.v2 v2.2.8 // indirect
 )

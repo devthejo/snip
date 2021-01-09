@@ -63,8 +63,8 @@ var (
 					Input:       string(input),
 					Out:         buf,
 					OutputFiles: []string{"-"},
-					// DataSources: []string{"snipEnv=file://" + tmpfileEnvName},
-					Contexts: []string{".=file://" + tmpfileEnvName},
+					DataSources: []string{"env=file://" + tmpfileEnvName},
+					Contexts:    []string{".=file://" + tmpfileEnvName},
 				}
 
 				err = gomplate.RunTemplates(config)
