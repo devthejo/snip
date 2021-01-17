@@ -90,6 +90,10 @@ type CfgPlay struct {
 	Scope string
 
 	Tmpdir *bool
+
+	Use     map[string]string
+	Persist map[string]string
+	Volumes map[string]string
 }
 
 func CreateCfgPlay(app App, m map[string]interface{}, parentCfgPlay *CfgPlay, buildCtx *BuildCtx) *CfgPlay {
@@ -195,6 +199,10 @@ func (cp *CfgPlay) ParseMapRun(m map[string]interface{}, override bool) {
 	cp.ParsePostCheck(m, override)
 
 	cp.ParseTmpdir(m, override)
+
+	cp.ParseUse(m, override)
+	cp.ParsePersist(m, override)
+	cp.ParseVolumes(m, override)
 
 	cp.ParsePlay(m, override)
 }
@@ -695,9 +703,69 @@ func (cp *CfgPlay) ParseTmpdir(m map[string]interface{}, override bool) {
 	case nil:
 		if cp.ParentCfgPlay != nil && cp.ParentCfgPlay.Tmpdir != nil {
 			cp.Tmpdir = cp.ParentCfgPlay.Tmpdir
+		} else {
+			v := true
+			cp.Tmpdir = &v
 		}
 	default:
 		unexpectedTypeCfgPlay(m, "tmpdir")
+	}
+}
+
+func (cp *CfgPlay) ParseUse(m map[string]interface{}, override bool) {
+
+}
+func (cp *CfgPlay) ParseVolumes(m map[string]interface{}, override bool) {
+
+}
+
+func (cp *CfgPlay) ParsePersist(m map[string]interface{}, override bool) {
+	if cp.Persist == nil {
+		cp.Persist = make(map[string]string, 0)
+	}
+	switch v := m["persist"].(type) {
+	case nil:
+	case map[string]interface{}, map[interface{}]interface{}:
+		itemMap, err := decode.ToMap(v)
+		if err != nil {
+			logrus.Fatalf("unexpected persist type %T value %v, %v", v, v, err)
+		}
+		for target, sourceI := range itemMap {
+			if _, ok := cp.Persist[target]; !ok || override {
+				cp.Persist[target] = sourceI.(string)
+			}
+		}
+	case []interface{}, []string:
+		var source string
+		var target string
+		for _, itemI := range v.([]interface{}) {
+			switch item := itemI.(type) {
+			case string:
+				if strings.Contains(item, ":") {
+					parts := strings.Split(item, ":")
+					target = parts[0]
+					source = parts[1]
+				} else {
+					target = item
+					source = item
+				}
+			case map[string]interface{}, map[interface{}]interface{}:
+				itemMap, err := decode.ToMap(item)
+				if err != nil {
+					logrus.Fatalf("unexpected persist item type %T value %v, %v", item, item, err)
+				}
+				source = itemMap["source"].(string)
+				target = itemMap["target"].(string)
+			}
+			if _, ok := cp.Persist[target]; !ok || override {
+				cp.Persist[target] = source
+			}
+		}
+	default:
+		unexpectedTypeCmd(m, "persist")
+	}
+	if len(cp.Persist) != 0 {
+		logrus.Errorf("persists: %v", cp.Persist)
 	}
 }
 
