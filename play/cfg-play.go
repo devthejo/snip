@@ -712,11 +712,106 @@ func (cp *CfgPlay) ParseTmpdir(m map[string]interface{}, override bool) {
 	}
 }
 
-func (cp *CfgPlay) ParseUse(m map[string]interface{}, override bool) {
-
-}
 func (cp *CfgPlay) ParseVolumes(m map[string]interface{}, override bool) {
+	if cp.Persist == nil {
+		cp.Persist = make(map[string]string, 0)
+	}
+	if cp.Use == nil {
+		cp.Use = make(map[string]string, 0)
+	}
+	switch v := m["volumes"].(type) {
+	case nil:
+	case map[string]interface{}, map[interface{}]interface{}:
+		itemMap, err := decode.ToMap(v)
+		if err != nil {
+			logrus.Fatalf("unexpected volumes type %T value %v, %v", v, v, err)
+		}
+		for target, sourceI := range itemMap {
+			if _, ok := cp.Use[target]; !ok || override {
+				cp.Use[target] = sourceI.(string)
+				cp.Use[sourceI.(string)] = target
+			}
+		}
+	case []interface{}, []string:
+		var source string
+		var target string
+		for _, itemI := range v.([]interface{}) {
+			switch item := itemI.(type) {
+			case string:
+				if strings.Contains(item, ":") {
+					parts := strings.Split(item, ":")
+					target = parts[0]
+					source = parts[1]
+				} else {
+					target = item
+					source = item
+				}
+			case map[string]interface{}, map[interface{}]interface{}:
+				itemMap, err := decode.ToMap(item)
+				if err != nil {
+					logrus.Fatalf("unexpected use item type %T value %v, %v", item, item, err)
+				}
+				source = itemMap["source"].(string)
+				target = itemMap["target"].(string)
+			}
+			if _, ok := cp.Use[target]; !ok || override {
+				cp.Use[target] = source
+				cp.Persist[source] = target
+			}
+		}
+	default:
+		unexpectedTypeCmd(m, "volumes")
+	}
+}
 
+func (cp *CfgPlay) ParseUse(m map[string]interface{}, override bool) {
+	if cp.Use == nil {
+		cp.Use = make(map[string]string, 0)
+	}
+	switch v := m["use"].(type) {
+	case nil:
+	case map[string]interface{}, map[interface{}]interface{}:
+		itemMap, err := decode.ToMap(v)
+		if err != nil {
+			logrus.Fatalf("unexpected use type %T value %v, %v", v, v, err)
+		}
+		for target, sourceI := range itemMap {
+			if _, ok := cp.Use[target]; !ok || override {
+				cp.Use[target] = sourceI.(string)
+			}
+		}
+	case []interface{}, []string:
+		var source string
+		var target string
+		for _, itemI := range v.([]interface{}) {
+			switch item := itemI.(type) {
+			case string:
+				if strings.Contains(item, ":") {
+					parts := strings.Split(item, ":")
+					target = parts[0]
+					source = parts[1]
+				} else {
+					target = item
+					source = item
+				}
+			case map[string]interface{}, map[interface{}]interface{}:
+				itemMap, err := decode.ToMap(item)
+				if err != nil {
+					logrus.Fatalf("unexpected use item type %T value %v, %v", item, item, err)
+				}
+				source = itemMap["source"].(string)
+				target = itemMap["target"].(string)
+			}
+			if _, ok := cp.Use[target]; !ok || override {
+				cp.Use[target] = source
+			}
+		}
+	default:
+		unexpectedTypeCmd(m, "use")
+	}
+	if len(cp.Use) != 0 {
+		logrus.Errorf("use: %v", cp.Use)
+	}
 }
 
 func (cp *CfgPlay) ParsePersist(m map[string]interface{}, override bool) {
