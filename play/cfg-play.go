@@ -703,9 +703,6 @@ func (cp *CfgPlay) ParseTmpdir(m map[string]interface{}, override bool) {
 	case nil:
 		if cp.ParentCfgPlay != nil && cp.ParentCfgPlay.Tmpdir != nil {
 			cp.Tmpdir = cp.ParentCfgPlay.Tmpdir
-		} else {
-			v := true
-			cp.Tmpdir = &v
 		}
 	default:
 		unexpectedTypeCfgPlay(m, "tmpdir")

@@ -102,8 +102,11 @@ func CreateCmd(ccmd *CfgCmd, parentLoopRow *LoopRow) *Cmd {
 		Quiet:        cp.Quiet != nil && (*cp.Quiet),
 
 		RunVars: parentLoopRow.RunVars,
-
-		Tmpdir: cp.Tmpdir != nil && (*cp.Tmpdir),
+	}
+	if cp.Tmpdir == nil {
+		cmd.Tmpdir = true
+	} else {
+		cmd.Tmpdir = (*cp.Tmpdir)
 	}
 
 	depth := ccmd.Depth
