@@ -238,10 +238,10 @@ func (cmd *Cmd) BuildLauncher() error {
 		if err != nil {
 			return err
 		}
-		// bugfix hack, sometime the tempdir is not created by ioutil.TempDir
-		if err := os.MkdirAll(tempDir, os.ModePerm); err != nil {
+		if err := os.Chmod(tempDir, 0775); err != nil {
 			return err
 		}
+
 		launcherContent += "cd " + tempDir + "\n"
 	}
 
