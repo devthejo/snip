@@ -457,6 +457,7 @@ func (chk *Chk) RunRunner() error {
 
 	appCfg := chk.AppConfig
 	rootPath := r.Plugin.GetRootPath(runCfg)
+	vars["SNIP_TMPDIR_PATH"] = filepath.Join(rootPath, "tmpdir")
 	vars["SNIP_SNIPPETS_PATH"] = filepath.Join(rootPath, "build", "snippets")
 	vars["SNIP_LAUNCHER_PATH"] = filepath.Join(rootPath, "build", "launcher",
 		appCfg.TreeDirLauncher(chk.TreeKeyParts))

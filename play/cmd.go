@@ -4,7 +4,6 @@ import (
 	"context"
 	"io/ioutil"
 	"os"
-	"os/user"
 	"path/filepath"
 	"strings"
 	"time"
@@ -19,6 +18,7 @@ import (
 	"gitlab.com/ytopia/ops/snip/plugin/runner"
 	"gitlab.com/ytopia/ops/snip/proc"
 	"gitlab.com/ytopia/ops/snip/registry"
+	"gitlab.com/ytopia/ops/snip/tools"
 )
 
 type Cmd struct {
@@ -227,26 +227,15 @@ func (cmd *Cmd) BuildLauncher() error {
 	}
 
 	launcherContent := "#!/usr/bin/env bash\n"
+	launcherContent += "set -e \n"
 
 	if cmd.Tmpdir {
-		usr, _ := user.Current()
-		rootPath := filepath.Join(usr.HomeDir, ".snip", appCfg.DeploymentName, "tmpdir")
-		if err := os.MkdirAll(rootPath, os.ModePerm); err != nil {
-			return err
-		}
-		tempDir, err := ioutil.TempDir(rootPath, "tmpdir-")
+		tempDir, err := tools.GenerateRandomString(16)
 		if err != nil {
 			return err
 		}
-		if err := os.MkdirAll(tempDir, os.ModePerm); err != nil {
-			return err
-		}
-		if err := os.Chmod(tempDir, 0775); err != nil {
-			return err
-		}
-
-		launcherContent += "set -e \n"
-		launcherContent += "cd " + tempDir + "\n"
+		launcherContent += "mkdir -p ${SNIP_TMPDIR_PATH}/" + tempDir + "\n"
+		launcherContent += "cd ${SNIP_TMPDIR_PATH}/" + tempDir + "\n"
 	}
 
 	launcherContent += "exec " + cmd.Command[0] + " $@> >(tee ${SNIP_VARS_TREEPATH}/raw.stdout)"
@@ -321,6 +310,7 @@ func (cmd *Cmd) RunRunner() error {
 
 	appCfg := cmd.AppConfig
 	rootPath := r.Plugin.GetRootPath(runCfg)
+	vars["SNIP_TMPDIR_PATH"] = filepath.Join(rootPath, "tmpdir")
 	vars["SNIP_SNIPPETS_PATH"] = filepath.Join(rootPath, "build", "snippets")
 	vars["SNIP_LAUNCHER_PATH"] = filepath.Join(rootPath, "build", "launcher",
 		appCfg.TreeDirLauncher(cmd.TreeKeyParts))
