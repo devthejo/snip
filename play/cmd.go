@@ -238,10 +238,14 @@ func (cmd *Cmd) BuildLauncher() error {
 		if err != nil {
 			return err
 		}
+		if err := os.MkdirAll(tempDir, os.ModePerm); err != nil {
+			return err
+		}
 		if err := os.Chmod(tempDir, 0775); err != nil {
 			return err
 		}
 
+		launcherContent += "set -e \n"
 		launcherContent += "cd " + tempDir + "\n"
 	}
 
