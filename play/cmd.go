@@ -230,12 +230,12 @@ func (cmd *Cmd) BuildLauncher() error {
 	launcherContent += "set -e \n"
 
 	if cmd.Tmpdir {
-		tempDir, err := tools.GenerateRandomString(16)
+		tempKey, err := tools.GenerateRandomString(16)
 		if err != nil {
 			return err
 		}
-		launcherContent += "mkdir -p ${SNIP_TMPDIR_PATH}/" + tempDir + "\n"
-		launcherContent += "cd ${SNIP_TMPDIR_PATH}/" + tempDir + "\n"
+		launcherContent += "mkdir --mode=0775 -p $(dirname $0)/" + tempKey + "\n"
+		launcherContent += "cd $(dirname $0)/" + tempKey + "\n"
 	}
 
 	launcherContent += "exec " + cmd.Command[0] + " $@> >(tee ${SNIP_VARS_TREEPATH}/raw.stdout)"
@@ -310,7 +310,6 @@ func (cmd *Cmd) RunRunner() error {
 
 	appCfg := cmd.AppConfig
 	rootPath := r.Plugin.GetRootPath(runCfg)
-	vars["SNIP_TMPDIR_PATH"] = filepath.Join(rootPath, "tmpdir")
 	vars["SNIP_SNIPPETS_PATH"] = filepath.Join(rootPath, "build", "snippets")
 	vars["SNIP_LAUNCHER_PATH"] = filepath.Join(rootPath, "build", "launcher",
 		appCfg.TreeDirLauncher(cmd.TreeKeyParts))
