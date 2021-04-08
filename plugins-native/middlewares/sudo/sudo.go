@@ -20,7 +20,7 @@ var (
 			vars := cfg.MiddlewareVars
 			mutableCmd := cfg.MutableCmd
 
-			command := []string{"sudo", "PATH=$PATH:/sbin", "--preserve-env"}
+			command := []string{"sudo", "PATH=$PATH:/sbin:/usr/sbin/", "--preserve-env"}
 
 			command = append(command, "--prompt=[sudo]")
 
