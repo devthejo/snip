@@ -18,7 +18,6 @@ import (
 	"gitlab.com/ytopia/ops/snip/plugin/runner"
 	"gitlab.com/ytopia/ops/snip/proc"
 	"gitlab.com/ytopia/ops/snip/registry"
-	"gitlab.com/ytopia/ops/snip/tools"
 )
 
 type Cmd struct {
@@ -57,7 +56,8 @@ type Cmd struct {
 
 	PreflightRunnedOnce bool
 
-	Tmpdir bool
+	Tmpdir     bool
+	TmpdirName string
 }
 
 func CreateCmd(ccmd *CfgCmd, parentLoopRow *LoopRow) *Cmd {
@@ -103,10 +103,10 @@ func CreateCmd(ccmd *CfgCmd, parentLoopRow *LoopRow) *Cmd {
 
 		RunVars: parentLoopRow.RunVars,
 	}
-	if cp.Tmpdir == nil {
-		cmd.Tmpdir = true
-	} else {
-		cmd.Tmpdir = (*cp.Tmpdir)
+
+	cmd.Tmpdir = parentPlay.Tmpdir
+	if cmd.Tmpdir {
+		cmd.TmpdirName = parentPlay.TmpdirName
 	}
 
 	depth := ccmd.Depth
@@ -230,12 +230,9 @@ func (cmd *Cmd) BuildLauncher() error {
 	launcherContent += "set -e \n"
 
 	if cmd.Tmpdir {
-		tempKey, err := tools.GenerateRandomString(16)
-		if err != nil {
-			return err
-		}
-		launcherContent += "mkdir --mode=0775 -p $(dirname $0)/" + tempKey + "\n"
-		launcherContent += "cd $(dirname $0)/" + tempKey + "\n"
+		tmpdirPath := filepath.Join("/tmp", cmd.TmpdirName)
+		launcherContent += "mkdir --mode=0775 -p " + tmpdirPath + "\n"
+		launcherContent += "cd " + tmpdirPath + "\n"
 	}
 
 	launcherContent += "exec " + cmd.Command[0] + " $@> >(tee ${SNIP_VARS_TREEPATH}/raw.stdout)"

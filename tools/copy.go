@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+
+	"gitlab.com/ytopia/ops/snip/tools/copydir"
 )
 
 func Copy(src, dst string) (int64, error) {
@@ -35,4 +37,8 @@ func Copy(src, dst string) (int64, error) {
 	}
 
 	return nBytes, err
+}
+
+func CopyDir(src, dst string) error {
+	return copydir.CopyDirectory(src, dst)
 }

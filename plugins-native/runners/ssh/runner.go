@@ -36,58 +36,7 @@ var (
 
 			vars := cfg.RunnerVars
 
-			r := cfg.Cache
-
-			newConnection := func(vars map[string]string) (*sshclient.Client, *sshclient.Config, error) {
-				sshCfg := sshclient.CreateConfig(vars)
-				client, err := sshclient.CreateClient(sshCfg)
-				if err == nil {
-					err = client.Connect()
-				}
-				return client, sshCfg, err
-			}
-
-			portsConnection := func() (*sshclient.Client, *sshclient.Config, error) {
-
-				var client *sshclient.Client
-				var sshCfg *sshclient.Config
-				var err error
-				if port, ok := vars["port"]; ok && strings.Contains(port, ",") {
-					cacheKey := "host:port:" + vars["host"]
-					var portFirst string
-					if portI, found := r.Get(cacheKey); found {
-						portFirst = portI.(string)
-					}
-
-					portsList := strings.Split(port, ",")
-					var ports []string
-					if portFirst != "" {
-						ports = append(ports, portFirst)
-					}
-					for _, p := range portsList {
-						if p != portFirst {
-							ports = append(ports, p)
-						}
-					}
-					for _, p := range ports {
-						varsP := make(map[string]string)
-						for k, v := range vars {
-							varsP[k] = v
-						}
-						varsP["port"] = p
-						client, sshCfg, err = newConnection(varsP)
-						if err == nil {
-							r.Set(cacheKey, p, cache.DefaultExpiration)
-							break
-						}
-					}
-				} else {
-					client, sshCfg, err = newConnection(vars)
-				}
-				return client, sshCfg, err
-			}
-
-			client, sshCfg, err := portsConnection()
+			client, sshCfg, err := portsConnection(cfg)
 			if err != nil {
 				return err
 			}
@@ -115,7 +64,7 @@ var (
 
 			session, err := client.NewSession()
 			if err != nil {
-				client, sshCfg, err = portsConnection()
+				client, sshCfg, err = portsConnection(cfg)
 				if err != nil {
 					return err
 				}
@@ -288,6 +237,20 @@ var (
 
 			return nil
 		},
+		UpUse: func(cfg *runner.Config) error {
+			_, sshCfg, err := portsConnection(cfg)
+			if err != nil {
+				return err
+			}
+			return upUse(cfg, sshCfg)
+		},
+		DownPersist: func(cfg *runner.Config) error {
+			_, sshCfg, err := portsConnection(cfg)
+			if err != nil {
+				return err
+			}
+			return downPersist(cfg, sshCfg)
+		},
 	}
 )
 
@@ -312,11 +275,16 @@ func (w *WriterModifier) Close() error {
 
 func getRootPath(cfg *runner.Config) string {
 	username := cfg.RunnerVars["user"]
+	var homedir string
 	if username == "" {
 		usr, _ := user.Current()
-		username = usr.Username
+		// username = usr.Username
+		// homedir = filepath.Join("/home", username)
+		homedir = usr.HomeDir
+	} else {
+		homedir = filepath.Join("/home", username)
 	}
-	return filepath.Join("/home", username, ".snip", cfg.AppConfig.DeploymentName)
+	return filepath.Join(homedir, ".snip", cfg.AppConfig.DeploymentName)
 }
 
 func getVarsPath(cfg *runner.Config) string {
@@ -335,6 +303,29 @@ func installRequiredFiles(cfg *runner.Config, sshCfg *sshclient.Config) error {
 			err := sshutils.Upload(sshCfg, src, destAbs, cfg.Logger)
 			return nil, err
 		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func upUse(cfg *runner.Config, sshCfg *sshclient.Config) error {
+	rootPath := getRootPath(cfg)
+	for dest, src := range cfg.Use {
+		destAbs := filepath.Join(rootPath, dest)
+		err := sshutils.UploadDir(sshCfg, src, destAbs, cfg.Logger)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+func downPersist(cfg *runner.Config, sshCfg *sshclient.Config) error {
+	rootPath := getRootPath(cfg)
+	for src, dest := range cfg.Persist {
+		destAbs := filepath.Join(rootPath, dest)
+		err := sshutils.DownloadDir(sshCfg, destAbs, src, cfg.Logger)
 		if err != nil {
 			return err
 		}
@@ -476,4 +467,56 @@ func makeWriterHeadStripperAndGetPGID(sep string, pgid *string) func(data []byte
 		}
 		return data
 	}
+}
+
+func newConnection(vars map[string]string) (*sshclient.Client, *sshclient.Config, error) {
+	sshCfg := sshclient.CreateConfig(vars)
+	client, err := sshclient.CreateClient(sshCfg)
+	if err == nil {
+		err = client.Connect()
+	}
+	return client, sshCfg, err
+}
+
+func portsConnection(cfg *runner.Config) (*sshclient.Client, *sshclient.Config, error) {
+	vars := cfg.RunnerVars
+
+	r := cfg.Cache
+
+	var client *sshclient.Client
+	var sshCfg *sshclient.Config
+	var err error
+	if port, ok := vars["port"]; ok && strings.Contains(port, ",") {
+		cacheKey := "host:port:" + vars["host"]
+		var portFirst string
+		if portI, found := r.Get(cacheKey); found {
+			portFirst = portI.(string)
+		}
+
+		portsList := strings.Split(port, ",")
+		var ports []string
+		if portFirst != "" {
+			ports = append(ports, portFirst)
+		}
+		for _, p := range portsList {
+			if p != portFirst {
+				ports = append(ports, p)
+			}
+		}
+		for _, p := range ports {
+			varsP := make(map[string]string)
+			for k, v := range vars {
+				varsP[k] = v
+			}
+			varsP["port"] = p
+			client, sshCfg, err = newConnection(varsP)
+			if err == nil {
+				r.Set(cacheKey, p, cache.DefaultExpiration)
+				break
+			}
+		}
+	} else {
+		client, sshCfg, err = newConnection(vars)
+	}
+	return client, sshCfg, err
 }

@@ -93,7 +93,6 @@ type CfgPlay struct {
 
 	Use     map[string]string
 	Persist map[string]string
-	Volumes map[string]string
 }
 
 func CreateCfgPlay(app App, m map[string]interface{}, parentCfgPlay *CfgPlay, buildCtx *BuildCtx) *CfgPlay {

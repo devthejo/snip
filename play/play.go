@@ -12,13 +12,16 @@ import (
 
 	"gitlab.com/ytopia/ops/snip/config"
 	"gitlab.com/ytopia/ops/snip/errors"
+	snipplugin "gitlab.com/ytopia/ops/snip/plugin"
+	"gitlab.com/ytopia/ops/snip/plugin/runner"
 	"gitlab.com/ytopia/ops/snip/registry"
 	"gitlab.com/ytopia/ops/snip/tools"
 	"gitlab.com/ytopia/ops/snip/variable"
 )
 
 type Play struct {
-	App App
+	App       App
+	AppConfig *snipplugin.AppConfig
 
 	RunVars *RunVars
 
@@ -54,6 +57,13 @@ type Play struct {
 	CfgPlay      *CfgPlay
 
 	VarsClean bool
+
+	Use        map[string]string
+	Persist    map[string]string
+	Runner     *runner.Runner
+	Dir        string
+	Tmpdir     bool
+	TmpdirName string
 }
 
 func CreatePlay(cp *CfgPlay, ctx *RunVars, parentLoopRow *LoopRow) *Play {
@@ -67,8 +77,17 @@ func CreatePlay(cp *CfgPlay, ctx *RunVars, parentLoopRow *LoopRow) *Play {
 		registerVars[k] = v
 	}
 
+	app := cp.App
+	cfg := app.GetConfig()
+
 	p := &Play{
 		App: cp.App,
+		AppConfig: &snipplugin.AppConfig{
+			DeploymentName: cfg.DeploymentName,
+			SnippetsDir:    cfg.SnippetsDir,
+			Runner:         cfg.Runner,
+		},
+		Dir: cp.Dir,
 
 		Index: cp.Index,
 		Key:   cp.Key,
@@ -85,6 +104,10 @@ func CreatePlay(cp *CfgPlay, ctx *RunVars, parentLoopRow *LoopRow) *Play {
 
 		GlobalRunCtx: cp.GlobalRunCtx,
 		CfgPlay:      cp,
+
+		Use:     cp.Use,
+		Persist: cp.Persist,
+		Runner:  cp.Runner,
 	}
 
 	if cp.VarsClean != nil {
@@ -93,6 +116,16 @@ func CreatePlay(cp *CfgPlay, ctx *RunVars, parentLoopRow *LoopRow) *Play {
 
 	if cp.Retry != nil {
 		p.Retry = *cp.Retry
+	}
+
+	if cp.Tmpdir == nil {
+		p.Tmpdir = true
+	} else {
+		p.Tmpdir = (*cp.Tmpdir)
+	}
+	if p.Tmpdir {
+		tempKey, _ := tools.GenerateRandomString(16)
+		p.TmpdirName = "snip-" + tempKey
 	}
 
 	p.RunVars = ctx
@@ -399,6 +432,53 @@ func (p *Play) RegisterVarsSaveUpAndPersist() {
 	}
 }
 
+func (p *Play) UpUseBeforeRun() error {
+	r := p.Runner
+
+	if r.Plugin == nil {
+		r.Plugin = p.App.GetRunner(r.Name)
+	}
+	runnerVars := p.ParentLoopRow.RunVars.GetPluginVars("runner", r.Name, r.Plugin.UseVars, r.Vars)
+	runCfg := &runner.Config{
+		AppConfig:    p.AppConfig,
+		RunnerVars:   runnerVars,
+		Logger:       p.Logger,
+		Cache:        p.App.GetCache(),
+		VarsRegistry: p.App.GetVarsRegistry(),
+		TreeKeyParts: p.TreeKeyParts,
+		Dir:          p.Dir,
+		// Quiet:         false,
+		Use:        p.Use,
+		TmpdirName: p.TmpdirName,
+	}
+
+	return r.Plugin.UpUse(runCfg)
+}
+
+func (p *Play) DownPersistAfterRun() error {
+
+	r := p.Runner
+
+	if r.Plugin == nil {
+		r.Plugin = p.App.GetRunner(r.Name)
+	}
+	runnerVars := p.ParentLoopRow.RunVars.GetPluginVars("runner", r.Name, r.Plugin.UseVars, r.Vars)
+	runCfg := &runner.Config{
+		AppConfig:    p.AppConfig,
+		RunnerVars:   runnerVars,
+		Logger:       p.Logger,
+		Cache:        p.App.GetCache(),
+		VarsRegistry: p.App.GetVarsRegistry(),
+		TreeKeyParts: p.TreeKeyParts,
+		Dir:          p.Dir,
+		// Quiet:         false,
+		Persist:    p.Persist,
+		TmpdirName: p.TmpdirName,
+	}
+
+	return r.Plugin.DownPersist(runCfg)
+}
+
 func (p *Play) Run() error {
 
 	app := p.App
@@ -450,31 +530,68 @@ func (p *Play) Run() error {
 
 		switch pl := loop.Play.(type) {
 		case []*Play:
-			for tries := p.Retry + 1; tries > 0; tries-- {
 
-				for _, child := range pl {
-					if err := child.Run(); err != nil {
-						localErrSlice = append(localErrSlice, err)
-						break
-					}
-
-					if app.IsExiting() {
-						break
-					}
+			upOK := true
+			for _, child := range pl {
+				if err := child.UpUseBeforeRun(); err != nil {
+					localErrSlice = append(localErrSlice, err)
+					upOK = false
+					break
 				}
-
-				if len(localErrSlice) == 0 && loop.PostChk != nil {
-					if ok, err := loop.PostChk.Run(); !ok {
-						localErrSlice = append(localErrSlice, err)
-					} else {
-						break
-					}
-				}
-
 				if app.IsExiting() {
+					upOK = false
 					break
 				}
 			}
+
+			var runOK bool
+			if upOK {
+				runOK = true
+				for tries := p.Retry + 1; tries > 0; tries-- {
+
+					for _, child := range pl {
+						if err := child.Run(); err != nil {
+							localErrSlice = append(localErrSlice, err)
+							runOK = false
+							break
+						}
+
+						if app.IsExiting() {
+							runOK = false
+							break
+						}
+					}
+
+					if len(localErrSlice) == 0 && loop.PostChk != nil {
+						if ok, err := loop.PostChk.Run(); !ok {
+							runOK = false
+							localErrSlice = append(localErrSlice, err)
+						} else {
+							break
+						}
+					}
+
+					if app.IsExiting() {
+						runOK = false
+						break
+					}
+				}
+			}
+
+			if runOK {
+				for _, child := range pl {
+					if err := child.DownPersistAfterRun(); err != nil {
+						localErrSlice = append(localErrSlice, err)
+						upOK = false
+						break
+					}
+					if app.IsExiting() {
+						upOK = false
+						break
+					}
+				}
+			}
+
 		case *Cmd:
 			for tries := p.Retry + 1; tries > 0; tries-- {
 				if err := pl.Run(); err != nil {

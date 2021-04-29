@@ -2,6 +2,7 @@ package sshutils
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -13,6 +14,13 @@ import (
 	"gitlab.com/ytopia/ops/snip/errors"
 	"gitlab.com/ytopia/ops/snip/sshclient"
 )
+
+func UploadDir(cfg *sshclient.Config, src string, dest string, logger *logrus.Entry) error {
+	return fmt.Errorf("missing implementation, dev in progress, ssh upload dir")
+}
+func DownloadDir(cfg *sshclient.Config, local string, remote string, logger *logrus.Entry) error {
+	return fmt.Errorf("missing implementation, dev in progress, ssh download dir")
+}
 
 func Upload(cfg *sshclient.Config, src string, dest string, logger *logrus.Entry) error {
 
