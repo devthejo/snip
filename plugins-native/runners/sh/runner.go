@@ -13,7 +13,6 @@ import (
 
 	"github.com/google/goterm/term"
 	"github.com/kvz/logstreamer"
-	"github.com/sirupsen/logrus"
 
 	expect "gitlab.com/ytopia/ops/snip/goexpect"
 	"gitlab.com/ytopia/ops/snip/plugin/runner"
@@ -273,14 +272,12 @@ func installRequiredFiles(cfg *runner.Config) error {
 func upUse(cfg *runner.Config) error {
 	// rootPath := getRootPath(cfg)
 	rootPath := filepath.Join("/tmp", cfg.TmpdirName)
-	logrus.Warnf("cfg.Use: %v", cfg.Use)
 	for dest, src := range cfg.Use {
 		destAbs := filepath.Join(rootPath, dest)
 		dir := filepath.Dir(destAbs)
 		if err := os.MkdirAll(dir, os.ModePerm); err != nil {
 			return err
 		}
-		logrus.Warnf("src: %v, destAbs: %v", src, destAbs)
 		err := tools.CopyDir(src, destAbs)
 		if err != nil {
 			return err
