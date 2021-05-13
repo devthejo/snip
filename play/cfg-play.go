@@ -805,9 +805,6 @@ func (cp *CfgPlay) ParseUse(m map[string]interface{}, override bool) {
 	default:
 		unexpectedTypeCmd(m, "use")
 	}
-	if len(cp.Use) != 0 {
-		logrus.Errorf("use: %v", cp.Use)
-	}
 }
 
 func (cp *CfgPlay) ParsePersist(m map[string]interface{}, override bool) {
@@ -854,9 +851,6 @@ func (cp *CfgPlay) ParsePersist(m map[string]interface{}, override bool) {
 		}
 	default:
 		unexpectedTypeCmd(m, "persist")
-	}
-	if len(cp.Persist) != 0 {
-		logrus.Errorf("persists: %v", cp.Persist)
 	}
 }
 
