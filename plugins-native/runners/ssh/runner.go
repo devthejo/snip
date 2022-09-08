@@ -19,13 +19,13 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.uber.org/multierr"
 
-	expect "gitlab.com/ytopia/ops/snip/goexpect"
-	// "gitlab.com/ytopia/ops/snip/loggers"
-	"gitlab.com/ytopia/ops/snip/plugin/runner"
-	"gitlab.com/ytopia/ops/snip/registry"
-	"gitlab.com/ytopia/ops/snip/sshclient"
-	"gitlab.com/ytopia/ops/snip/sshutils"
-	"gitlab.com/ytopia/ops/snip/tools"
+	expect "github.com/devthejo/snip/goexpect"
+	// "github.com/devthejo/snip/loggers"
+	"github.com/devthejo/snip/plugin/runner"
+	"github.com/devthejo/snip/registry"
+	"github.com/devthejo/snip/sshclient"
+	"github.com/devthejo/snip/sshutils"
+	"github.com/devthejo/snip/tools"
 )
 
 var (

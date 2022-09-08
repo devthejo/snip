@@ -1,7 +1,7 @@
 package main
 
 import (
-	"gitlab.com/ytopia/ops/snip/app"
+	"github.com/devthejo/snip/app"
 )
 
 func main() {

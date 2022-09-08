@@ -10,8 +10,8 @@ import (
 	gomplate "github.com/hairyhenderson/gomplate/v3"
 	"github.com/joho/godotenv"
 
-	"gitlab.com/ytopia/ops/snip/plugin/processor"
-	loaderMarkdownMod "gitlab.com/ytopia/ops/snip/plugins-native/loaders/markdown/mod"
+	"github.com/devthejo/snip/plugin/processor"
+	loaderMarkdownMod "github.com/devthejo/snip/plugins-native/loaders/markdown/mod"
 )
 
 var (

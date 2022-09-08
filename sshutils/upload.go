@@ -11,8 +11,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
 
-	"gitlab.com/ytopia/ops/snip/errors"
-	"gitlab.com/ytopia/ops/snip/sshclient"
+	"github.com/devthejo/snip/errors"
+	"github.com/devthejo/snip/sshclient"
 )
 
 func UploadDir(cfg *sshclient.Config, src string, dest string, logger *logrus.Entry) error {

@@ -1,11 +1,3 @@
-PROGNAME=snip
-OUTPUT=${PROGNAME}_${CI_COMMIT_TAG}_${GOOS}_${GOARCH}
-PKG=gitlab.com/ytopia/ops/$(PROGNAME)
-
-cross:
-	go build -o ${OUTPUT}
-	sha256sum ${OUTPUT} >${OUTPUT}.sha256
-
 buildstall: build install autocomplete
 
 build:

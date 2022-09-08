@@ -7,7 +7,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"gitlab.com/ytopia/ops/snip/errors"
+	"github.com/devthejo/snip/errors"
 )
 
 type Thread struct {

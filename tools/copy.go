@@ -5,7 +5,7 @@ import (
 	"io"
 	"os"
 
-	"gitlab.com/ytopia/ops/snip/tools/copydir"
+	"github.com/devthejo/snip/tools/copydir"
 )
 
 func Copy(src, dst string) (int64, error) {

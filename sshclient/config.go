@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"gitlab.com/ytopia/ops/snip/errors"
+	"github.com/devthejo/snip/errors"
 	"golang.org/x/crypto/ssh"
 )
 

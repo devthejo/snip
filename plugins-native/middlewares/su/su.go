@@ -4,10 +4,10 @@ import (
 	"strings"
 	// "strings"
 
+	expect "github.com/devthejo/snip/goexpect"
 	shellquote "github.com/kballard/go-shellquote"
-	expect "gitlab.com/ytopia/ops/snip/goexpect"
 
-	"gitlab.com/ytopia/ops/snip/plugin/middleware"
+	"github.com/devthejo/snip/plugin/middleware"
 )
 
 // inspired from https://github.com/ansible/ansible/blob/devel/lib/ansible/plugins/become/su.py

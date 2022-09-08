@@ -1,9 +1,9 @@
 package loader
 
 import (
-	snipplugin "gitlab.com/ytopia/ops/snip/plugin"
-	"gitlab.com/ytopia/ops/snip/registry"
-	"gitlab.com/ytopia/ops/snip/plugin/processor"
+	snipplugin "github.com/devthejo/snip/plugin"
+	"github.com/devthejo/snip/plugin/processor"
+	"github.com/devthejo/snip/registry"
 )
 
 type Config struct {
@@ -11,9 +11,9 @@ type Config struct {
 
 	LoaderVars map[string]string
 
-	Command                 []string
-	DefaultsPlayProps       map[string]interface{}
-	RequiredFiles           map[string]string
+	Command                    []string
+	DefaultsPlayProps          map[string]interface{}
+	RequiredFiles              map[string]string
 	RequiredFilesSrcProcessors map[string][]func(*processor.Config, *string) error
 
 	RegisterVars map[string]*registry.VarDef

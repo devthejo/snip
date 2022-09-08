@@ -1,10 +1,10 @@
 package middleware
 
 import (
-	expect "gitlab.com/ytopia/ops/snip/goexpect"
-	snipplugin "gitlab.com/ytopia/ops/snip/plugin"
-	"gitlab.com/ytopia/ops/snip/plugin/processor"
-	"gitlab.com/ytopia/ops/snip/plugin/runner"
+	expect "github.com/devthejo/snip/goexpect"
+	snipplugin "github.com/devthejo/snip/plugin"
+	"github.com/devthejo/snip/plugin/processor"
+	"github.com/devthejo/snip/plugin/runner"
 )
 
 type MutableCmd struct {

@@ -3,7 +3,7 @@ package mainNative
 import (
 	"plugin"
 
-	"gitlab.com/ytopia/ops/snip/errors"
+	"github.com/devthejo/snip/errors"
 )
 
 func getPlugin(k string) interface{} {

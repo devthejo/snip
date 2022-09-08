@@ -6,9 +6,9 @@ import (
 	"strings"
 	"syscall"
 
+	expect "github.com/devthejo/snip/goexpect"
+	"github.com/devthejo/snip/plugin/middleware"
 	"github.com/sirupsen/logrus"
-	expect "gitlab.com/ytopia/ops/snip/goexpect"
-	"gitlab.com/ytopia/ops/snip/plugin/middleware"
 	"golang.org/x/crypto/ssh"
 )
 

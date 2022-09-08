@@ -1,8 +1,8 @@
 package play
 
 import (
-	"gitlab.com/ytopia/ops/snip/plugin/runner"
-	"gitlab.com/ytopia/ops/snip/variable"
+	"github.com/devthejo/snip/plugin/runner"
+	"github.com/devthejo/snip/variable"
 )
 
 type BuildCtx struct {

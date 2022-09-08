@@ -4,8 +4,8 @@ import (
 	"io/ioutil"
 	"path"
 
+	"github.com/devthejo/snip/errors"
 	"github.com/sirupsen/logrus"
-	"gitlab.com/ytopia/ops/snip/errors"
 )
 
 func GetFileContent(cfg *Config, filePath string) []byte {

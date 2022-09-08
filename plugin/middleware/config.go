@@ -5,7 +5,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	snipplugin "gitlab.com/ytopia/ops/snip/plugin"
+	snipplugin "github.com/devthejo/snip/plugin"
 )
 
 type Config struct {

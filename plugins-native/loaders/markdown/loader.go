@@ -5,10 +5,10 @@ import (
 
 	cmap "github.com/orcaman/concurrent-map"
 
-	"gitlab.com/ytopia/ops/snip/plugin/loader"
+	"github.com/devthejo/snip/plugin/loader"
 
-	pluginSCP "gitlab.com/ytopia/ops/snip/plugins-native/loaders/markdown/plugins/scp"
-	pluginTMPL "gitlab.com/ytopia/ops/snip/plugins-native/loaders/markdown/plugins/tmpl"
+	pluginSCP "github.com/devthejo/snip/plugins-native/loaders/markdown/plugins/scp"
+	pluginTMPL "github.com/devthejo/snip/plugins-native/loaders/markdown/plugins/tmpl"
 )
 
 var (

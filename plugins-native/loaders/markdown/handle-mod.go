@@ -1,9 +1,9 @@
 package mainNative
 
 import (
-	"gitlab.com/ytopia/ops/snip/plugin/loader"
-	"gitlab.com/ytopia/ops/snip/plugins-native/loaders/markdown/blocks"
-	loaderMarkdownMod "gitlab.com/ytopia/ops/snip/plugins-native/loaders/markdown/mod"
+	"github.com/devthejo/snip/plugin/loader"
+	"github.com/devthejo/snip/plugins-native/loaders/markdown/blocks"
+	loaderMarkdownMod "github.com/devthejo/snip/plugins-native/loaders/markdown/mod"
 )
 
 func handleMod(mod string, args []string, codeBlock *blocks.Code, cfg *loader.Config) bool {

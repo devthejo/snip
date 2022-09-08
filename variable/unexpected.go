@@ -1,8 +1,8 @@
 package variable
 
 import (
+	"github.com/devthejo/snip/errors"
 	"github.com/sirupsen/logrus"
-	"gitlab.com/ytopia/ops/snip/errors"
 )
 
 func UnexpectedTypeVarValue(k string, v interface{}) {

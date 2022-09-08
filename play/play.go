@@ -10,13 +10,13 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.uber.org/multierr"
 
-	"gitlab.com/ytopia/ops/snip/config"
-	"gitlab.com/ytopia/ops/snip/errors"
-	snipplugin "gitlab.com/ytopia/ops/snip/plugin"
-	"gitlab.com/ytopia/ops/snip/plugin/runner"
-	"gitlab.com/ytopia/ops/snip/registry"
-	"gitlab.com/ytopia/ops/snip/tools"
-	"gitlab.com/ytopia/ops/snip/variable"
+	"github.com/devthejo/snip/config"
+	"github.com/devthejo/snip/errors"
+	snipplugin "github.com/devthejo/snip/plugin"
+	"github.com/devthejo/snip/plugin/runner"
+	"github.com/devthejo/snip/registry"
+	"github.com/devthejo/snip/tools"
+	"github.com/devthejo/snip/variable"
 )
 
 type Play struct {

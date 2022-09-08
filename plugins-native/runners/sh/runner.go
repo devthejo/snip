@@ -14,9 +14,9 @@ import (
 	"github.com/google/goterm/term"
 	"github.com/kvz/logstreamer"
 
-	expect "gitlab.com/ytopia/ops/snip/goexpect"
-	"gitlab.com/ytopia/ops/snip/plugin/runner"
-	"gitlab.com/ytopia/ops/snip/tools"
+	expect "github.com/devthejo/snip/goexpect"
+	"github.com/devthejo/snip/plugin/runner"
+	"github.com/devthejo/snip/tools"
 )
 
 var (

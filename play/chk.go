@@ -10,13 +10,13 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"gitlab.com/ytopia/ops/snip/config"
-	expect "gitlab.com/ytopia/ops/snip/goexpect"
-	snipplugin "gitlab.com/ytopia/ops/snip/plugin"
-	"gitlab.com/ytopia/ops/snip/plugin/middleware"
-	"gitlab.com/ytopia/ops/snip/plugin/processor"
-	"gitlab.com/ytopia/ops/snip/plugin/runner"
-	"gitlab.com/ytopia/ops/snip/proc"
+	"github.com/devthejo/snip/config"
+	expect "github.com/devthejo/snip/goexpect"
+	snipplugin "github.com/devthejo/snip/plugin"
+	"github.com/devthejo/snip/plugin/middleware"
+	"github.com/devthejo/snip/plugin/processor"
+	"github.com/devthejo/snip/plugin/runner"
+	"github.com/devthejo/snip/proc"
 )
 
 type Chk struct {

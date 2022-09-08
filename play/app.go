@@ -6,12 +6,12 @@ import (
 	"github.com/logrusorgru/aurora"
 	cache "github.com/patrickmn/go-cache"
 
-	"gitlab.com/ytopia/ops/snip/config"
-	"gitlab.com/ytopia/ops/snip/plugin/loader"
-	"gitlab.com/ytopia/ops/snip/plugin/middleware"
-	"gitlab.com/ytopia/ops/snip/plugin/runner"
-	"gitlab.com/ytopia/ops/snip/proc"
-	"gitlab.com/ytopia/ops/snip/registry"
+	"github.com/devthejo/snip/config"
+	"github.com/devthejo/snip/plugin/loader"
+	"github.com/devthejo/snip/plugin/middleware"
+	"github.com/devthejo/snip/plugin/runner"
+	"github.com/devthejo/snip/proc"
+	"github.com/devthejo/snip/registry"
 )
 
 type App interface {

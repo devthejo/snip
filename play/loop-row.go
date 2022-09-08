@@ -3,7 +3,7 @@ package play
 import (
 	"strconv"
 
-	"gitlab.com/ytopia/ops/snip/variable"
+	"github.com/devthejo/snip/variable"
 )
 
 type LoopRow struct {
@@ -16,7 +16,7 @@ type LoopRow struct {
 	IsLoopRowItem bool
 	PreChk        *Chk
 	PostChk       *Chk
-	RunVars        *RunVars
+	RunVars       *RunVars
 }
 
 func (l *LoopRow) GetKey() string {

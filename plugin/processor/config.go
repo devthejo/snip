@@ -1,6 +1,6 @@
 package processor
 
-import "gitlab.com/ytopia/ops/snip/variable"
+import "github.com/devthejo/snip/variable"
 
 type Config struct {
 	RunVars variable.RunVars

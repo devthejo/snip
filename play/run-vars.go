@@ -3,8 +3,8 @@ package play
 import (
 	"strings"
 
+	"github.com/devthejo/snip/variable"
 	cmap "github.com/orcaman/concurrent-map"
-	"gitlab.com/ytopia/ops/snip/variable"
 )
 
 type RunVars struct {

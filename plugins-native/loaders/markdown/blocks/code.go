@@ -1,7 +1,7 @@
 package blocks
 
 import (
-	"gitlab.com/ytopia/ops/snip/plugin/processor"
+	"github.com/devthejo/snip/plugin/processor"
 )
 
 type Code struct {

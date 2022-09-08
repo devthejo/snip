@@ -1,7 +1,7 @@
 package proc
 
 import (
-	"gitlab.com/ytopia/ops/snip/config"
+	"github.com/devthejo/snip/config"
 )
 
 type App interface {

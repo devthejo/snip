@@ -9,9 +9,9 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"gitlab.com/ytopia/ops/snip/config"
-	"gitlab.com/ytopia/ops/snip/play"
-	"gitlab.com/ytopia/ops/snip/tools"
+	"github.com/devthejo/snip/config"
+	"github.com/devthejo/snip/play"
+	"github.com/devthejo/snip/tools"
 )
 
 func CmdPlay(app App) *cobra.Command {

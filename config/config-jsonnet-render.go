@@ -5,8 +5,8 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"gitlab.com/ytopia/ops/snip/tools"
-	"gitlab.com/ytopia/ops/snip/xjsonnet"
+	"github.com/devthejo/snip/tools"
+	"github.com/devthejo/snip/xjsonnet"
 )
 
 func ConfigJsonnetRender(dirpaths []string, name string) (bool, error) {

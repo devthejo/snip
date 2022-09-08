@@ -3,12 +3,12 @@ package play
 import (
 	"strings"
 
-	snipplugin "gitlab.com/ytopia/ops/snip/plugin"
-	"gitlab.com/ytopia/ops/snip/plugin/loader"
-	"gitlab.com/ytopia/ops/snip/plugin/middleware"
-	"gitlab.com/ytopia/ops/snip/plugin/processor"
-	"gitlab.com/ytopia/ops/snip/plugin/runner"
-	"gitlab.com/ytopia/ops/snip/variable"
+	snipplugin "github.com/devthejo/snip/plugin"
+	"github.com/devthejo/snip/plugin/loader"
+	"github.com/devthejo/snip/plugin/middleware"
+	"github.com/devthejo/snip/plugin/processor"
+	"github.com/devthejo/snip/plugin/runner"
+	"github.com/devthejo/snip/variable"
 )
 
 type CfgChk struct {

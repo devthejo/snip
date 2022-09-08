@@ -1,4 +1,4 @@
-module gitlab.com/ytopia/ops/snip
+module github.com/devthejo/snip
 
 go 1.13
 

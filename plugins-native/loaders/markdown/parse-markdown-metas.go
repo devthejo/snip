@@ -4,14 +4,14 @@ import (
 	"bytes"
 	"path/filepath"
 
+	"github.com/devthejo/snip/errors"
+	"github.com/devthejo/snip/plugin/loader"
 	"github.com/yuin/goldmark"
 	meta "github.com/yuin/goldmark-meta"
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/renderer"
 	"github.com/yuin/goldmark/util"
-	"gitlab.com/ytopia/ops/snip/errors"
-	"gitlab.com/ytopia/ops/snip/plugin/loader"
 )
 
 func ParseMarkdownMetas(cfg *loader.Config) map[string]interface{} {

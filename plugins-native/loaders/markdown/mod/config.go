@@ -1,8 +1,8 @@
 package mod
 
 import (
-	"gitlab.com/ytopia/ops/snip/plugin/loader"
-	"gitlab.com/ytopia/ops/snip/plugins-native/loaders/markdown/blocks"
+	"github.com/devthejo/snip/plugin/loader"
+	"github.com/devthejo/snip/plugins-native/loaders/markdown/blocks"
 )
 
 type Config struct {

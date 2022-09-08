@@ -12,9 +12,9 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
-	"gitlab.com/ytopia/ops/snip/errors"
-	"gitlab.com/ytopia/ops/snip/goenv"
-	"gitlab.com/ytopia/ops/snip/tools"
+	"github.com/devthejo/snip/errors"
+	"github.com/devthejo/snip/goenv"
+	"github.com/devthejo/snip/tools"
 )
 
 type ConfigLoader struct {

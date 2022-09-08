@@ -13,11 +13,11 @@ import (
 
 	// "github.com/sirupsen/logrus"
 
+	"github.com/devthejo/snip/errors"
+	"github.com/devthejo/snip/plugin/processor"
+	loaderMarkdownMod "github.com/devthejo/snip/plugins-native/loaders/markdown/mod"
+	"github.com/devthejo/snip/tools"
 	"github.com/sirupsen/logrus"
-	"gitlab.com/ytopia/ops/snip/errors"
-	"gitlab.com/ytopia/ops/snip/plugin/processor"
-	loaderMarkdownMod "gitlab.com/ytopia/ops/snip/plugins-native/loaders/markdown/mod"
-	"gitlab.com/ytopia/ops/snip/tools"
 )
 
 var (

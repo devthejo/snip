@@ -3,15 +3,15 @@ package play
 import (
 	"strings"
 
+	"github.com/devthejo/snip/errors"
+	snipplugin "github.com/devthejo/snip/plugin"
+	"github.com/devthejo/snip/plugin/loader"
+	"github.com/devthejo/snip/plugin/middleware"
+	"github.com/devthejo/snip/plugin/processor"
+	"github.com/devthejo/snip/plugin/runner"
+	"github.com/devthejo/snip/registry"
+	"github.com/devthejo/snip/variable"
 	"github.com/sirupsen/logrus"
-	"gitlab.com/ytopia/ops/snip/errors"
-	snipplugin "gitlab.com/ytopia/ops/snip/plugin"
-	"gitlab.com/ytopia/ops/snip/plugin/loader"
-	"gitlab.com/ytopia/ops/snip/plugin/middleware"
-	"gitlab.com/ytopia/ops/snip/plugin/processor"
-	"gitlab.com/ytopia/ops/snip/plugin/runner"
-	"gitlab.com/ytopia/ops/snip/registry"
-	"gitlab.com/ytopia/ops/snip/variable"
 )
 
 type CfgCmd struct {

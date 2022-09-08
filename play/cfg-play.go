@@ -12,13 +12,13 @@ import (
 	"github.com/mgutz/ansi"
 	"github.com/sirupsen/logrus"
 
-	"gitlab.com/ytopia/ops/snip/decode"
-	"gitlab.com/ytopia/ops/snip/errors"
-	"gitlab.com/ytopia/ops/snip/plugin/loader"
-	"gitlab.com/ytopia/ops/snip/plugin/middleware"
-	"gitlab.com/ytopia/ops/snip/plugin/runner"
-	"gitlab.com/ytopia/ops/snip/registry"
-	"gitlab.com/ytopia/ops/snip/variable"
+	"github.com/devthejo/snip/decode"
+	"github.com/devthejo/snip/errors"
+	"github.com/devthejo/snip/plugin/loader"
+	"github.com/devthejo/snip/plugin/middleware"
+	"github.com/devthejo/snip/plugin/runner"
+	"github.com/devthejo/snip/registry"
+	"github.com/devthejo/snip/variable"
 )
 
 type CfgPlay struct {

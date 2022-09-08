@@ -3,8 +3,8 @@ package cmd
 import (
 	"os"
 
+	"github.com/devthejo/snip/config"
 	"github.com/spf13/cobra"
-	"gitlab.com/ytopia/ops/snip/config"
 )
 
 func NewCmd(app App) *cobra.Command {

@@ -10,8 +10,8 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"gitlab.com/ytopia/ops/snip/errors"
-	"gitlab.com/ytopia/ops/snip/plugin/loader"
+	"github.com/devthejo/snip/errors"
+	"github.com/devthejo/snip/plugin/loader"
 )
 
 func BuildScripts(cfg *loader.Config) error {
@@ -52,7 +52,7 @@ func BuildScripts(cfg *loader.Config) error {
 		content := codeBlock.Content
 		content = strings.Trim(content, "\n")
 
-		if !strings.HasPrefix( content, "#!") {
+		if !strings.HasPrefix(content, "#!") {
 			var header string
 			switch codeBlock.Lang {
 			case "sh":
