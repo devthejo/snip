@@ -2,6 +2,7 @@ package mainNative
 
 import (
 	"bytes"
+	"path/filepath"
 
 	"github.com/yuin/goldmark"
 	meta "github.com/yuin/goldmark-meta"
@@ -50,6 +51,8 @@ func ParseMarkdownMetas(cfg *loader.Config) map[string]interface{} {
 	if defaultsPlayProps["title"] == nil {
 		defaultsPlayProps["title"] = loader.SnippetDefaultTitle(mdPath, cfg)
 	}
+
+	defaultsPlayProps["snippetDir"] = filepath.Dir(mdPath)
 
 	return defaultsPlayProps
 }

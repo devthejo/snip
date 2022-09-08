@@ -1,6 +1,8 @@
 package play
 
 import (
+	"fmt"
+	"path"
 	"strconv"
 	"strings"
 	"sync"
@@ -300,7 +302,13 @@ func (cp *CfgPlay) ParseDir(m map[string]interface{}, override bool) {
 	}
 	switch v := m["dir"].(type) {
 	case string:
-		cp.Dir = v
+		if v == "." {
+			cfg := cp.App.GetConfig()
+			cp.Dir = path.Join(cfg.SnippetsDir, m["snippetDir"].(string))
+		} else {
+			cp.Dir = v
+		}
+		fmt.Printf("cp.Dir %v \n", cp.Dir)
 	case nil:
 	default:
 		unexpectedTypeCmd(m, "dir")
