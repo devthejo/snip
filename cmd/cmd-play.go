@@ -70,10 +70,17 @@ func CmdPlay(app App) *cobra.Command {
 				au := app.GetAurora()
 				runReport := gRunCtx.RunReport
 				logrus.Infof("🏁 play report:")
-				logrus.Infof("  result: %s %s %s",
+				resultMsg := "  result: %s %s %s"
+				resultVars := []interface{}{
 					au.BrightGreen(fmt.Sprintf("OK=%d", runReport.OK)),
 					au.BrightMagenta(fmt.Sprintf("Changed=%d", runReport.Changed)),
-					au.BrightBlue(fmt.Sprintf("Total=%d", runReport.Total)))
+				}
+				if runReport.Failed > 0 {
+					resultMsg += " %s"
+					resultVars = append(resultVars, au.BrightRed(fmt.Sprintf("Failed=%d", runReport.Failed)))
+				}
+				resultVars = append(resultVars, au.BrightBlue(fmt.Sprintf("Total=%d", runReport.Total)))
+				logrus.Infof(resultMsg, resultVars...)
 
 				logrus.Infof("  duration %s", time.Since(startTime).Round(time.Second))
 

@@ -40,6 +40,8 @@ type Play struct {
 
 	Retry int
 
+	AllowFail bool
+
 	ExecTimeout *time.Duration
 
 	RegisterVars map[string]*registry.VarDef
@@ -116,6 +118,10 @@ func CreatePlay(cp *CfgPlay, ctx *RunVars, parentLoopRow *LoopRow) *Play {
 
 	if cp.Retry != nil {
 		p.Retry = *cp.Retry
+	}
+
+	if cp.AllowFail != nil {
+		p.AllowFail = *cp.AllowFail
 	}
 
 	if cp.Tmpdir == nil {
@@ -613,8 +619,11 @@ func (p *Play) Run() error {
 		}
 
 		if len(localErrSlice) > 0 {
-			errSlice = append(errSlice, localErrSlice...)
-			return multierr.Combine(localErrSlice...)
+			runReport.Failed++
+			if !p.AllowFail {
+				errSlice = append(errSlice, localErrSlice...)
+				return multierr.Combine(localErrSlice...)
+			}
 		}
 
 		return nil

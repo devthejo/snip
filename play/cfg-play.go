@@ -44,6 +44,8 @@ type CfgPlay struct {
 
 	RegisterVars map[string]*registry.VarDef
 
+	AllowFail *bool
+
 	Quiet          *bool
 	CheckQuiet     *bool
 	PreCheckQuiet  *bool
@@ -178,6 +180,7 @@ func (cp *CfgPlay) ParseMapRun(m map[string]interface{}, override bool) {
 	cp.ParseCheckQuiet(m, override)
 	cp.ParsePreCheckQuiet(m, override)
 	cp.ParsePostCheckQuiet(m, override)
+	cp.ParseAllowFail(m, override)
 	cp.ParseDependencies(m, override)
 	cp.ParsePostInstall(m, override)
 	cp.ParseLoader(m, override)
@@ -980,6 +983,7 @@ func (cp *CfgPlay) ParsePreCheckQuiet(m map[string]interface{}, override bool) {
 		unexpectedTypeCmd(m, "pre_check_quiet")
 	}
 }
+
 func (cp *CfgPlay) ParsePostCheckQuiet(m map[string]interface{}, override bool) {
 	if !override && cp.PostCheckQuiet != nil {
 		return
@@ -994,6 +998,23 @@ func (cp *CfgPlay) ParsePostCheckQuiet(m map[string]interface{}, override bool) 
 		}
 	default:
 		unexpectedTypeCmd(m, "post_check_quiet")
+	}
+}
+
+func (cp *CfgPlay) ParseAllowFail(m map[string]interface{}, override bool) {
+	if !override && cp.AllowFail != nil {
+		return
+	}
+	switch v := m["allow_fail"].(type) {
+	case bool:
+		cp.AllowFail = &v
+	case nil:
+		if cp.AllowFail == nil && cp.AllowFail != nil {
+			v := *cp.CheckQuiet
+			cp.AllowFail = &v
+		}
+	default:
+		unexpectedTypeCmd(m, "allow_fail")
 	}
 }
 
