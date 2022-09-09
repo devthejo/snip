@@ -1,7 +1,7 @@
 buildstall: build install autocomplete
 
 build:
-	CGO_ENABLED=0 GOOS=linux go build -a -mod vendor -installsuffix cgo -o snip .
+	CGO_ENABLED=0 GOOS=linux go build -mod vendor -installsuffix cgo -o snip .
 
 install:
 	sudo cp -f snip /usr/local/bin/snip
