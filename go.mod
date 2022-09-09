@@ -5,7 +5,7 @@ go 1.13
 require (
 	github.com/AlecAivazis/survey/v2 v2.0.7
 	github.com/bramvdbogaerde/go-scp v0.0.0-20200518191442-5c8efdd1d925
-	github.com/google/go-jsonnet v0.15.0
+	github.com/google/go-jsonnet v0.18.0
 	github.com/google/goterm v0.0.0-20190703233501-fc88cf888a3f
 	github.com/hairyhenderson/gomplate/v3 v3.8.0
 	github.com/imdario/mergo v0.3.9

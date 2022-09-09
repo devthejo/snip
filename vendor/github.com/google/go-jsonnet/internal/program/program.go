@@ -1,3 +1,4 @@
+// Package program provides API for AST pre-processing (desugaring, static analysis).
 package program
 
 import (
@@ -6,8 +7,8 @@ import (
 )
 
 // SnippetToAST converts a Jsonnet code snippet to a desugared and analyzed AST.
-func SnippetToAST(filename string, snippet string) (ast.Node, error) {
-	node, err := parser.SnippetToRawAST(filename, snippet)
+func SnippetToAST(diagnosticFilename ast.DiagnosticFileName, importedFilename, snippet string) (ast.Node, error) {
+	node, _, err := parser.SnippetToRawAST(diagnosticFilename, importedFilename, snippet)
 	if err != nil {
 		return nil, err
 	}
