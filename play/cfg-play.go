@@ -1351,6 +1351,11 @@ func (cp *CfgPlay) ParseRunner(m map[string]interface{}, override bool) {
 	default:
 		logrus.Fatalf("unexpected runner type %T value %v", runnerV, runnerV)
 	}
+	if cp.Runner == nil {
+		cp.Runner = &runner.Runner{
+			Name: "sh",
+		}
+	}
 }
 
 func (cp *CfgPlay) ParseScope(m map[string]interface{}, override bool) {

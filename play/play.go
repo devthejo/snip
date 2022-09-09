@@ -442,7 +442,8 @@ func (p *Play) UpUseBeforeRun() error {
 	r := p.Runner
 
 	if r == nil {
-		panic("runner undefined, you must specify one")
+		logrus.Errorf("missing runner for %v", p.TreeKey)
+		panic("runner undefined")
 	}
 
 	if r.Plugin == nil {
