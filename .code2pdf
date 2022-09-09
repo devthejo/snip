@@ -1,6 +1,0 @@
-:directories:
-  - .git
-  - vendor
-:files:
-  - snip
-  - go.sum
