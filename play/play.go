@@ -168,6 +168,7 @@ func CreatePlay(cp *CfgPlay, ctx *RunVars, parentLoopRow *LoopRow) *Play {
 			Name:          cfgLoopRow.Name,
 			Key:           cfgLoopRow.Key,
 			Index:         cfgLoopRow.Index,
+			Prefix:        cfgLoopRow.Prefix,
 			Vars:          cfgLoopRow.Vars,
 			IsLoopRowItem: cfgLoopRow.IsLoopRowItem,
 			ParentPlay:    p,
@@ -300,10 +301,10 @@ func (p *Play) LoadVars() {
 			}
 		}
 		for _, v := range cp.Vars {
-			v.RegisterValueTo(values)
+			v.RegisterValueTo(values, "")
 		}
 		for _, v := range loop.Vars {
-			v.RegisterValueTo(values)
+			v.RegisterValueTo(values, loop.Prefix)
 		}
 
 		if !p.VarsClean {
@@ -312,12 +313,12 @@ func (p *Play) LoadVars() {
 			}
 		}
 		for _, v := range loop.Vars {
-			v.RegisterDefaultTo(defaults)
-			v.HandleRequired(defaults, values)
+			v.RegisterDefaultTo(defaults, loop.Prefix)
+			v.HandleRequired(defaults, values, loop.Prefix)
 		}
 		for _, v := range cp.Vars {
-			v.RegisterDefaultTo(defaults)
-			v.HandleRequired(defaults, values)
+			v.RegisterDefaultTo(defaults, "")
+			v.HandleRequired(defaults, values, "")
 		}
 
 		cp.PromptPluginVars()

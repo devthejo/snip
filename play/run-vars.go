@@ -107,6 +107,6 @@ func (ctx *RunVars) Get(k string) string {
 			val = r.GetValue(ctx, ctx.Parent)
 		}
 	}
-	val, _ = goenv.Expand(val, ctx.GetAll())
+	// val, _ = goenv.Expand(val, ctx.GetAll())
 	return val
 }

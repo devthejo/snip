@@ -425,12 +425,18 @@ func (cp *CfgPlay) ParseLoopOn(m map[string]interface{}, override bool) {
 	}
 	switch v := m["loop_on"].(type) {
 	case string:
+		prefix := ""
+		if strings.Contains(v, " as ") {
+			parts := strings.Split(v, " as ")
+			v = parts[0]
+			prefix = parts[1]
+		}
 		if cp.LoopSets[v] == nil {
 			logrus.Fatalf("undefined LoopSet %v called by loop_on", v)
 		}
 		cp.LoopOn = make([]*CfgLoopRow, len(cp.LoopSets[v]))
 		for loopI, loopV := range cp.LoopSets[v] {
-			cfgLoopRow := CreateCfgLoopRow(loopI, v, loopV)
+			cfgLoopRow := CreateCfgLoopRow(loopI, v, loopV, prefix)
 			cp.LoopOn[loopI] = cfgLoopRow
 		}
 	case []interface{}:
@@ -440,14 +446,20 @@ func (cp *CfgPlay) ParseLoopOn(m map[string]interface{}, override bool) {
 			switch loop := loopV.(type) {
 			case string:
 				loop = strings.ToLower(loop)
+				prefix := ""
+				if strings.Contains(loop, " as ") {
+					parts := strings.Split(loop, " as ")
+					loop = parts[0]
+					prefix = parts[1]
+				}
 				if cp.VarsSets[loop] == nil {
 					logrus.Fatalf("undefined LoopSet %v", loop)
 				}
-				cfgLoopRow = CreateCfgLoopRow(loopI, loop, cp.VarsSets[loop])
+				cfgLoopRow = CreateCfgLoopRow(loopI, loop, cp.VarsSets[loop], prefix)
 			case map[interface{}]interface{}, map[string]interface{}:
 				l, err := decode.ToMap(loop)
 				errors.Check(err)
-				cfgLoopRow = CreateCfgLoopRow(loopI, "", variable.ParseVarsMap(l, cp.Depth))
+				cfgLoopRow = CreateCfgLoopRow(loopI, "", variable.ParseVarsMap(l, cp.Depth), "")
 			default:
 				variable.UnexpectedTypeVarValue(strconv.Itoa(loopI), loopV)
 			}
@@ -1477,7 +1489,7 @@ func (cp *CfgPlay) PromptPluginVars() {
 				v.OnPromptMessageOnce("🠶 loader "+lr.Name, o)
 				v.PromptOnEmptyDefault()
 				v.PromptOnEmptyValue()
-				v.HandleRequired(nil, nil)
+				v.HandleRequired(nil, nil, "")
 			}
 		}
 	}
@@ -1488,7 +1500,7 @@ func (cp *CfgPlay) PromptPluginVars() {
 				v.OnPromptMessageOnce("🠶 middleware "+mr.Name, o)
 				v.PromptOnEmptyDefault()
 				v.PromptOnEmptyValue()
-				v.HandleRequired(nil, nil)
+				v.HandleRequired(nil, nil, "")
 			}
 		}
 	}
@@ -1498,7 +1510,7 @@ func (cp *CfgPlay) PromptPluginVars() {
 			v.OnPromptMessageOnce("🠶 runner "+cp.Runner.Name, o)
 			v.PromptOnEmptyDefault()
 			v.PromptOnEmptyValue()
-			v.HandleRequired(nil, nil)
+			v.HandleRequired(nil, nil, "")
 		}
 	}
 }

@@ -445,15 +445,15 @@ func (v *Var) PromptOnEmptyValue() {
 	}
 }
 
-func (v *Var) RegisterValueTo(vars cmap.ConcurrentMap) {
+func (v *Var) RegisterValueTo(vars cmap.ConcurrentMap, prefix string) {
 	v.PromptOnEmptyValue()
-	val, ok := vars.Get(v.Name)
+	val, ok := vars.Get(prefix + v.Name)
 	var runVar *RunVar
 	if ok && val != nil {
 		runVar = val.(*RunVar)
 	} else {
 		runVar = CreateRunVar()
-		vars.Set(v.Name, runVar)
+		vars.Set(prefix+v.Name, runVar)
 	}
 
 	if v.ValueParam != "" {
@@ -461,22 +461,22 @@ func (v *Var) RegisterValueTo(vars cmap.ConcurrentMap) {
 	}
 }
 
-func (v *Var) RegisterDefaultTo(varsDefault cmap.ConcurrentMap) {
+func (v *Var) RegisterDefaultTo(varsDefault cmap.ConcurrentMap, prefix string) {
 	v.PromptOnEmptyDefault()
-	val, ok := varsDefault.Get(v.Name)
+	val, ok := varsDefault.Get(prefix + v.Name)
 	var runVar *RunVar
 	if ok && val != nil {
 		runVar = val.(*RunVar)
 	} else {
 		runVar = CreateRunVar()
-		varsDefault.Set(v.Name, runVar)
+		varsDefault.Set(prefix+v.Name, runVar)
 	}
 	if v.DefaultParam != "" {
 		runVar.Set(v.DefaultFromType, v.DefaultParam)
 	}
 }
 
-func (v *Var) HandleRequired(varsDefault cmap.ConcurrentMap, vars cmap.ConcurrentMap) {
+func (v *Var) HandleRequired(varsDefault cmap.ConcurrentMap, vars cmap.ConcurrentMap, prefix string) {
 	if !v.Required || v.GetDefault() != "" || v.GetValue() != "" {
 		return
 	}

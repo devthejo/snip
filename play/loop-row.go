@@ -10,6 +10,7 @@ type LoopRow struct {
 	Name          string
 	Key           string
 	Index         int
+	Prefix        string
 	Vars          map[string]*variable.Var
 	ParentPlay    *Play
 	Play          interface{}
