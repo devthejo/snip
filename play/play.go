@@ -441,6 +441,10 @@ func (p *Play) RegisterVarsSaveUpAndPersist() {
 func (p *Play) UpUseBeforeRun() error {
 	r := p.Runner
 
+	if r == nil {
+		panic("runner undefined, you must specify one")
+	}
+
 	if r.Plugin == nil {
 		r.Plugin = p.App.GetRunner(r.Name)
 	}
