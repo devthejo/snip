@@ -3,6 +3,7 @@ package play
 import (
 	"strings"
 
+	"github.com/devthejo/snip/goenv"
 	"github.com/devthejo/snip/variable"
 	cmap "github.com/orcaman/concurrent-map"
 )
@@ -53,9 +54,9 @@ func (ctx *RunVars) GetAll() map[string]string {
 			vars[k] = value
 		}
 	}
-	// for k, v := range vars {
-	// 	vars[k], _ = goenv.Expand(v, vars)
-	// }
+	for k, v := range vars {
+		vars[k], _ = goenv.Expand(v, vars)
+	}
 	return vars
 }
 
@@ -106,6 +107,6 @@ func (ctx *RunVars) Get(k string) string {
 			val = r.GetValue(ctx, ctx.Parent)
 		}
 	}
-	// val, _ = goenv.Expand(val)
+	val, _ = goenv.Expand(val, ctx.GetAll())
 	return val
 }
