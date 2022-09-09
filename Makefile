@@ -1,6 +1,6 @@
 buildstall: build install autocomplete
 
-build:
+build: update
 	CGO_ENABLED=0 GOOS=linux go build -mod vendor -installsuffix cgo -o snip .
 
 install:
