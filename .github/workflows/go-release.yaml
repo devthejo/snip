@@ -25,5 +25,6 @@ jobs:
         goversion: "https://dl.google.com/go/go1.18.linux-amd64.tar.gz"
         project_path: "."
         binary_name: "snip"
+        build_flags: -mod vendor
         compress_assets: "FALSE"
         # extra_files: LICENSE README.md
