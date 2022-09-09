@@ -39,7 +39,7 @@ func BuildScripts(cfg *loader.Config) error {
 		_, err = fileP.WriteString(content)
 		errors.Check(err)
 
-		cfg.RequiredFiles[file] = fileAbs
+		cfg.RequiredFiles.Set(file, fileAbs)
 
 		logrus.Debugf("writed script from md to %v", file)
 	}

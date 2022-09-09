@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	cmap "github.com/orcaman/concurrent-map"
 	"github.com/sirupsen/logrus"
 
 	"github.com/devthejo/snip/config"
@@ -39,7 +40,7 @@ type Cmd struct {
 	Middlewares []*middleware.Middleware
 	Runner      *runner.Runner
 
-	RequiredFiles              map[string]string
+	RequiredFiles              cmap.ConcurrentMap
 	RequiredFilesSrcProcessors map[string][]func(*processor.Config, *string) error
 
 	Expect []expect.Batcher
@@ -146,9 +147,9 @@ func (cmd *Cmd) CreateMutableCmd() *middleware.MutableCmd {
 	originalCommand := make([]string, len(cmd.Command))
 	copy(originalCommand, cmd.Command)
 
-	requiredFiles := make(map[string]string)
-	for k, v := range cmd.RequiredFiles {
-		requiredFiles[k] = v
+	requiredFiles := cmap.New()
+	for k, v := range cmd.RequiredFiles.Items() {
+		requiredFiles.Set(k, v)
 	}
 
 	requiredFilesProcessors := make(map[string][]func(*processor.Config, *string) error)
@@ -247,7 +248,7 @@ func (cmd *Cmd) BuildLauncher() error {
 	bin := filepath.Join("${SNIP_LAUNCHER_PATH}", launcherFilename)
 	cmd.Command[0] = bin
 
-	cmd.RequiredFiles[launcherFile] = launcherFileAbs
+	cmd.RequiredFiles.Set(launcherFile, launcherFileAbs)
 
 	return nil
 }
@@ -334,16 +335,17 @@ func (cmd *Cmd) PreflightRun() error {
 	processorCfg := &processor.Config{
 		RunVars: cmd.RunVars,
 	}
-	for dest, src := range cmd.RequiredFiles {
-		if processors, ok := cmd.RequiredFilesSrcProcessors[src]; ok {
+	for dest, src := range cmd.RequiredFiles.Items() {
+		if processors, ok := cmd.RequiredFilesSrcProcessors[src.(string)]; ok {
+			srcStr := src.(string)
 			for _, processor := range processors {
-				err := processor(processorCfg, &src)
+				err := processor(processorCfg, &srcStr)
 				if err != nil {
 					logrus.Fatal(err)
 					return err
 				}
 			}
-			cmd.RequiredFiles[dest] = src
+			cmd.RequiredFiles.Set(dest, src)
 		}
 	}
 

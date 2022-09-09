@@ -42,7 +42,7 @@ var (
 			err := ioutil.WriteFile(fileAbs, []byte(codeBlock.Content), 0644)
 			errors.Check(err)
 
-			cfg.RequiredFiles[file] = fileAbs
+			cfg.RequiredFiles.Set(file, fileAbs)
 
 			cfg.RequiredFilesSrcProcessors[fileAbs] = append(cfg.RequiredFilesSrcProcessors[fileAbs], codeBlock.Processors...)
 			codeBlock.Processors = nil

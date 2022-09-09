@@ -297,10 +297,10 @@ func getVarsPath(cfg *runner.Config) string {
 
 func installRequiredFiles(cfg *runner.Config, sshCfg *sshclient.Config) error {
 	rootPath := getRootPath(cfg)
-	for dest, src := range cfg.RequiredFiles {
-		_, err := tools.RequiredOnce(cfg.Cache, []string{"host", sshCfg.Host, dest}, src, func() (interface{}, error) {
+	for dest, src := range cfg.RequiredFiles.Items() {
+		_, err := tools.RequiredOnce(cfg.Cache, []string{"host", sshCfg.Host, dest}, src.(string), func() (interface{}, error) {
 			destAbs := filepath.Join(rootPath, dest)
-			err := sshutils.Upload(sshCfg, src, destAbs, cfg.Logger)
+			err := sshutils.Upload(sshCfg, src.(string), destAbs, cfg.Logger)
 			return nil, err
 		})
 		if err != nil {

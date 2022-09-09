@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	cmap "github.com/orcaman/concurrent-map"
 	"github.com/sirupsen/logrus"
 
 	"github.com/devthejo/snip/config"
@@ -40,7 +41,7 @@ type Chk struct {
 	Middlewares []*middleware.Middleware
 	Runner      *runner.Runner
 
-	RequiredFiles              map[string]string
+	RequiredFiles              cmap.ConcurrentMap
 	RequiredFilesSrcProcessors map[string][]func(*processor.Config, *string) error
 
 	Expect []expect.Batcher
@@ -299,9 +300,9 @@ func (chk *Chk) CreateMutableCmd() *middleware.MutableCmd {
 	originalCommand := make([]string, len(chk.Command))
 	copy(originalCommand, chk.Command)
 
-	requiredFiles := make(map[string]string)
-	for k, v := range chk.RequiredFiles {
-		requiredFiles[k] = v
+	requiredFiles := cmap.New()
+	for k, v := range chk.RequiredFiles.Items() {
+		requiredFiles.Set(k, v)
 	}
 
 	requiredFilesProcessors := make(map[string][]func(*processor.Config, *string) error)
@@ -362,7 +363,7 @@ func (chk *Chk) BuildLauncher() error {
 	bin := filepath.Join("${SNIP_LAUNCHER_PATH}", launcherFilename)
 	chk.Command = []string{bin}
 
-	chk.RequiredFiles[launcherFile] = launcherFileAbs
+	chk.RequiredFiles.Set(launcherFile, launcherFileAbs)
 
 	return nil
 }

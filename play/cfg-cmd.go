@@ -11,6 +11,7 @@ import (
 	"github.com/devthejo/snip/plugin/runner"
 	"github.com/devthejo/snip/registry"
 	"github.com/devthejo/snip/variable"
+	cmap "github.com/orcaman/concurrent-map"
 	"github.com/sirupsen/logrus"
 )
 
@@ -26,7 +27,7 @@ type CfgCmd struct {
 
 	Dir string
 
-	RequiredFiles              map[string]string
+	RequiredFiles              cmap.ConcurrentMap
 	RequiredFilesSrcProcessors map[string][]func(*processor.Config, *string) error
 
 	Depth int
@@ -44,7 +45,7 @@ func CreateCfgCmd(cp *CfgPlay, c []string) *CfgCmd {
 		Command:                    c,
 		Depth:                      cp.Depth + 1,
 		Dir:                        cp.Dir,
-		RequiredFiles:              make(map[string]string),
+		RequiredFiles:              cmap.New(),
 		RequiredFilesSrcProcessors: make(map[string][]func(*processor.Config, *string) error),
 	}
 	ccmd.Parse()

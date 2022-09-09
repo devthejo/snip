@@ -3,6 +3,7 @@ package runner
 import (
 	"context"
 
+	cmap "github.com/orcaman/concurrent-map"
 	cache "github.com/patrickmn/go-cache"
 	"github.com/sirupsen/logrus"
 
@@ -30,7 +31,7 @@ type Config struct {
 
 	TreeKeyParts []string
 
-	RequiredFiles map[string]string
+	RequiredFiles cmap.ConcurrentMap
 	Use           map[string]string
 	Persist       map[string]string
 	TmpdirName    string

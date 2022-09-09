@@ -5,6 +5,7 @@ import (
 	snipplugin "github.com/devthejo/snip/plugin"
 	"github.com/devthejo/snip/plugin/processor"
 	"github.com/devthejo/snip/plugin/runner"
+	cmap "github.com/orcaman/concurrent-map"
 )
 
 type MutableCmd struct {
@@ -15,7 +16,7 @@ type MutableCmd struct {
 
 	OriginalCommand []string
 
-	RequiredFiles              map[string]string
+	RequiredFiles              cmap.ConcurrentMap
 	RequiredFilesSrcProcessors map[string][]func(*processor.Config, *string) error
 	Expect                     []expect.Batcher
 	Runner                     *runner.Runner
