@@ -30,5 +30,6 @@ require (
 	gitlab.com/golang-commonmark/markdown v0.0.0-20191127184510-91b5b3c99c19
 	go.uber.org/multierr v1.1.0
 	golang.org/x/crypto v0.0.0-20200728195943-123391ffb6de
+	golang.org/x/sys v0.0.0-20220908164124-27713097b956 // indirect
 	google.golang.org/grpc v1.29.1
 )
