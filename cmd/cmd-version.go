@@ -15,10 +15,9 @@ import (
 )
 
 type BuildInfo struct {
-	Version      string `json:"version,omitempty"`
-	GitCommit    string `json:"git_commit,omitempty"`
-	GitTreeState string `json:"git_tree_state,omitempty"`
-	GoVersion    string `json:"go_version,omitempty"`
+	Version   string `json:"version,omitempty"`
+	GitCommit string `json:"git_commit,omitempty"`
+	GoVersion string `json:"go_version,omitempty"`
 }
 
 type versionOptions struct {
@@ -56,27 +55,10 @@ func getBuildInfo(app App) BuildInfo {
 		}
 		return ""
 	}()
-	var vcsModified = func() string {
-		if info, ok := debug.ReadBuildInfo(); ok {
-			for _, setting := range info.Settings {
-				if setting.Key == "vcs.modified" {
-					return setting.Value
-				}
-			}
-		}
-		return ""
-	}()
-	var gitTreeState string
-	if vcsModified == "true" {
-		gitTreeState = "dirty"
-	} else {
-		gitTreeState = "clean"
-	}
 	return BuildInfo{
-		Version:      app.GetVersion(),
-		GitCommit:    vcsRevision,
-		GitTreeState: gitTreeState,
-		GoVersion:    runtime.Version(),
+		Version:   app.GetVersion(),
+		GitCommit: vcsRevision,
+		GoVersion: runtime.Version(),
 	}
 }
 
