@@ -54,8 +54,18 @@ func (ctx *RunVars) GetAll() map[string]string {
 			vars[k] = value
 		}
 	}
-	for k, v := range vars {
-		vars[k], _ = goenv.Expand(v, vars)
+	for {
+		breakLoop := true
+		for k, v := range vars {
+			expanded, _ := goenv.Expand(v, vars)
+			if expanded != v {
+				breakLoop = false
+				vars[k] = expanded
+			}
+		}
+		if breakLoop {
+			break
+		}
 	}
 	return vars
 }
