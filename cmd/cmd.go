@@ -11,6 +11,7 @@ func NewCmd(app App) *cobra.Command {
 	cmd := CmdRoot(app)
 
 	cmd.AddCommand(CmdCompletion(app, cmd))
+	cmd.AddCommand(CmdVersion(app))
 
 	cmd.AddCommand(CmdPlay(app))
 	// cmd.AddCommand(CmdMarkdown(app))
@@ -23,7 +24,7 @@ func CmdRoot(app App) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:                    "snip",
-		Short:                  "Bash superset for DevOps 🚀",
+		Short:                  "Idempotent pipelines for DevOps 🌊",
 		BashCompletionFunction: newBashCompletionFunc(cl),
 	}
 

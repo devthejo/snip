@@ -23,7 +23,7 @@ const (
 	FlagPlayKeyStartDesc = "skip all before key"
 	FlagPlayKeyEndDesc   = "skip all after key"
 	FlagPlayResumeDesc   = "resume feeding --key-start with previous interrupted playing"
-	FlagPlayNoCleanDesc = "no clean built files, debugging purpose"
+	FlagPlayNoCleanDesc  = "no clean built files, debugging purpose"
 )
 
 var (
@@ -47,5 +47,5 @@ var (
 	FlagPlayKeyStartDefault = ""
 	FlagPlayKeyEndDefault   = ""
 	FlagPlayResumeDefault   = false
-	FlagPlayNoCleanDefault = false
+	FlagPlayNoCleanDefault  = false
 )

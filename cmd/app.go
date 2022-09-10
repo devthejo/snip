@@ -22,6 +22,7 @@ type App interface {
 	GetConfigLoader() *config.ConfigLoader
 	GetConfigFile() *string
 	GetAurora() aurora.Aurora
+	GetVersion() string
 	OnPreRun(*cobra.Command)
 	GetNow() time.Time
 	GetCache() *cache.Cache

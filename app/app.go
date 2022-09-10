@@ -51,16 +51,20 @@ type App struct {
 	ExitingState bool
 
 	Aurora auroraPackage.Aurora
+
+	Version string
 }
 
-func New() *App {
-	app := NewApp()
+func New(version string) *App {
+	app := NewApp(version)
 	app.RunCmd()
 	return app
 }
 
-func NewApp() *App {
-	app := &App{}
+func NewApp(version string) *App {
+	app := &App{
+		Version: version,
+	}
 
 	app.ConfigEnvPrefix = "SNIP"
 
@@ -89,6 +93,10 @@ func (app *App) GetViper() *viper.Viper {
 
 func (app *App) GetConfig() *config.Config {
 	return app.ConfigLoader.GetConfig()
+}
+
+func (app *App) GetVersion() string {
+	return app.Version
 }
 
 func (app *App) GetConfigLoader() *config.ConfigLoader {

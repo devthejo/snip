@@ -18,7 +18,7 @@ func CmdPlay(app App) *cobra.Command {
 
 	var cmd = &cobra.Command{
 		Use:   "play",
-		Short: "let's play !",
+		Short: "Let's run the playbook !",
 		Args:  cobra.ExactArgs(0),
 		PreRun: func(cmd *cobra.Command, args []string) {
 			app.OnPreRun(cmd)

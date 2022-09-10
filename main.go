@@ -4,6 +4,8 @@ import (
 	"github.com/devthejo/snip/app"
 )
 
+var Version string
+
 func main() {
-	app.New()
+	app.New(Version)
 }
