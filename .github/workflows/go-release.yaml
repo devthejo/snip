@@ -23,5 +23,6 @@ jobs:
         project_path: "."
         binary_name: "snip"
         build_flags: -mod vendor
+        ldflags: "-X 'main.Version=${{ github.ref_name }}'"
         compress_assets: "FALSE"
         # extra_files: LICENSE README.md
