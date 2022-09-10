@@ -24,7 +24,7 @@ func CmdRoot(app App) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:                    "snip",
-		Short:                  "Idempotent pipelines for DevOps 🌊",
+		Short:                  "Infra as Idempotent Pipelines 🐉",
 		BashCompletionFunction: newBashCompletionFunc(cl),
 	}
 
