@@ -83,15 +83,18 @@ func (ctx *RunVars) GetPluginVars(pluginType string, pluginName string, useVars 
 			val = v.GetDefault()
 		}
 
-		k1 := strings.ToUpper("@" + key)
+		k1 := "@" + key
+		k1 = strings.ToUpper(k1)
 		if cv := ctx.Get(k1); cv != "" {
 			val = cv
 		}
-		k2 := strings.ToUpper("@" + pluginName + "_" + key)
+		k2 := "@" + pluginName + "_" + key
+		k2 = strings.ToUpper(k2)
 		if cv := ctx.Get(k2); cv != "" {
 			val = cv
 		}
-		k3 := strings.ToUpper("@" + pluginType + "_" + pluginName + "_" + key)
+		k3 := "@" + pluginType + "_" + pluginName + "_" + key
+		k3 = strings.ToUpper(k3)
 		if cv := ctx.Get(k3); cv != "" {
 			val = cv
 		}
@@ -100,7 +103,8 @@ func (ctx *RunVars) GetPluginVars(pluginType string, pluginName string, useVars 
 			val = v.GetValue()
 		}
 
-		pVars[strings.ToLower(key)] = val
+		// pVars[strings.ToLower(key)] = val
+		pVars[key] = val
 	}
 	return pVars
 }

@@ -34,9 +34,10 @@ type CfgPlay struct {
 
 	CfgPlay interface{}
 
-	VarsClean *bool
-	Vars      map[string]*variable.Var
-	LoopOn    []*CfgLoopRow
+	VarsClean  *bool
+	VarsUseEnv *bool
+	Vars       map[string]*variable.Var
+	LoopOn     []*CfgLoopRow
 
 	VarsSets       map[string]map[string]*variable.Var
 	LoopSets       map[string][]map[string]*variable.Var
@@ -186,6 +187,7 @@ func (cp *CfgPlay) ParseMapRun(m map[string]interface{}, override bool) {
 	cp.ParseLoader(m, override)
 	cp.ParseMiddlewares(m, override)
 	cp.ParseRunner(m, override)
+	cp.ParseVarsUseEnv(m, override)
 	cp.ParseScope(m, override)
 
 	cp.ParseCheckRetry(m, override)
@@ -349,6 +351,23 @@ func (cp *CfgPlay) ParseVarsClean(m map[string]interface{}, override bool) {
 	}
 }
 
+func (cp *CfgPlay) ParseVarsUseEnv(m map[string]interface{}, override bool) {
+	if !override && cp.VarsUseEnv != nil {
+		return
+	}
+	switch v := m["vars_use_env"].(type) {
+	case bool:
+		cp.VarsUseEnv = &v
+	case nil:
+		if cp.Runner.Name == "sh" {
+			v := true
+			cp.VarsUseEnv = &v
+		}
+	default:
+		unexpectedTypeCfgPlay(m, "vars_use_env")
+	}
+}
+
 func (cp *CfgPlay) ParseVarsSets(m map[string]interface{}, override bool) {
 	switch v := m["vars_sets"].(type) {
 	case map[string]interface{}:
@@ -445,7 +464,7 @@ func (cp *CfgPlay) ParseLoopOn(m map[string]interface{}, override bool) {
 			var cfgLoopRow *CfgLoopRow
 			switch loop := loopV.(type) {
 			case string:
-				loop = strings.ToLower(loop)
+				// loop = strings.ToLower(loop)
 				prefix := ""
 				if strings.Contains(loop, " as ") {
 					parts := strings.Split(loop, " as ")
@@ -577,9 +596,9 @@ func parseRegisterVarsItemMap(mI map[string]interface{}, defaultKey string) *reg
 		logrus.Fatalf("unexpected register_vars source type %T value %v, %v", val, val, err)
 	}
 
-	to = strings.ToUpper(to)
-	from = strings.ToUpper(from)
-	source = strings.ToUpper(source)
+	// to = strings.ToUpper(to)
+	// from = strings.ToUpper(from)
+	// source = strings.ToUpper(source)
 
 	if sourceStdout && source != "" {
 		logrus.Fatalf("unexpected, register_vars source and source_stdout are mutually exclusive %v", m)
@@ -626,7 +645,7 @@ func (cp *CfgPlay) ParseRegisterVars(m map[string]interface{}, override bool) {
 		for _, varsItemI := range rVars {
 			switch item := varsItemI.(type) {
 			case string:
-				item = strings.ToUpper(item)
+				// item = strings.ToUpper(item)
 				tmpV[item] = &registry.VarDef{
 					To:     item,
 					From:   item,
@@ -664,14 +683,14 @@ func (cp *CfgPlay) ParseRegisterVars(m map[string]interface{}, override bool) {
 				v := parseRegisterVarsItemMap(rVar, k)
 				tmpV[v.To] = v
 			case bool:
-				k := strings.ToUpper(k)
+				// k := strings.ToUpper(k)
 				tmpV[k] = &registry.VarDef{
 					To:     k,
 					From:   k,
 					Enable: rVar,
 				}
 			case nil:
-				k := strings.ToUpper(k)
+				// k := strings.ToUpper(k)
 				tmpV[k] = &registry.VarDef{
 					To:     k,
 					From:   k,

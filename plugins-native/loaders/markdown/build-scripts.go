@@ -52,9 +52,15 @@ func BuildScripts(cfg *loader.Config) error {
 		content := codeBlock.Content
 		content = strings.Trim(content, "\n")
 
+		codeLang := codeBlock.Lang
+
+		var header string
 		if !strings.HasPrefix(content, "#!") {
-			var header string
-			switch codeBlock.Lang {
+			switch codeLang {
+			case "js":
+				codeLang = "node"
+			}
+			switch codeLang {
 			case "sh":
 				header += "#!/bin/sh\n\n"
 			case "bash":
@@ -63,17 +69,13 @@ func BuildScripts(cfg *loader.Config) error {
 				header += `[ -f "$BASH_ENV" ] && source $BASH_ENV` + "\n"
 				header += "set -e\n\n"
 			default:
-				header = "#!/usr/bin/env " + codeBlock.Lang + "\n\n"
+				header = "#!/usr/bin/env " + codeLang + "\n\n"
 			}
-			content = header + content
 		}
-		content += "\n\n# snip vars export \n"
-		for _, vr := range cfg.RegisterVars {
-			if !vr.Enable {
-				continue
-			}
-			content += `echo "${` + vr.GetSource() + `}">${SNIP_VARS_TREEPATH}/` + vr.GetFrom() + "\n"
-		}
+
+		content += BuildRegisterVars(cfg.RegisterVars, codeLang)
+		content = header + content
+
 		snippetPath := mdpath + "_" + strconv.Itoa(i)
 		file := filepath.Join(buildDir, snippetPath)
 		buildFile(file, content)

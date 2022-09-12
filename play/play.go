@@ -2,6 +2,7 @@ package play
 
 import (
 	"context"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -58,7 +59,8 @@ type Play struct {
 	GlobalRunCtx *GlobalRunCtx
 	CfgPlay      *CfgPlay
 
-	VarsClean bool
+	VarsClean  bool
+	VarsUseEnv bool
 
 	Use        map[string]string
 	Persist    map[string]string
@@ -114,6 +116,10 @@ func CreatePlay(cp *CfgPlay, ctx *RunVars, parentLoopRow *LoopRow) *Play {
 
 	if cp.VarsClean != nil {
 		p.VarsClean = *cp.VarsClean
+	}
+
+	if cp.VarsUseEnv != nil {
+		p.VarsUseEnv = *cp.VarsUseEnv
 	}
 
 	if cp.Retry != nil {
@@ -307,6 +313,14 @@ func (p *Play) LoadVars() {
 			v.RegisterValueTo(values, loop.Prefix)
 		}
 
+		if p.VarsUseEnv {
+			envMap := tools.EnvToMap(os.Environ())
+			for k, v := range envMap {
+				rv := variable.CreateRunVar()
+				rv.Set(variable.FromValue, v)
+				defaults.Set(k, rv)
+			}
+		}
 		if !p.VarsClean {
 			for k, v := range parentCtx.Defaults.Items() {
 				defaults.Set(k, v)
