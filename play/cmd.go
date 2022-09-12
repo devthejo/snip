@@ -232,8 +232,8 @@ func (cmd *Cmd) BuildLauncher() error {
 
 	if cmd.Tmpdir {
 		tmpdirPath := filepath.Join("/tmp", cmd.TmpdirName)
-		launcherContent += `mkdir --mode=0775 -p " ` + tmpdirPath + `" && `
-		launcherContent += "cd " + tmpdirPath + "\n"
+		launcherContent += `mkdir --mode=0775 -p "` + tmpdirPath + `" && `
+		launcherContent += "cd " + `"` + tmpdirPath + `"` + "\n"
 	}
 
 	launcherContent += "exec " + cmd.Command[0] + " $@> >(tee ${SNIP_VARS_TREEPATH}/raw.stdout)"
