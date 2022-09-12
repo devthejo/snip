@@ -232,7 +232,7 @@ func (cmd *Cmd) BuildLauncher() error {
 
 	if cmd.Tmpdir {
 		tmpdirPath := filepath.Join("/tmp", cmd.TmpdirName)
-		launcherContent += "mkdir --mode=0775 -p " + tmpdirPath + "\n"
+		launcherContent += `mkdir --mode=0775 -p " ` + tmpdirPath + `" && `
 		launcherContent += "cd " + tmpdirPath + "\n"
 	}
 

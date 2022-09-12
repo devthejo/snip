@@ -2,7 +2,7 @@ package tools
 
 import (
 	"crypto/rand"
-	"encoding/base64"
+	"encoding/hex"
 )
 
 // GenerateRandomBytes returns securely generated random bytes.
@@ -20,9 +20,7 @@ func GenerateRandomBytes(n int) ([]byte, error) {
 	return b, nil
 }
 
-// GenerateRandomString returns a URL-safe, base64 encoded
-// securely generated random string.
 func GenerateRandomString(s int) (string, error) {
 	b, err := GenerateRandomBytes(s)
-	return base64.URLEncoding.EncodeToString(b), err
+	return hex.EncodeToString(b), err
 }

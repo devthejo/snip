@@ -137,7 +137,7 @@ func CreatePlay(cp *CfgPlay, ctx *RunVars, parentLoopRow *LoopRow) *Play {
 	}
 	if p.Tmpdir {
 		tempKey, _ := tools.GenerateRandomString(16)
-		p.TmpdirName = "snip-" + tempKey
+		p.TmpdirName = "snip/" + tempKey
 	}
 
 	p.RunVars = ctx
