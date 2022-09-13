@@ -39,7 +39,7 @@ var (
 	FlagRunnerDefault  = "sh"
 	FlagLoadersDefault = `["markdown"]`
 
-	FlagDeploymentNameDefault = "default"
+	FlagDeploymentNameDefault = ""
 
 	FlagPlayKeyDefault      = []string{}
 	FlagPlayKeyDepsDefault  = false

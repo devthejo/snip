@@ -114,6 +114,7 @@ func (cl *ConfigLoader) InitConfig() {
 	cl.LoadJsonnet()
 	cl.InitViper()
 	cl.LoadViperConfigFile()
+	cl.ConfigureDeploymentName()
 }
 
 func (cl *ConfigLoader) GetEnvPrefix() string {
