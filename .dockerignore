@@ -1,2 +1,12 @@
-/snip
-/snip.tar.gz
+Dockerfile
+.dockerignore
+.github
+.git
+.vscode
+Makefile
+README.md
+snip
+snip.tar.gz
+.gitlab-ci.yml
+.gitignore
+go-build-plugins

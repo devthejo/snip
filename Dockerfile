@@ -10,11 +10,18 @@ FROM golang:$GOLANG_VERSION as builder
 
 RUN mkdir -p /opt/bin
 
+ARG VERSION_TAG
+ENV VERSION_TAG=${VERSION_TAG}
+
 # compile snip
 ENV GOFLAGS=-mod=vendor
+ENV CGO_ENABLED=0
+ENV GOOS=linux
 WORKDIR /snip
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -o=/opt/bin/snip .
+
+RUN echo go build -ldflags="-X 'main.Version=${VERSION_TAG}'" -o=/opt/bin/snip .
+RUN go build -ldflags="-X 'main.Version=${VERSION_TAG}'" -o=/opt/bin/snip .
 
 # bash completion
 RUN mkdir -p /etc/bash_completion.d && \
@@ -22,7 +29,8 @@ RUN mkdir -p /etc/bash_completion.d && \
   chmod +x /etc/bash_completion.d/snip
 
 # final image
-FROM scratch
+FROM ubuntu:$UBUNTU_VERSION
+WORKDIR /app
 
 COPY --from=gomplate        /gomplate                       /usr/local/bin/gomplate
 COPY --from=builder         /opt/bin/                       /usr/local/bin/
