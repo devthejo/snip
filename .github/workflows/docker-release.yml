@@ -50,6 +50,6 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: 
-            VERSION_TAG: ${{ github.ref_name }}
+          build-args: |
+            VERSION_TAG=${{ github.ref_name }}
       
