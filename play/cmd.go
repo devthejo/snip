@@ -2,6 +2,7 @@ package play
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -59,6 +60,8 @@ type Cmd struct {
 
 	Tmpdir     bool
 	TmpdirName string
+
+	CfgCmd *CfgCmd
 }
 
 func CreateCmd(ccmd *CfgCmd, parentLoopRow *LoopRow) *Cmd {
@@ -78,7 +81,8 @@ func CreateCmd(ccmd *CfgCmd, parentLoopRow *LoopRow) *Cmd {
 	}
 
 	cmd := &Cmd{
-		App: app,
+		App:    app,
+		CfgCmd: ccmd,
 		AppConfig: &snipplugin.AppConfig{
 			DeploymentName: cfg.DeploymentName,
 			SnippetsDir:    cfg.SnippetsDir,
@@ -284,6 +288,13 @@ func (cmd *Cmd) RunRunner() error {
 	}
 
 	vars := cmd.RunVars.GetAll()
+
+	for key, varDef := range cmd.CfgCmd.CfgPlay.Vars {
+		key = strings.ToUpper(key)
+		if varDef.Required && vars[key] == "" {
+			return fmt.Errorf(`missing required var "%s"`, key)
+		}
+	}
 
 	runCfg := &runner.Config{
 		AppConfig:     cmd.AppConfig,
