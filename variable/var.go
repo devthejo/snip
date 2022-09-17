@@ -40,6 +40,7 @@ func (vr *Var) Parse(k string, m map[string]interface{}) {
 	vr.Name = k
 	vr.ParseDefaultFromVar(m)
 	vr.ParseDefaultFromFile(m)
+	vr.ParseDefaultFromRegister(m)
 	vr.ParseDefault(m)
 	vr.ParseValueFromVar(m)
 	vr.ParseValueFromFile(m)
@@ -148,6 +149,19 @@ func (vr *Var) ParseValueFromVar(v map[string]interface{}) {
 		}
 	default:
 		UnexpectedTypeVar(v, "value_from_var")
+	}
+}
+
+func (vr *Var) ParseDefaultFromRegister(v map[string]interface{}) {
+	switch val := v["from_register"].(type) {
+	case bool:
+		if val {
+			vr.DefaultFromType = FromRegister
+			vr.DefaultParam = vr.Name
+		}
+	case nil:
+	default:
+		UnexpectedTypeVar(v, "from_register")
 	}
 }
 

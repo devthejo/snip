@@ -13,6 +13,7 @@ const (
 	FromValue FromType = iota
 	FromVar
 	FromFile
+	FromRegister
 )
 
 type RunVar struct {
@@ -36,6 +37,8 @@ func (runVar *RunVar) Set(fromType FromType, param string) {
 		runVar.LazyLoad = false
 	case FromVar:
 		runVar.LazyLoad = true
+	case FromRegister:
+		runVar.LazyLoad = true
 	case FromFile:
 		runVar.LazyLoad = true
 	default:
@@ -49,6 +52,13 @@ func (runVar *RunVar) GetValue(ctxs ...RunVars) string {
 	switch runVar.FromType {
 	case FromValue:
 		r = runVar.Param
+	case FromRegister:
+		for _, c := range ctxs {
+			r = runVar.getDefaultOfCtx(c, ctxs)
+			if r != "" {
+				break
+			}
+		}
 	case FromVar:
 		for _, c := range ctxs {
 			r = runVar.getValueOfCtx(c, ctxs)
@@ -63,6 +73,19 @@ func (runVar *RunVar) GetValue(ctxs ...RunVars) string {
 		}
 		r = string(content)
 		r = strings.TrimRight(r, "\n")
+	}
+	return r
+}
+
+func (runVar *RunVar) getDefaultOfCtx(ctx RunVars, ctxs []RunVars) string {
+	var r string
+	k := runVar.Param
+	varsDefault := ctx.GetDefaults()
+	if v, ok := varsDefault.Get(k); ok {
+		rv := v.(*RunVar)
+		if rv != runVar {
+			r = rv.GetValue(ctxs...)
+		}
 	}
 	return r
 }
