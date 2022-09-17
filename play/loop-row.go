@@ -21,9 +21,5 @@ type LoopRow struct {
 }
 
 func (l *LoopRow) GetKey() string {
-	k := l.Key
-	if k == "" {
-		k = strconv.Itoa(l.Index)
-	}
-	return k
+	return l.Key + "." + strconv.Itoa(l.Index)
 }

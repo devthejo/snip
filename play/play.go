@@ -170,10 +170,16 @@ func CreatePlay(cp *CfgPlay, ctx *RunVars, parentLoopRow *LoopRow) *Play {
 
 		runCtx := p.RunVars.NewChild()
 
+		var key string
+		if cfgLoopRow.Key != "" {
+			key = cfgLoopRow.Key
+		} else {
+			key = strconv.Itoa(cfgLoopRow.Index)
+		}
 		loop := &LoopRow{
 			Name:          cfgLoopRow.Name,
-			Key:           cfgLoopRow.Key,
-			Index:         cfgLoopRow.Index,
+			Key:           key,
+			Index:         i,
 			Prefix:        cfgLoopRow.Prefix,
 			Vars:          cfgLoopRow.Vars,
 			IsLoopRowItem: cfgLoopRow.IsLoopRowItem,
