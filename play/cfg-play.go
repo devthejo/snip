@@ -1,7 +1,6 @@
 package play
 
 import (
-	"fmt"
 	"path"
 	"strconv"
 	"strings"
@@ -313,7 +312,6 @@ func (cp *CfgPlay) ParseDir(m map[string]interface{}, override bool) {
 		} else {
 			cp.Dir = v
 		}
-		fmt.Printf("cp.Dir %v \n", cp.Dir)
 	case nil:
 	default:
 		unexpectedTypeCmd(m, "dir")
@@ -742,7 +740,10 @@ func (cp *CfgPlay) ParseTmpdir(m map[string]interface{}, override bool) {
 			cp.Tmpdir = &v
 		}
 	case nil:
-		if cp.ParentCfgPlay != nil && cp.ParentCfgPlay.Tmpdir != nil {
+		if cp.Dir != "" {
+			b := false
+			cp.Tmpdir = &b
+		} else if cp.ParentCfgPlay != nil && cp.ParentCfgPlay.Tmpdir != nil {
 			cp.Tmpdir = cp.ParentCfgPlay.Tmpdir
 		}
 	default:
