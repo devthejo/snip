@@ -15,7 +15,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/devthejo/snip/cmd"
 	"github.com/devthejo/snip/config"
 	"github.com/devthejo/snip/errors"
 	"github.com/devthejo/snip/plugin/loader"
@@ -53,12 +52,6 @@ type App struct {
 	Aurora auroraPackage.Aurora
 
 	Version string
-}
-
-func New(version string) *App {
-	app := NewApp(version)
-	app.RunCmd()
-	return app
 }
 
 func NewApp(version string) *App {
@@ -128,7 +121,10 @@ func (app *App) GetAurora() auroraPackage.Aurora {
 
 func (app *App) OnPreRun(cmd *cobra.Command) {
 	app.ConfigLoader.OnPreRun(cmd)
+	app.InitVarsRegistry()
+}
 
+func (app *App) InitVarsRegistry() {
 	usr, _ := user.Current()
 	app.VarsRegistry = registry.CreateNsVars(&registry.NsVarsOptions{
 		BasePath: filepath.Join(usr.HomeDir, ".snip", app.Config.DeploymentName, "vars_persist"),
@@ -140,18 +136,6 @@ func (app *App) IsExiting() bool {
 }
 func (app *App) Exiting() {
 	app.ExitingState = true
-}
-
-func (app *App) RunCmd() {
-	cobra.OnInitialize(app.OnInitialize)
-
-	RootCmd := cmd.NewCmd(app)
-	app.RootCmd = RootCmd
-	app.ConfigLoader.RootCmd = RootCmd
-
-	if err := RootCmd.Execute(); err != nil {
-		logrus.Fatal(err)
-	}
 }
 
 func (app *App) GetNow() time.Time {

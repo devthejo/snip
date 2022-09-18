@@ -11,6 +11,8 @@ type Config struct {
 	LogForceColors bool   `mapstructure:"LOG_FORCE_COLORS" json:"logs_force_colors"`
 	CWD            string `mapstructure:"CWD" json:"cwd"`
 
+	Playbooks []string `mapstructure:"PLAYBOOKS" json:"key,omitempty"`
+
 	Vars      map[string]interface{}            `mapstructure:"VARS" json:"vars"`
 	VarsLoops map[string]map[string]interface{} `mapstructure:"VARS_LOOPS" json:"vars_loops"`
 	Play      map[string]interface{}            `mapstructure:"PLAY" json:"play"`

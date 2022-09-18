@@ -24,9 +24,9 @@ type ConfigLoader struct {
 	File                     *string
 	Config                   *Config
 	RootCmd                  *cobra.Command
-	configPaths              []string
-	configName               string
-	configFile               string
+	ConfigPaths              []string
+	ConfigName               string
+	ConfigFile               string
 	initialized              bool
 }
 
@@ -34,8 +34,8 @@ func NewConfigLoader() *ConfigLoader {
 	cl := &ConfigLoader{}
 	cl.Viper = viper.New()
 	cl.Config = &Config{}
-	cl.configPaths = []string{".", "/etc"}
-	cl.configName = "snip"
+	cl.ConfigPaths = []string{".", "/etc"}
+	cl.ConfigName = "snip"
 	return cl
 }
 
@@ -183,8 +183,8 @@ func (cl *ConfigLoader) LoadJsonnet() {
 			*cl.File = dir + "/" + configName + ".json"
 		}
 	} else {
-		configDirs = cl.configPaths
-		configName = cl.configName
+		configDirs = cl.ConfigPaths
+		configName = cl.ConfigName
 	}
 	if _, err := ConfigJsonnetRender(configDirs, configName); err != nil {
 		logrus.Fatal(err)
@@ -213,10 +213,10 @@ func (cl *ConfigLoader) InitViper() {
 	if File != "" {
 		v.SetConfigFile(File)
 	} else {
-		for _, configPath := range cl.configPaths {
+		for _, configPath := range cl.ConfigPaths {
 			v.AddConfigPath(configPath)
 		}
-		v.SetConfigName(cl.configName)
+		v.SetConfigName(cl.ConfigName)
 	}
 
 	cl.ViperDecoderConfigOption = viper.DecodeHook(mapstructure.ComposeDecodeHookFunc(
@@ -232,6 +232,7 @@ func (cl *ConfigLoader) LoadViperConfigFile() {
 			logrus.Fatalf("Unable to read config: %v", err)
 		}
 	}
+	logrus.Debug("use config file: ", cl.Viper.ConfigFileUsed())
 }
 
 func (cl *ConfigLoader) LoadViper() {

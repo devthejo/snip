@@ -14,6 +14,7 @@ func NewCmd(app App) *cobra.Command {
 	cmd.AddCommand(CmdVersion(app))
 
 	cmd.AddCommand(CmdPlay(app))
+	cmd.AddCommand(CmdPlaybooks(app))
 	// cmd.AddCommand(CmdMarkdown(app))
 
 	return cmd

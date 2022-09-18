@@ -106,17 +106,20 @@ func (proc *Main) Done() <-chan struct{} {
 	return proc.Context.Done()
 }
 
-func (proc *Main) Run(f func() error) {
+func (proc *Main) Run(f func() (error, interface{})) {
 	proc.RunMain(f)
 	os.Exit(proc.ExitCode)
 }
 
-func (proc *Main) RunMain(f func() error) {
+func (proc *Main) RunMain(f func() (error, interface{})) (error, interface{}) {
 
 	proc.MainOpener()
 
+	var err error
+	var runReport interface{}
+
 	go func() {
-		err := f()
+		err, runReport = f()
 		if err != nil {
 			logrus.Error(err)
 			proc.ExitCode = 1
@@ -126,6 +129,8 @@ func (proc *Main) RunMain(f func() error) {
 	}()
 
 	proc.MainCloser()
+
+	return err, runReport
 }
 
 func (proc *Main) End() {

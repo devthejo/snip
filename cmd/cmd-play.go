@@ -2,15 +2,13 @@ package cmd
 
 import (
 	"fmt"
-	"io/ioutil"
-	"path/filepath"
+	"os"
 	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/devthejo/snip/config"
-	"github.com/devthejo/snip/play"
 	"github.com/devthejo/snip/tools"
 )
 
@@ -25,50 +23,12 @@ func CmdPlay(app App) *cobra.Command {
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 
-			cfg := app.GetConfig()
-
 			startTime := time.Now()
 
-			main := app.GetMainProc()
+			_, runReport := RunPlay(app)
 
-			mainFunc := func() error {
-				if err := play.Clean(app); err != nil {
-					return err
-				}
-
-				resumeFile := filepath.Join(play.GetRootPath(app), "resume")
-				if cfg.PlayResume {
-					if resume, err := ioutil.ReadFile(resumeFile); err == nil {
-						logrus.Infof("🔁 resuming from %s", resume)
-						cfg.PlayKeyStart = string(resume)
-					}
-				}
-
-				playCfg := play.BuildConfig(app)
-
-				p := play.BuildPlay(playCfg)
-
-				gRunCtx := playCfg.GlobalRunCtx
-
-				err := p.Start()
-
-				if main.Success {
-					gRunCtx.CurrentTreeKey = ""
-				}
-
-				logrus.Debugf("resume saved: %v", gRunCtx.CurrentTreeKey)
-				ioutil.WriteFile(resumeFile, []byte(gRunCtx.CurrentTreeKey), 0644)
-
-				if !cfg.PlayNoClean {
-					play.Clean(app)
-				}
-
-				if err != nil {
-					return err
-				}
-
+			if runReport != nil {
 				au := app.GetAurora()
-				runReport := gRunCtx.RunReport
 				logrus.Infof("🏁 play report:")
 				resultMsg := "  result: %s %s %s"
 				resultVars := []interface{}{
@@ -85,11 +45,10 @@ func CmdPlay(app App) *cobra.Command {
 				logrus.Infof("  duration %s", time.Since(startTime).Round(time.Second))
 
 				tools.PrintMemUsage()
-
-				return nil
 			}
 
-			main.Run(mainFunc)
+			proc := app.GetMainProc()
+			os.Exit(proc.ExitCode)
 
 		},
 	}
