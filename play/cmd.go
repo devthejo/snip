@@ -95,7 +95,7 @@ func CreateCmd(ccmd *CfgCmd, parentLoopRow *LoopRow) *Cmd {
 		Middlewares: ccmd.Middlewares,
 		Runner:      ccmd.Runner,
 
-		Dir: ccmd.Dir,
+		Dir: cp.Dir,
 
 		RequiredFiles:              ccmd.RequiredFiles,
 		RequiredFilesSrcProcessors: ccmd.RequiredFilesSrcProcessors,
