@@ -85,10 +85,12 @@ func CmdPlaybooks(app App) *cobra.Command {
 					break
 				}
 
-				runReport.OK += playbookRunReport.OK
-				runReport.Failed += playbookRunReport.Failed
-				runReport.Changed += playbookRunReport.Changed
-				runReport.Total += playbookRunReport.Total
+				if playbookRunReport != nil {
+					runReport.OK += playbookRunReport.OK
+					runReport.Failed += playbookRunReport.Failed
+					runReport.Changed += playbookRunReport.Changed
+					runReport.Total += playbookRunReport.Total
+				}
 			}
 
 			au := app.GetAurora()
