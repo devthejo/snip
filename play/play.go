@@ -3,13 +3,16 @@ package play
 import (
 	"context"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	cmap "github.com/orcaman/concurrent-map"
 	"github.com/sirupsen/logrus"
 	"go.uber.org/multierr"
+	"gopkg.in/yaml.v2"
 
 	"github.com/devthejo/snip/config"
 	"github.com/devthejo/snip/errors"
@@ -35,7 +38,8 @@ type Play struct {
 	TreeKeyParts []string
 	TreeKey      string
 
-	LoopRow []*LoopRow
+	LoopRow     []*LoopRow
+	LoopRowExec string
 
 	LoopSequential bool
 
@@ -152,8 +156,20 @@ func CreatePlay(cp *CfgPlay, ctx *RunVars, parentLoopRow *LoopRow) *Play {
 	logger = logger.WithContext(loggerCtx)
 	p.Logger = logger
 
+	if cp.LoopOnExec != "" {
+		p.LoopRowExec = cp.LoopOnExec
+	} else {
+		p.MakeLoopRow(cp.LoopOn)
+	}
+
+	return p
+}
+
+func (p *Play) MakeLoopRow(loopOn []*CfgLoopRow) {
+	cp := p.CfgPlay
+
 	var loopRows []*CfgLoopRow
-	if len(cp.LoopOn) == 0 {
+	if len(loopOn) == 0 {
 		loopRows = append(loopRows, &CfgLoopRow{
 			Name:          "",
 			Key:           "",
@@ -162,10 +178,10 @@ func CreatePlay(cp *CfgPlay, ctx *RunVars, parentLoopRow *LoopRow) *Play {
 			IsLoopRowItem: false,
 		})
 	} else {
-		loopRows = cp.LoopOn
+		loopRows = loopOn
 	}
-
 	p.LoopRow = make([]*LoopRow, len(loopRows))
+
 	for i, cfgLoopRow := range loopRows {
 
 		runCtx := p.RunVars.NewChild()
@@ -220,8 +236,6 @@ func CreatePlay(cp *CfgPlay, ctx *RunVars, parentLoopRow *LoopRow) *Play {
 		}
 
 	}
-
-	return p
 }
 
 func (p *Play) LoadSkip() {
@@ -298,6 +312,70 @@ func (p *Play) LoadVars() {
 	cp := p.CfgPlay
 
 	parentCtx := p.RunVars
+
+	if p.LoopRowExec != "" {
+		execCmd := exec.Command("sh", "-c", p.LoopRowExec)
+		execCmd.Env = os.Environ()
+
+		// get env to run loopRowExec
+		values := cmap.New()
+		defaults := cmap.New()
+		if !p.VarsClean {
+			for k, v := range parentCtx.Values.Items() {
+				values.Set(k, v)
+			}
+		}
+		for _, v := range cp.Vars {
+			v.RegisterValueTo(values, "")
+		}
+		if p.VarsUseEnv {
+			envMap := tools.EnvToMap(os.Environ())
+			for k, v := range envMap {
+				rv := variable.CreateRunVar()
+				rv.Set(variable.FromValue, v)
+				defaults.Set(k, rv)
+			}
+		}
+		if !p.VarsClean {
+			for k, v := range parentCtx.Defaults.Items() {
+				defaults.Set(k, v)
+			}
+		}
+		for _, v := range cp.Vars {
+			v.RegisterDefaultTo(defaults, "")
+			v.HandleRequired(defaults, values, "")
+		}
+		cp.PromptPluginVars()
+
+		execCmd.Env = tools.EnvToPairs(p.RunVars.GetAll())
+
+		out, err := execCmd.Output()
+		if err != nil {
+			logrus.Fatalf("error running loop_on exec: %v", err)
+		}
+		var loopOut []map[string]interface{}
+		err = yaml.Unmarshal(out, &loopOut)
+		if err != nil {
+			panic(err)
+		}
+
+		var loopOn []*CfgLoopRow
+		for i, row := range loopOut {
+			loopRowVars := make(map[string]*variable.Var)
+			for key, value := range row {
+				loopRowVars[key] = &variable.Var{
+					Name:  key,
+					Depth: cp.Depth,
+				}
+				loopRowVars[key].SetValue(value.(string))
+			}
+			loopOn = append(loopOn, CreateCfgLoopRow(i, "exec:"+p.LoopRowExec, loopRowVars, ""))
+		}
+
+		p.MakeLoopRow(loopOn)
+
+		p.LoadSkip()
+	}
 
 	for _, loop := range p.LoopRow {
 		ctx := loop.RunVars

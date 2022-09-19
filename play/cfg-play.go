@@ -37,6 +37,7 @@ type CfgPlay struct {
 	VarsUseEnv *bool
 	Vars       map[string]*variable.Var
 	LoopOn     []*CfgLoopRow
+	LoopOnExec string
 
 	VarsSets       map[string]map[string]*variable.Var
 	LoopSets       map[string][]map[string]*variable.Var
@@ -436,12 +437,21 @@ func (cp *CfgPlay) ParseLoopSets(m map[string]interface{}, override bool) {
 		}
 	}
 }
+
 func (cp *CfgPlay) ParseLoopOn(m map[string]interface{}, override bool) {
 	if cp.LoopOn != nil && !override {
 		return
 	}
 	switch v := m["loop_on"].(type) {
 	case string:
+		if strings.HasPrefix(v, "exec:") {
+			if cp.LoopOnExec != "" && !override {
+				return
+			}
+			bin := strings.TrimPrefix(v, "exec:")
+			cp.LoopOnExec = bin
+			return
+		}
 		prefix := ""
 		if strings.Contains(v, " as ") {
 			parts := strings.Split(v, " as ")
@@ -1555,6 +1565,8 @@ func (cp *CfgPlay) BuildRoot() *Play {
 
 	logrus.Infof(ansi.Color("≡ ", "green") + "collecting variables")
 	rootPlay.LoadVars()
+
+	// rootPlay.LoadSkip()
 
 	return rootPlay
 }

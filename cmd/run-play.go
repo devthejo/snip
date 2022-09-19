@@ -48,12 +48,10 @@ func RunPlay(app App) (error, *play.RunReport) {
 		}
 
 		if err != nil {
-			return err, nil
+			return err, gRunCtx.RunReport
 		}
 
-		runReport := gRunCtx.RunReport
-
-		return nil, runReport
+		return nil, gRunCtx.RunReport
 
 	}
 

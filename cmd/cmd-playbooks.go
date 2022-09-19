@@ -38,6 +38,8 @@ func CmdPlaybooks(app App) *cobra.Command {
 
 			runReport := &play.RunReport{}
 
+			var hasError error
+
 			for _, file := range files {
 				playbookApp := snipApp.NewApp(app.GetVersion())
 				cl := playbookApp.ConfigLoader
@@ -81,9 +83,6 @@ func CmdPlaybooks(app App) *cobra.Command {
 				cl.LoadViper()
 
 				err, playbookRunReport := RunPlay(playbookApp)
-				if err != nil {
-					break
-				}
 
 				if playbookRunReport != nil {
 					runReport.OK += playbookRunReport.OK
@@ -91,6 +90,12 @@ func CmdPlaybooks(app App) *cobra.Command {
 					runReport.Changed += playbookRunReport.Changed
 					runReport.Total += playbookRunReport.Total
 				}
+
+				if err != nil {
+					hasError = err
+					break
+				}
+
 			}
 
 			au := app.GetAurora()
@@ -99,6 +104,9 @@ func CmdPlaybooks(app App) *cobra.Command {
 			resultVars := []interface{}{
 				au.BrightGreen(fmt.Sprintf("OK=%d", runReport.OK)),
 				au.BrightMagenta(fmt.Sprintf("Changed=%d", runReport.Changed)),
+			}
+			if hasError != nil {
+				runReport.Total = runReport.OK + runReport.Changed + runReport.Failed
 			}
 			if runReport.Failed > 0 {
 				resultMsg += " %s"

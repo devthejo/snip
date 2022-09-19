@@ -32,4 +32,5 @@ require (
 	golang.org/x/crypto v0.0.0-20200728195943-123391ffb6de
 	golang.org/x/sys v0.0.0-20220908164124-27713097b956 // indirect
 	google.golang.org/grpc v1.29.1
+	gopkg.in/yaml.v2 v2.2.8
 )
