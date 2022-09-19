@@ -314,9 +314,6 @@ func (p *Play) LoadVars() {
 	parentCtx := p.RunVars
 
 	if p.LoopRowExec != "" {
-		execCmd := exec.Command("sh", "-c", p.LoopRowExec)
-		execCmd.Env = os.Environ()
-
 		// get env to run loopRowExec
 		values := cmap.New()
 		defaults := cmap.New()
@@ -347,11 +344,14 @@ func (p *Play) LoadVars() {
 		}
 		cp.PromptPluginVars()
 
+		execCmd := exec.Command("sh", "-c", p.LoopRowExec)
 		execCmd.Env = tools.EnvToPairs(p.RunVars.GetAll())
 
+		stderr := new(strings.Builder)
+		execCmd.Stderr = stderr
 		out, err := execCmd.Output()
 		if err != nil {
-			logrus.Fatalf("error running loop_on exec: %v", err)
+			logrus.Fatalf("error running loop_on exec: %v, message: %s", err, stderr)
 		}
 		var loopOut []map[string]interface{}
 		err = yaml.Unmarshal(out, &loopOut)
