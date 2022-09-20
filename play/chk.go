@@ -57,6 +57,9 @@ type Chk struct {
 
 	PreflightRunnedOnce bool
 
+	Tmpdir     bool
+	TmpdirName string
+
 	GlobalRunCtx *GlobalRunCtx
 
 	Retry    interface{}
@@ -102,6 +105,11 @@ func CreateChk(cchk *CfgChk, parentLoopRow *LoopRow, isPreRun bool) *Chk {
 		GlobalRunCtx: cp.GlobalRunCtx,
 
 		RunVars: parentLoopRow.RunVars,
+	}
+
+	chk.Tmpdir = parentPlay.Tmpdir
+	if chk.Tmpdir {
+		chk.TmpdirName = parentPlay.TmpdirName
 	}
 
 	depth := cchk.Depth
@@ -348,6 +356,11 @@ func (chk *Chk) BuildLauncher() error {
 	}
 
 	launcherContent := "#!/usr/bin/env bash\n"
+	if chk.Tmpdir {
+		tmpdirPath := filepath.Join("/tmp", chk.TmpdirName)
+		launcherContent += `mkdir --mode=0775 -p "` + tmpdirPath + `" && `
+		launcherContent += "cd " + `"` + tmpdirPath + `"` + "\n"
+	}
 	launcherContent += "BASH_ENV=${BASH_ENV:-/etc/profile}\n"
 	launcherContent += `[ -f "$BASH_ENV" ] && source $BASH_ENV` + "\n"
 	launcherContent += "set -e\n"
