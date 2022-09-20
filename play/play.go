@@ -372,7 +372,9 @@ func (p *Play) LoadVars() {
 			loopOn = append(loopOn, CreateCfgLoopRow(i, "exec:"+p.LoopRowExec, loopRowVars, ""))
 		}
 
-		p.MakeLoopRow(loopOn)
+		if len(loopOn) != 0 {
+			p.MakeLoopRow(loopOn)
+		}
 
 		p.LoadSkip()
 	}
